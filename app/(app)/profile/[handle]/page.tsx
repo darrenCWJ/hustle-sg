@@ -344,6 +344,65 @@ export default async function ProfilePage({
         </div>
       </section>
 
+      {/* Reviews */}
+      <section style={{ marginBottom: 70 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end", marginBottom: 24 }}>
+          <h2 style={{ fontFamily: "var(--font-display)", fontSize: 38, margin: 0, letterSpacing: "-0.03em" }}>
+            Reviews
+          </h2>
+          <span style={{ fontSize: 12, color: "var(--color-ink-soft)" }}>
+            <b>4.9</b> avg · 3 reviews
+          </span>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+          {[
+            { name: "Kopitiam Co.", role: "F&B partner", quote: "Showed up exactly on time, no reminders needed. Handled the lunch rush like a pro and even trained a new hire mid-shift.", hue: 38 },
+            { name: "Muezza Studio", role: "Design client", quote: "Delivered the brand refresh in one round of revisions. Attention to detail was exceptional — every spec nailed perfectly.", hue: 165 },
+            { name: "Tampines CC", role: "Event organiser", quote: "Third time hiring through HustleSG and every assignment has been a delight. Reliable, resourceful, and always professional.", hue: 340 },
+          ].map((r) => (
+            <figure
+              key={r.name}
+              style={{
+                margin: 0,
+                padding: 22,
+                borderRadius: 20,
+                border: "1px solid var(--color-line)",
+                background: "var(--color-surface-raised)",
+                display: "flex",
+                flexDirection: "column",
+                gap: 14,
+              }}
+            >
+              <div style={{ display: "flex", gap: 2 }}>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <span key={i} style={{ color: "var(--color-accent)", fontSize: 14 }}>★</span>
+                ))}
+              </div>
+              <blockquote style={{ margin: 0, fontSize: 13.5, lineHeight: 1.6, color: "var(--color-ink-soft)", fontStyle: "italic" }}>
+                &ldquo;{r.quote}&rdquo;
+              </blockquote>
+              <figcaption style={{ display: "flex", alignItems: "center", gap: 10, marginTop: "auto" }}>
+                <span
+                  style={{
+                    width: 36, height: 36, borderRadius: "50%",
+                    background: `oklch(78% 0.08 ${r.hue})`,
+                    color: `oklch(22% 0.08 ${r.hue})`,
+                    display: "grid", placeItems: "center",
+                    fontSize: 12, fontWeight: 700, flexShrink: 0,
+                  }}
+                >
+                  {r.name.split(" ").map((s) => s[0]).join("").slice(0, 2).toUpperCase()}
+                </span>
+                <div>
+                  <p style={{ margin: 0, fontWeight: 600, fontSize: 13 }}>{r.name}</p>
+                  <p style={{ margin: 0, fontSize: 11, color: "var(--color-ink-mute)" }}>{r.role}</p>
+                </div>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </section>
+
       {/* Credentials */}
       <section style={{ marginBottom: 70 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end", marginBottom: 20 }}>

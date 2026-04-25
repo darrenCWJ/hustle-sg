@@ -86,6 +86,7 @@ export async function SiteNav() {
             {[
               { href: "/feed", label: "My feed" },
               { href: "/gigs", label: "Gigs" },
+              { href: "/instant", label: "Instant" },
               { href: "/start-a-business", label: "Start a business" },
               { href: "/dashboard", label: "Dashboard" },
             ].map((item) => (
