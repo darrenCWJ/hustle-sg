@@ -15,6 +15,8 @@ const config: Config = {
         "ink-soft": "var(--color-ink-soft)",
         "ink-mute": "var(--color-ink-mute)",
         muted: "var(--color-muted)",
+        line: "var(--color-line)",
+        "line-soft": "var(--color-line-soft)",
         accent: "var(--color-accent)",
         "accent-soft": "var(--color-accent-soft)",
         "accent-ink": "var(--color-accent-ink)",
@@ -24,11 +26,11 @@ const config: Config = {
         jade: "var(--color-jade)",
         "jade-soft": "var(--color-jade-soft)",
         "jade-ink": "var(--color-jade-ink)",
-        line: "var(--color-line)",
-        "line-soft": "var(--color-line-soft)",
+        plum: "var(--color-plum)",
+        "plum-soft": "var(--color-plum-soft)",
       },
       fontFamily: {
-        display: ["var(--font-display)", "Georgia", "serif"],
+        display: ["var(--font-display)", "Inter", "system-ui", "sans-serif"],
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "monospace"],
       },
@@ -40,6 +42,9 @@ const config: Config = {
       },
       borderRadius: {
         card: "var(--radius-card)",
+        lg: "var(--radius-lg)",
+        md: "var(--radius-md)",
+        sm: "var(--radius-sm)",
         pill: "9999px",
       },
       boxShadow: {
