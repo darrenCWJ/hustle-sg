@@ -1,5 +1,8 @@
 -- Return budget_kind, category, and location from match_gigs_for_user
 -- so the feed page can render these without a second query.
+-- Must drop first because return type changes are not allowed with CREATE OR REPLACE.
+
+drop function if exists public.match_gigs_for_user(uuid, integer);
 
 create or replace function public.match_gigs_for_user(
   p_user_id uuid,
