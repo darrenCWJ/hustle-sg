@@ -10,17 +10,27 @@ const config: Config = {
     extend: {
       colors: {
         surface: "var(--color-surface)",
+        "surface-raised": "var(--color-surface-raised)",
         ink: "var(--color-ink)",
+        "ink-soft": "var(--color-ink-soft)",
+        "ink-mute": "var(--color-ink-mute)",
         muted: "var(--color-muted)",
         accent: "var(--color-accent)",
         "accent-soft": "var(--color-accent-soft)",
+        "accent-ink": "var(--color-accent-ink)",
         trust: "var(--color-trust)",
         "trust-soft": "var(--color-trust-soft)",
+        "trust-ink": "var(--color-trust-ink)",
+        jade: "var(--color-jade)",
+        "jade-soft": "var(--color-jade-soft)",
+        "jade-ink": "var(--color-jade-ink)",
         line: "var(--color-line)",
+        "line-soft": "var(--color-line-soft)",
       },
       fontFamily: {
         display: ["var(--font-display)", "Georgia", "serif"],
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "monospace"],
       },
       fontSize: {
         "display-xl": "var(--text-display-xl)",
@@ -33,11 +43,13 @@ const config: Config = {
         pill: "9999px",
       },
       boxShadow: {
-        soft: "0 1px 2px rgba(14,17,22,0.04), 0 8px 24px -12px rgba(14,17,22,0.12)",
-        lift: "0 2px 4px rgba(14,17,22,0.06), 0 24px 48px -20px rgba(14,17,22,0.20)",
+        soft: "var(--shadow-soft)",
+        lift: "var(--shadow-lift)",
+        deep: "var(--shadow-deep)",
       },
       transitionTimingFunction: {
         "out-expo": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "out-smooth": "cubic-bezier(0.22, 1, 0.36, 1)",
       },
     },
   },

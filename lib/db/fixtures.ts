@@ -41,15 +41,20 @@ export interface SeedGig {
   questions?: string[];
 }
 
-const sample = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+export interface SeedApplication {
+  applicant_handle: string;
+  gig_title: string;
+  status: "applied" | "interviewing" | "hired" | "rejected";
+  cover_note?: string;
+}
 
 export const FREELANCERS: SeedProfile[] = [
   {
     nric: "S1234567D",
     handle: "arif_rahman",
     display_name: "Arif Rahman",
-    headline: "Product designer · ex-fintech",
-    bio: "Figma all day. UX research, design systems, end-to-end product design. 4 years at a local bank, now freelancing for F&B brands around Kampong Glam.",
+    headline: "Product designer · ex-GovTech",
+    bio: "Figma all day. UX research, design systems, end-to-end product design. 3 years at GovTech on LifeSG and MyInfo redesigns, now freelancing for F&B brands around Kampong Glam.",
     role: "freelancer",
     certs: [
       {
@@ -70,6 +75,12 @@ export const FREELANCERS: SeedProfile[] = [
       },
     ],
     portfolio: [
+      {
+        kind: "video",
+        title: "GovTech LifeSG redesign walkthrough",
+        description: "Walkthrough of the LifeSG mobile nav redesign — reduced drop-off by 31% in beta testing.",
+        tags: ["ux", "govtech", "case-study"],
+      },
       {
         kind: "writeup",
         title: "Redesigning kopitiam loyalty",
@@ -343,12 +354,12 @@ export const EMPLOYERS: SeedProfile[] = [
 export const GIGS: SeedGig[] = [
   {
     employer_handle: "kopitiam_co",
-    title: "Rebrand our loyalty app — 4 weeks",
-    description: "We want to modernize our QR loyalty flow. Needs a designer who has shipped real Figma + can stay in kopi-culture tone. Outcome: hi-fi designs + design system.",
+    title: "Design a kopitiam loyalty app — 3 weeks",
+    description: "We want to modernize our QR loyalty flow. Needs a designer who has shipped real Figma + can stay in kopi-culture tone. Outcome: hi-fi designs + design system for our 14-outlet chain.",
     skills: ["figma", "ux", "design systems", "user research"],
     location: "Kallang (hybrid)",
     category: "design",
-    budget_cents: 480000,
+    budget_cents: 840000,
     budget_kind: "fixed",
     questions: [
       "Walk us through a redesign you shipped for a small-team brand.",
@@ -373,7 +384,7 @@ export const GIGS: SeedGig[] = [
     skills: ["ux", "figma", "fintech", "user research"],
     location: "Tanjong Pagar (hybrid)",
     category: "design",
-    budget_cents: 120000,
+    budget_cents: 12000,
     budget_kind: "hourly",
     questions: [
       "Describe a tricky fintech flow you've redesigned.",
@@ -476,5 +487,95 @@ export const GIGS: SeedGig[] = [
     category: "content",
     budget_cents: 50000,
     budget_kind: "fixed",
+  },
+];
+
+export const APPLICATIONS: SeedApplication[] = [
+  // Arif applying to design gigs
+  {
+    applicant_handle: "arif_rahman",
+    gig_title: "Design a kopitiam loyalty app — 3 weeks",
+    status: "interviewing",
+    cover_note: "I literally did this for a kopitiam chain last year — see my case study. Happy to share the Figma file on call.",
+  },
+  {
+    applicant_handle: "arif_rahman",
+    gig_title: "Senior UX contractor · 12-week fintech",
+    status: "applied",
+    cover_note: "3 years in fintech UX at GovTech (MyInfo, LifeSG). Strong in research-led design, comfortable with complex data flows.",
+  },
+  {
+    applicant_handle: "arif_rahman",
+    gig_title: "Motion designer for brand launch",
+    status: "applied",
+    cover_note: "I do motion in Figma + Rive. Happy to share a Rive prototype I built for a product launch last quarter.",
+  },
+
+  // Priya applying to tuition gigs
+  {
+    applicant_handle: "priya_sg",
+    gig_title: "H2 Maths curriculum reviewer",
+    status: "hired",
+    cover_note: "I've taught H2 Maths for 5 years and reviewed O-level content for a publisher. Can start immediately.",
+  },
+  {
+    applicant_handle: "priya_sg",
+    gig_title: "Relief tutor — P6 PSLE English",
+    status: "applied",
+    cover_note: "I have availability on Tuesday and Thursday evenings + Saturday mornings. ACTA-certified adult educator.",
+  },
+
+  // Wei Jie applying to tech gigs
+  {
+    applicant_handle: "weijie",
+    gig_title: "Full-stack Next.js contractor",
+    status: "interviewing",
+    cover_note: "I shipped a Next.js 14 app with Server Actions + Supabase for a SG fintech last month. Can share repo.",
+  },
+
+  // Siti applying to events gigs
+  {
+    applicant_handle: "siti_mc",
+    gig_title: "Bilingual emcee — corporate D&D, 600 pax",
+    status: "applied",
+    cover_note: "I emceed a 600-pax bank D&D at MBS in 2024 — clip available. Fluent EN + BM, conversational Mandarin.",
+  },
+
+  // Jayden applying to video gigs
+  {
+    applicant_handle: "jayden_fx",
+    gig_title: "Wedding videographer — Nikah + dinner",
+    status: "applied",
+    cover_note: "60 weddings shot including 20 Malay weddings. Sony FX3 + drone. Highlight reel from 2024 attached.",
+  },
+  {
+    applicant_handle: "jayden_fx",
+    gig_title: "Short-form video for new outlet opening",
+    status: "applied",
+    cover_note: "I do short-form retail/F&B a lot. Can bring drone for exterior B-roll.",
+  },
+
+  // Eden applying to content gigs
+  {
+    applicant_handle: "eden_tt",
+    gig_title: "TikTok creator partnership — food review",
+    status: "interviewing",
+    cover_note: "180k SG followers, 80% aged 18-35. My nasi lemak reviews average 400k views. Rate card attached.",
+  },
+
+  // Daniel applying to copywriting
+  {
+    applicant_handle: "daniel_copy",
+    gig_title: "Copywriter — parent-facing newsletter",
+    status: "applied",
+    cover_note: "I wrote 12 editions of an EdTech parent newsletter for a SG startup. Open rate went from 22% to 41%.",
+  },
+
+  // Mei Lin applying to catering
+  {
+    applicant_handle: "chef_mei",
+    gig_title: "Halal caterer — 150 pax corporate lunch",
+    status: "applied",
+    cover_note: "Halal-certified kitchen, 200-pax capacity. Did 3 similar corporate lunches in Raffles Place this year.",
   },
 ];

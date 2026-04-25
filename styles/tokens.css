@@ -1,32 +1,41 @@
 :root {
-  /* Palette — intentional, warm SG-hawker-meets-editorial */
-  --color-surface: oklch(97% 0.012 85);       /* warm off-white */
+  /* Palette — formal gov.sg meets warm SG editorial */
+  --color-surface: oklch(97% 0.012 85);
   --color-surface-raised: oklch(99% 0.008 85);
-  --color-ink: oklch(18% 0.02 240);           /* deep navy-black */
+  --color-ink: oklch(18% 0.02 240);
   --color-ink-soft: oklch(38% 0.02 240);
+  --color-ink-mute: oklch(58% 0.015 240);
   --color-muted: oklch(88% 0.014 85);
   --color-line: oklch(82% 0.012 85);
+  --color-line-soft: oklch(90% 0.008 85);
 
-  --color-accent: oklch(68% 0.18 38);         /* sunset orange — kopi-kaya */
+  --color-accent: oklch(68% 0.18 38);
   --color-accent-soft: oklch(92% 0.05 38);
   --color-accent-ink: oklch(28% 0.1 38);
+  --accent-h: 38;
 
-  --color-trust: oklch(55% 0.16 240);         /* calm SG blue — verification only */
+  --color-trust: oklch(55% 0.16 240);
   --color-trust-soft: oklch(94% 0.04 240);
+  --color-trust-ink: oklch(28% 0.12 240);
+
+  --color-jade: oklch(62% 0.13 165);
+  --color-jade-soft: oklch(94% 0.04 165);
+  --color-jade-ink: oklch(30% 0.1 165);
 
   --color-positive: oklch(60% 0.14 155);
   --color-warn: oklch(72% 0.16 78);
 
   /* Typography */
-  --font-display: "Fraunces", "Times New Roman", Georgia, serif;
+  --font-display: "Bricolage Grotesque", "Fraunces", "Times New Roman", Georgia, serif;
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
 
   --text-display-xl: clamp(3rem, 1rem + 7vw, 7.5rem);
   --text-display-lg: clamp(2.25rem, 1rem + 4vw, 4.5rem);
   --text-display-md: clamp(1.75rem, 1rem + 2vw, 2.75rem);
   --text-body-lg: clamp(1rem, 0.92rem + 0.4vw, 1.125rem);
 
-  /* Spacing — deliberately non-uniform */
+  /* Spacing */
   --space-section: clamp(4rem, 3rem + 5vw, 9rem);
   --space-block: clamp(2rem, 1rem + 3vw, 4rem);
   --gutter: clamp(1.25rem, 0.5rem + 2vw, 2.5rem);
@@ -40,6 +49,12 @@
   --duration-normal: 280ms;
   --duration-slow: 520ms;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Elevation */
+  --shadow-soft: 0 1px 2px rgba(14,17,22,0.04), 0 8px 24px -12px rgba(14,17,22,0.12);
+  --shadow-lift: 0 2px 4px rgba(14,17,22,0.06), 0 24px 48px -20px rgba(14,17,22,0.20);
+  --shadow-deep: 0 8px 16px rgba(14,17,22,0.12), 0 32px 64px -24px rgba(14,17,22,0.28);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -48,9 +63,12 @@
     --color-surface-raised: oklch(18% 0.015 240);
     --color-ink: oklch(96% 0.012 85);
     --color-ink-soft: oklch(72% 0.012 85);
+    --color-ink-mute: oklch(52% 0.012 85);
     --color-muted: oklch(24% 0.012 240);
     --color-line: oklch(28% 0.012 240);
+    --color-line-soft: oklch(22% 0.01 240);
     --color-accent-soft: oklch(24% 0.05 38);
     --color-trust-soft: oklch(22% 0.04 240);
+    --color-jade-soft: oklch(20% 0.04 165);
   }
 }

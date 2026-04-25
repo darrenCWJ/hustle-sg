@@ -115,5 +115,8 @@ export interface MatchGigRow {
   employer_id: string;
   skills_required: string[];
   budget_cents: number | null;
+  budget_kind: string | null;
+  category: string | null;
+  location: string | null;
   score: number;
 }

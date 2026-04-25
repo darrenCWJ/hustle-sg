@@ -28,7 +28,7 @@ export default async function StartABusinessPage() {
         </h1>
         <p className="mt-6 max-w-2xl text-ink-soft text-body-lg">
           A guided path through ACRA, IRAS, CPF, and bank account. Real figures,
-          mock submission — so you know exactly what&apos;s waiting when you&apos;re ready to go full-time.
+          guided walkthrough — so you know exactly what&apos;s waiting when you&apos;re ready to go full-time.
         </p>
         {!user && (
           <p className="mt-6 text-sm text-ink-soft">

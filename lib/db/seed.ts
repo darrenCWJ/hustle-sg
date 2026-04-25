@@ -14,7 +14,7 @@ import {
   buildProfileEmbeddingText,
   generateEmbedding,
 } from "../ai/embeddings";
-import { EMPLOYERS, FREELANCERS, GIGS } from "./fixtures";
+import { EMPLOYERS, FREELANCERS, GIGS, APPLICATIONS } from "./fixtures";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -158,6 +158,30 @@ async function seedGigs(handleToId: Record<string, string>) {
   return map;
 }
 
+async function seedApplications(handleToId: Record<string, string>, gigMap: Record<string, string>) {
+  for (const a of APPLICATIONS) {
+    const applicantId = handleToId[a.applicant_handle];
+    const gigId = gigMap[a.gig_title];
+    if (!applicantId || !gigId) {
+      console.warn(`  ! skipping application: ${a.applicant_handle} → "${a.gig_title}" (missing ref)`);
+      continue;
+    }
+
+    await admin
+      .from("applications")
+      .upsert(
+        {
+          gig_id: gigId,
+          applicant_id: applicantId,
+          cover_note: a.cover_note ?? null,
+          status: a.status,
+        },
+        { onConflict: "gig_id,applicant_id" },
+      );
+    console.log(`  → application: ${a.applicant_handle} → "${a.gig_title}" (${a.status})`);
+  }
+}
+
 async function computeEmbeddings(handleToId: Record<string, string>, gigMap: Record<string, string>) {
   console.log("Embedding profiles…");
   for (const p of [...FREELANCERS, ...EMPLOYERS]) {
@@ -200,6 +224,9 @@ async function main() {
 
   console.log("Seeding gigs…");
   const gigMap = await seedGigs(handleToId);
+
+  console.log("Seeding applications…");
+  await seedApplications(handleToId, gigMap);
 
   if (process.env.OPENAI_API_KEY) {
     await computeEmbeddings(handleToId, gigMap);

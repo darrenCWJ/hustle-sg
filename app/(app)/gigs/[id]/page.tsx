@@ -15,7 +15,7 @@ export default async function GigDetailPage({
   const { data: gig } = await supabase
     .from("gigs")
     .select(
-      "*, employer:profiles!gigs_employer_id_fkey(handle, display_name, headline, singpass_verified_at)",
+      "*, employer:profiles!gigs_employer_id_fkey(id, handle, display_name, headline, singpass_verified_at)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -31,7 +31,7 @@ export default async function GigDetailPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  let existingApp: any = null;
+  let existingApp: { id: string; status: string } | null = null;
   if (user) {
     const { data } = await supabase
       .from("applications")
@@ -42,110 +42,422 @@ export default async function GigDetailPage({
     existingApp = data;
   }
 
+  const employerVerified = Boolean(gig.employer?.singpass_verified_at);
+  const similarGigsRes = await supabase
+    .from("gigs")
+    .select("id, title, budget_cents, budget_kind, category")
+    .eq("status", "open")
+    .eq("category", gig.category ?? "")
+    .neq("id", id)
+    .limit(2);
+  const similarGigs = similarGigsRes.data ?? [];
+
   return (
-    <main className="mx-auto max-w-4xl px-6 py-16">
-      <Link href="/gigs" className="text-xs text-ink-soft uppercase tracking-widest hover:text-ink">
+    <main style={{ maxWidth: 1180, margin: "0 auto", padding: "40px 28px 80px" }}>
+      <Link
+        href="/gigs"
+        style={{
+          fontSize: 12,
+          letterSpacing: "0.16em",
+          textTransform: "uppercase",
+          color: "var(--color-ink-soft)",
+          marginBottom: 30,
+          fontWeight: 600,
+          display: "inline-block",
+        }}
+      >
         ← All gigs
       </Link>
 
-      <header className="mt-6 mb-10">
-        <p className="text-xs uppercase tracking-widest text-ink-soft">
-          {gig.category ?? "Gig"} · {gig.location ?? "Remote"} · {timeAgo(gig.created_at)}
-        </p>
-        <h1 className="font-display text-display-lg mt-3 leading-[0.95]">{gig.title}</h1>
-        <p className="mt-4 flex items-center gap-3">
-          <span className="font-semibold">{formatSgd(gig.budget_cents)}</span>
-          <span className="text-xs text-ink-soft uppercase tracking-widest">
-            · {gig.budget_kind}
+      {/* Header */}
+      <header style={{ marginBottom: 32 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+          <span
+            style={{
+              fontSize: 10.5,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              fontWeight: 600,
+              color: "var(--color-ink-soft)",
+            }}
+          >
+            {gig.category ?? "Gig"} · {gig.location ?? "Remote"}
           </span>
-        </p>
-      </header>
+          <span style={{ fontSize: 11, color: "var(--color-ink-mute)" }}>· {timeAgo(gig.created_at)}</span>
+        </div>
+        <h1
+          style={{
+            fontFamily: "var(--font-display)",
+            fontSize: "clamp(2.2rem, 4vw, 3.6rem)",
+            margin: "0 0 16px",
+            lineHeight: 1,
+            letterSpacing: "-0.035em",
+            maxWidth: "22ch",
+          }}
+        >
+          {gig.title}
+        </h1>
 
-      <div className="grid md:grid-cols-[1.6fr_1fr] gap-10">
-        <article className="prose prose-sm max-w-none">
-          <h2 className="font-display text-2xl">About this gig</h2>
-          <p className="whitespace-pre-wrap">{gig.description}</p>
-
-          {gig.skills_required.length > 0 && (
+        {/* Duration strip */}
+        <div
+          style={{
+            display: "flex",
+            gap: 20,
+            alignItems: "center",
+            flexWrap: "wrap",
+            padding: "14px 20px",
+            borderRadius: 14,
+            background: "var(--color-surface-raised)",
+            border: "1px solid var(--color-line)",
+            fontSize: 13,
+            marginBottom: 16,
+          }}
+        >
+          <div>
+            <span style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--color-ink-soft)", fontWeight: 600 }}>Budget</span>
+            <p style={{ fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 700, margin: "2px 0 0" }}>
+              {formatSgd(gig.budget_cents)}
+            </p>
+          </div>
+          <span style={{ width: 1, height: 32, background: "var(--color-line)" }} />
+          <div>
+            <span style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--color-ink-soft)", fontWeight: 600 }}>Kind</span>
+            <p style={{ fontSize: 14, fontWeight: 600, margin: "2px 0 0", textTransform: "capitalize" }}>
+              {gig.budget_kind}
+            </p>
+          </div>
+          <span style={{ width: 1, height: 32, background: "var(--color-line)" }} />
+          <div>
+            <span style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--color-ink-soft)", fontWeight: 600 }}>Category</span>
+            <p style={{ fontSize: 14, fontWeight: 600, margin: "2px 0 0", textTransform: "capitalize" }}>
+              {gig.category ?? "General"}
+            </p>
+          </div>
+          {gig.location && (
             <>
-              <h3 className="font-display text-xl mt-8">Skills required</h3>
-              <ul className="mt-3 flex flex-wrap gap-2 text-sm list-none p-0">
-                {gig.skills_required.map((s: string) => (
-                  <li
-                    key={s}
-                    className="rounded-pill border border-line px-3 py-1 text-ink-soft"
-                  >
-                    {s}
-                  </li>
-                ))}
-              </ul>
+              <span style={{ width: 1, height: 32, background: "var(--color-line)" }} />
+              <div>
+                <span style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--color-ink-soft)", fontWeight: 600 }}>Location</span>
+                <p style={{ fontSize: 14, fontWeight: 600, margin: "2px 0 0" }}>
+                  {gig.location}
+                </p>
+              </div>
             </>
           )}
+        </div>
+      </header>
 
+      <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 40, alignItems: "start" }}>
+        {/* LEFT — content */}
+        <article>
+          {/* About */}
+          <section style={{ marginBottom: 36 }}>
+            <h2
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: 24,
+                margin: "0 0 14px",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              About this gig
+            </h2>
+            <p style={{ fontSize: 15, lineHeight: 1.65, color: "var(--color-ink-soft)", whiteSpace: "pre-wrap" }}>
+              {gig.description}
+            </p>
+          </section>
+
+          {/* Skills */}
+          {gig.skills_required.length > 0 && (
+            <section style={{ marginBottom: 36 }}>
+              <h2
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: 24,
+                  margin: "0 0 14px",
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                Skills required
+              </h2>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {gig.skills_required.map((s: string) => (
+                  <span
+                    key={s}
+                    style={{
+                      padding: "6px 14px",
+                      borderRadius: 999,
+                      border: "1px solid var(--color-line)",
+                      background: "transparent",
+                      color: "var(--color-ink-soft)",
+                      fontSize: 13,
+                      fontWeight: 500,
+                    }}
+                  >
+                    {s}
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Async interview */}
           {questions && questions.length > 0 && (
-            <>
-              <h3 className="font-display text-xl mt-8">Async interview</h3>
-              <p className="text-ink-soft">
-                If shortlisted, you&apos;ll record {questions.length} short video
-                answer{questions.length > 1 ? "s" : ""}.
+            <section style={{ marginBottom: 36 }}>
+              <h2
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: 24,
+                  margin: "0 0 8px",
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                Async interview
+              </h2>
+              <p style={{ color: "var(--color-ink-soft)", fontSize: 14, margin: "0 0 18px" }}>
+                If shortlisted, record {questions.length} short video answer{questions.length > 1 ? "s" : ""} on your own time.
               </p>
-              <ol className="mt-3 space-y-2 pl-0 list-none">
+              <ol style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                 {questions.map((q: any, i: number) => (
-                  <li key={q.id} className="rounded-card border border-line p-4">
-                    <p className="text-[10px] uppercase tracking-widest text-ink-soft">
-                      Q{i + 1} · {q.max_duration_sec}s
-                    </p>
-                    <p className="mt-1 font-medium">{q.prompt}</p>
+                  <li
+                    key={q.id}
+                    style={{
+                      padding: 18,
+                      borderRadius: 14,
+                      border: "1px solid var(--color-line)",
+                      background: "var(--color-surface-raised)",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                      <span style={{ fontSize: 10.5, letterSpacing: "0.18em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-ink-soft)" }}>
+                        Q{i + 1} · {q.max_duration_sec}s · video
+                      </span>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--color-ink-mute)" }}>
+                        auto-transcribed
+                      </span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: 15, fontWeight: 500 }}>{q.prompt}</p>
                   </li>
                 ))}
               </ol>
-            </>
+            </section>
+          )}
+
+          {/* Similar gigs */}
+          {similarGigs.length > 0 && (
+            <section>
+              <h2
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: 24,
+                  margin: "0 0 14px",
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                Similar gigs
+              </h2>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                {similarGigs.map((g: any) => (
+                  <Link
+                    key={g.id}
+                    href={`/gigs/${g.id}`}
+                    style={{
+                      padding: 16,
+                      borderRadius: 14,
+                      border: "1px solid var(--color-line)",
+                      background: "var(--color-surface-raised)",
+                      display: "block",
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontFamily: "var(--font-display)",
+                        fontSize: 17,
+                        margin: "0 0 6px",
+                        letterSpacing: "-0.02em",
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {g.title}
+                    </p>
+                    <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, margin: 0 }}>
+                      {formatSgd(g.budget_cents)}{" "}
+                      <span style={{ fontSize: 11, color: "var(--color-ink-soft)", fontWeight: 400 }}>{g.budget_kind}</span>
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            </section>
           )}
         </article>
 
-        <aside className="rounded-card bg-ink text-surface p-6 sticky top-24">
-          <p className="text-[10px] uppercase tracking-widest text-accent">Posted by</p>
-          <p className="mt-2 font-display text-xl">{gig.employer?.display_name}</p>
-          {gig.employer?.headline && (
-            <p className="text-sm text-surface/70 mt-1">{gig.employer.headline}</p>
-          )}
-
-          <div className="mt-6">
-            {existingApp ? (
-              <div className="rounded-xl bg-surface/10 p-3 text-sm">
-                Applied · <span className="uppercase tracking-widest text-xs text-accent">{existingApp.status}</span>
-                {questions && questions.length > 0 && (
-                  <Link
-                    href={`/interviews/${existingApp.id}`}
-                    className="block mt-3 rounded-pill bg-accent text-ink px-4 py-2 font-semibold text-center"
-                  >
-                    Record interview →
-                  </Link>
-                )}
-              </div>
-            ) : user ? (
-              <form action={applyToGig.bind(null, gig.id)} className="space-y-3">
-                <textarea
-                  name="cover_note"
-                  rows={3}
-                  placeholder="Short cover note (optional)"
-                  className="w-full rounded-xl bg-surface text-ink px-3 py-2 text-sm"
-                />
-                <button
-                  type="submit"
-                  className="w-full rounded-pill bg-accent text-ink py-2 font-semibold"
-                >
-                  Apply →
-                </button>
-              </form>
-            ) : (
-              <Link
-                href={`/singpass?next=/gigs/${gig.id}`}
-                className="block rounded-pill bg-accent text-ink py-2 font-semibold text-center"
+        {/* RIGHT — apply panel */}
+        <aside style={{ position: "sticky", top: 90, display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Employer card (dark) */}
+          <div
+            className="grain"
+            style={{
+              borderRadius: 20,
+              background: "var(--color-ink)",
+              color: "var(--color-surface)",
+              padding: 22,
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            <p style={{ fontSize: 10.5, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--color-accent)", fontWeight: 600, margin: "0 0 12px" }}>
+              Posted by
+            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <span
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: "50%",
+                  background: "oklch(78% 0.08 200)",
+                  color: "oklch(22% 0.08 200)",
+                  display: "grid",
+                  placeItems: "center",
+                  fontSize: 16,
+                  fontWeight: 700,
+                  fontFamily: "var(--font-display)",
+                  flexShrink: 0,
+                }}
               >
-                Log in to apply
-              </Link>
-            )}
+                {(gig.employer?.display_name ?? "?")
+                  .split(" ")
+                  .map((s: string) => s[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase()}
+              </span>
+              <div>
+                <p style={{ fontFamily: "var(--font-display)", fontSize: 20, margin: 0, letterSpacing: "-0.02em" }}>
+                  {gig.employer?.display_name}
+                </p>
+                <p style={{ fontSize: 12, color: "oklch(100% 0 0 / 0.65)", margin: "2px 0 0" }}>
+                  {employerVerified ? "Singpass-verified" : "Unverified"}
+                </p>
+              </div>
+            </div>
+
+            {/* Apply form */}
+            <div>
+              {existingApp ? (
+                <div
+                  style={{
+                    background: "oklch(100% 0 0 / 0.08)",
+                    borderRadius: 12,
+                    padding: 14,
+                    fontSize: 13,
+                  }}
+                >
+                  Applied ·{" "}
+                  <span
+                    style={{
+                      color: "var(--color-accent)",
+                      fontSize: 11,
+                      letterSpacing: "0.14em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {existingApp.status}
+                  </span>
+                  {questions && questions.length > 0 && (
+                    <Link
+                      href={`/interviews/${existingApp.id}`}
+                      style={{
+                        display: "block",
+                        marginTop: 10,
+                        padding: "8px 0",
+                        borderRadius: 999,
+                        background: "var(--color-accent)",
+                        color: "oklch(22% 0.08 38)",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        textAlign: "center",
+                      }}
+                    >
+                      Record interview →
+                    </Link>
+                  )}
+                </div>
+              ) : user ? (
+                <form action={applyToGig.bind(null, gig.id)} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <textarea
+                    name="cover_note"
+                    rows={3}
+                    placeholder="Short cover note (optional)…"
+                    style={{
+                      width: "100%",
+                      background: "oklch(100% 0 0 / 0.05)",
+                      border: "1px solid oklch(100% 0 0 / 0.15)",
+                      color: "var(--color-surface)",
+                      borderRadius: 12,
+                      padding: "10px 12px",
+                      fontSize: 13,
+                      resize: "vertical",
+                      fontFamily: "var(--font-sans)",
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    style={{
+                      width: "100%",
+                      padding: "10px 0",
+                      borderRadius: 999,
+                      background: "var(--color-accent)",
+                      color: "oklch(22% 0.08 38)",
+                      fontSize: 14,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Apply →
+                  </button>
+                  <p style={{ fontSize: 11, color: "oklch(100% 0 0 / 0.5)", margin: 0, textAlign: "center" }}>
+                    {questions && questions.length > 0
+                      ? `You'll record ${questions.length} video answer${questions.length > 1 ? "s" : ""} if shortlisted`
+                      : "Your application will be sent directly to the employer"}
+                  </p>
+                </form>
+              ) : (
+                <Link
+                  href={`/singpass?next=/gigs/${gig.id}`}
+                  style={{
+                    display: "block",
+                    padding: "10px 0",
+                    borderRadius: 999,
+                    background: "var(--color-accent)",
+                    color: "oklch(22% 0.08 38)",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    textAlign: "center",
+                  }}
+                >
+                  Log in to apply
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {/* Safety & payments (jade card) */}
+          <div
+            style={{
+              padding: 18,
+              borderRadius: 16,
+              background: "var(--color-jade-soft)",
+              border: "1px solid oklch(from var(--color-jade) l c h / 0.3)",
+            }}
+          >
+            <p style={{ fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-jade-ink)", margin: "0 0 10px" }}>
+              Safety & payments
+            </p>
+            <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 7, fontSize: 13, color: "var(--color-jade-ink)" }}>
+              <li>✓ Payment held in SGD escrow</li>
+              <li>✓ 14-day dispute window</li>
+              <li>✓ IRAS-ready receipts</li>
+            </ul>
           </div>
         </aside>
       </div>

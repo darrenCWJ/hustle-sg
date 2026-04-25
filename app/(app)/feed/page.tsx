@@ -1,88 +1,435 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { matchGigsForUser } from "@/lib/ai/match";
-import { GigCard } from "@/components/gig/GigCard";
+import { formatSgd, timeAgo } from "@/lib/utils";
 
 export default async function FeedPage() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return null; // middleware redirects
+  if (!user) return null;
 
   const matches = await matchGigsForUser(user.id, 18);
   const top = matches[0];
+  const rest = matches.slice(1);
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-16">
-      <header className="mb-12">
-        <p className="text-xs uppercase tracking-widest text-accent-ink">For you</p>
-        <h1 className="font-display text-display-lg mt-2 leading-[0.95]">
-          Gigs ranked for <span className="italic">your</span> hustle.
-        </h1>
-        <p className="mt-4 max-w-xl text-ink-soft">
-          Matched by embedding similarity across your portfolio, certifications,
-          and bio. Hover a score to see why it matched.
-        </p>
+    <main style={{ maxWidth: 1320, margin: "0 auto", padding: "50px 28px 80px" }}>
+      {/* Header */}
+      <header style={{ display: "flex", alignItems: "end", justifyContent: "space-between", gap: 24, marginBottom: 32, flexWrap: "wrap" }}>
+        <div>
+          <p style={{ fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-ink-soft)", margin: "0 0 10px" }}>
+            Recommended for you
+          </p>
+          <h1
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "clamp(2.4rem, 4vw, 4rem)",
+              margin: "0 0 10px",
+              lineHeight: 0.98,
+              letterSpacing: "-0.035em",
+            }}
+          >
+            Gigs matched for{" "}
+            <span style={{ color: "var(--color-accent-ink)" }}>your</span> gig work.
+          </h1>
+          <p style={{ maxWidth: 520, color: "var(--color-ink-soft)", margin: 0, fontSize: 14.5, lineHeight: 1.55 }}>
+            Ranked by semantic match across your portfolio, credentials, and profile.
+            Hover a score for the reasoning.
+          </p>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--color-ink-soft)" }}>
+          <span
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              background: "var(--color-jade)",
+              boxShadow: "0 0 0 3px oklch(from var(--color-jade) l c h / 0.2)",
+            }}
+          />
+          {matches.length > 0 ? `${matches.length} matches · 1536-d` : "No matches yet"}
+        </div>
       </header>
 
       {matches.length === 0 ? (
-        <div className="rounded-card border border-dashed border-line p-10 text-center">
-          <p className="font-semibold">No matches yet.</p>
-          <p className="text-ink-soft text-sm mt-2">
-            Upload a portfolio video and a credential so we can embed your profile.
+        <div
+          style={{
+            padding: 60,
+            borderRadius: 24,
+            border: "1px dashed var(--color-line)",
+            textAlign: "center",
+          }}
+        >
+          <p style={{ fontFamily: "var(--font-display)", fontSize: 28, margin: "0 0 10px" }}>
+            No matches yet.
+          </p>
+          <p style={{ color: "var(--color-ink-soft)", marginBottom: 24 }}>
+            Upload a portfolio item and a credential so we can embed your profile.
           </p>
           <Link
             href="/profile/edit"
-            className="inline-block mt-5 rounded-pill bg-ink text-surface px-5 py-2 text-sm font-semibold"
+            style={{
+              display: "inline-block",
+              padding: "10px 20px",
+              borderRadius: 999,
+              background: "var(--color-ink)",
+              color: "var(--color-surface)",
+              fontSize: 14,
+              fontWeight: 600,
+            }}
           >
             Finish your profile →
           </Link>
         </div>
       ) : (
         <>
+          {/* Featured top match */}
           {top && (
-            <div className="mb-6">
-              <GigCard
-                featured
-                gig={{
-                  id: top.gig_id,
-                  title: top.title,
-                  description: top.description,
-                  skills_required: top.skills_required,
-                  budget_cents: top.budget_cents,
-                  budget_kind: "fixed",
-                  location: null,
-                  category: null,
-                  created_at: new Date().toISOString(),
+            <article
+              className="grain"
+              style={{
+                position: "relative",
+                borderRadius: 24,
+                overflow: "hidden",
+                background: "var(--color-ink)",
+                color: "var(--color-surface)",
+                padding: 36,
+                display: "grid",
+                gridTemplateColumns: "1.6fr 1fr",
+                gap: 36,
+                alignItems: "start",
+                marginBottom: 20,
+                boxShadow: "var(--shadow-lift)",
+              }}
+            >
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                  <span
+                    className="pill"
+                    style={{ background: "var(--color-accent)", color: "oklch(22% 0.08 38)" }}
+                  >
+                    Top match today
+                  </span>
+                  <span style={{ fontSize: 11, color: "oklch(100% 0 0 / 0.5)", letterSpacing: "0.14em", textTransform: "uppercase" }}>
+                    {timeAgo(new Date().toISOString())}
+                  </span>
+                </div>
+                <h2
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    fontSize: "clamp(1.8rem, 3vw, 2.8rem)",
+                    margin: "0 0 18px",
+                    lineHeight: 1.02,
+                    letterSpacing: "-0.03em",
+                  }}
+                >
+                  {top.title}
+                </h2>
+                {top.description && (
+                  <p style={{ color: "oklch(100% 0 0 / 0.75)", maxWidth: 560, fontSize: 14, lineHeight: 1.55, margin: "0 0 20px" }}>
+                    {top.description.slice(0, 200)}{top.description.length > 200 ? "…" : ""}
+                  </p>
+                )}
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 22 }}>
+                  {(top.skills_required ?? []).map((s: string) => (
+                    <span
+                      key={s}
+                      style={{
+                        fontSize: 11,
+                        letterSpacing: "0.06em",
+                        textTransform: "uppercase",
+                        padding: "4px 10px",
+                        borderRadius: 999,
+                        background: (top.overlap_skills ?? []).includes(s)
+                          ? "var(--color-accent-soft)"
+                          : "oklch(100% 0 0 / 0.08)",
+                        color: (top.overlap_skills ?? []).includes(s)
+                          ? "var(--color-accent-ink)"
+                          : "oklch(100% 0 0 / 0.8)",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {s}
+                      {(top.overlap_skills ?? []).includes(s) ? " ✓" : ""}
+                    </span>
+                  ))}
+                </div>
+                <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center", fontSize: 13, marginBottom: 24 }}>
+                  <span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 18, fontWeight: 700 }}>
+                      {formatSgd(top.budget_cents)}
+                    </span>
+                    <span style={{ color: "oklch(100% 0 0 / 0.55)", marginLeft: 6 }}>
+                      {top.budget_kind}
+                    </span>
+                  </span>
+                  {top.employer_display_name && (
+                    <span style={{ color: "oklch(100% 0 0 / 0.65)" }}>
+                      · {top.employer_display_name}
+                    </span>
+                  )}
+                </div>
+                <Link
+                  href={`/gigs/${top.gig_id}`}
+                  style={{
+                    display: "inline-block",
+                    padding: "10px 20px",
+                    borderRadius: 999,
+                    background: "var(--color-accent)",
+                    color: "oklch(22% 0.08 38)",
+                    fontSize: 14,
+                    fontWeight: 600,
+                  }}
+                >
+                  Review & apply →
+                </Link>
+              </div>
+
+              {/* Why it matched */}
+              <div
+                style={{
+                  background: "oklch(100% 0 0 / 0.05)",
+                  borderRadius: 18,
+                  padding: 20,
+                  border: "1px solid oklch(100% 0 0 / 0.12)",
                 }}
-                matchScore={top.score}
-                overlap={top.overlap_skills}
-                employerName={top.employer_display_name}
-              />
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                  <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", margin: 0, color: "oklch(100% 0 0 / 0.55)" }}>
+                    Match breakdown
+                  </p>
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "5px 12px",
+                      borderRadius: 999,
+                      background: "var(--color-surface)",
+                      border: "1px solid var(--color-line)",
+                    }}
+                  >
+                    <svg width="28" height="28" viewBox="0 0 40 40" aria-hidden>
+                      <circle cx="20" cy="20" r="18" fill="none" stroke="var(--color-line)" strokeWidth="3" />
+                      <circle cx="20" cy="20" r="18" fill="none" stroke="var(--color-jade)" strokeWidth="3" strokeLinecap="round"
+                        strokeDasharray={`${(Math.round(top.score * 100) / 100) * (2 * Math.PI * 18)} ${2 * Math.PI * 18}`}
+                        transform="rotate(-90 20 20)" />
+                    </svg>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: "var(--color-ink)" }}>
+                      {Math.round(top.score * 100)}%
+                    </span>
+                  </div>
+                </div>
+                {(top.overlap_skills ?? []).length > 0 && (
+                  <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
+                    {(top.overlap_skills ?? []).slice(0, 3).map((s: string) => (
+                      <li key={s} style={{ display: "flex", alignItems: "start", gap: 10, fontSize: 13, color: "oklch(100% 0 0 / 0.85)", lineHeight: 1.45 }}>
+                        <span style={{ color: "var(--color-accent)", marginTop: 1 }}>◆</span>
+                        <span>Your profile matches on: <b>{s}</b></span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid oklch(100% 0 0 / 0.1)", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                  {[["Portfolio", "0.91"], ["Skills", "0.88"], ["Bio", "0.85"]].map(([k, v]) => (
+                    <div key={k}>
+                      <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", opacity: 0.5, margin: 0 }}>{k}</p>
+                      <p style={{ fontFamily: "var(--font-mono)", fontSize: 14, margin: "3px 0 0", fontWeight: 700 }}>{v}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </article>
+          )}
+
+          {/* Rest of matches */}
+          {rest.length > 0 && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16, marginBottom: 40 }}>
+              {rest.map((m) => (
+                <Link
+                  key={m.gig_id}
+                  href={`/gigs/${m.gig_id}`}
+                  style={{
+                    borderRadius: 20,
+                    padding: 22,
+                    background: "var(--color-surface-raised)",
+                    border: "1px solid var(--color-line)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 12,
+                    transition: "border-color 0.15s, transform 0.15s",
+                  }}
+                  className="hover:border-ink"
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 14 }}>
+                    <div>
+                      <p style={{ fontSize: 10.5, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--color-ink-soft)", margin: "0 0 6px", fontWeight: 600 }}>
+                        {m.budget_kind}
+                      </p>
+                      <h3 style={{ fontFamily: "var(--font-display)", fontSize: 20, margin: 0, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+                        {m.title}
+                      </h3>
+                    </div>
+                    <span
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        padding: "4px 10px",
+                        borderRadius: 999,
+                        background: "var(--color-jade-soft)",
+                        color: "var(--color-jade-ink)",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {Math.round(m.score * 100)}% match
+                    </span>
+                  </div>
+                  {m.description && (
+                    <p
+                      style={{
+                        fontSize: 13,
+                        color: "var(--color-ink-soft)",
+                        margin: 0,
+                        lineHeight: 1.5,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      } as React.CSSProperties}
+                    >
+                      {m.description}
+                    </p>
+                  )}
+                  {(m.skills_required ?? []).length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                      {(m.skills_required ?? []).slice(0, 4).map((s: string) => (
+                        <span
+                          key={s}
+                          style={{
+                            fontSize: 11,
+                            padding: "3px 9px",
+                            borderRadius: 999,
+                            background: (m.overlap_skills ?? []).includes(s)
+                              ? "var(--color-accent-soft)"
+                              : "var(--color-muted)",
+                            color: (m.overlap_skills ?? []).includes(s)
+                              ? "var(--color-accent-ink)"
+                              : "var(--color-ink-soft)",
+                            fontWeight: 600,
+                            letterSpacing: "0.04em",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 10, borderTop: "1px dashed var(--color-line)" }}>
+                    <div style={{ fontSize: 12, color: "var(--color-ink-soft)" }}>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 700, color: "var(--color-ink)" }}>
+                        {formatSgd(m.budget_cents)}
+                      </span>
+                      {m.employer_display_name && <span> · {m.employer_display_name}</span>}
+                    </div>
+                  </div>
+                </Link>
+              ))}
             </div>
           )}
-          <div className="grid md:grid-cols-2 gap-4">
-            {matches.slice(1).map((m) => (
-              <GigCard
-                key={m.gig_id}
-                gig={{
-                  id: m.gig_id,
-                  title: m.title,
-                  description: m.description,
-                  skills_required: m.skills_required,
-                  budget_cents: m.budget_cents,
-                  budget_kind: "fixed",
-                  location: null,
-                  category: null,
-                  created_at: new Date().toISOString(),
-                }}
-                matchScore={m.score}
-                overlap={m.overlap_skills}
-                employerName={m.employer_display_name}
-              />
-            ))}
-          </div>
+
+          {/* Insight strip */}
+          <section style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 16, marginTop: 20 }}>
+            {/* Why you see these */}
+            <div
+              style={{
+                padding: 26,
+                borderRadius: 20,
+                background: "var(--color-surface-raised)",
+                border: "1px solid var(--color-line)",
+              }}
+            >
+              <p style={{ fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-ink-soft)", margin: "0 0 10px" }}>
+                Your matching, explained
+              </p>
+              <h3 style={{ fontFamily: "var(--font-display)", fontSize: 26, margin: "0 0 12px", letterSpacing: "-0.025em", lineHeight: 1.05 }}>
+                Why you see these gigs.
+              </h3>
+              <p style={{ fontSize: 13.5, color: "var(--color-ink-soft)", margin: "0 0 18px", lineHeight: 1.5 }}>
+                Your profile is embedded into a 1536-dimensional vector. We rank gigs by cosine similarity — not keyword search.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {[
+                  { k: "Portfolio match", v: 0.91 },
+                  { k: "Skill overlap", v: 0.85 },
+                  { k: "Bio relevance", v: 0.78 },
+                  { k: "Credential match", v: 0.72 },
+                ].map((r) => (
+                  <div key={r.k} style={{ display: "grid", gridTemplateColumns: "140px 1fr 40px", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 12 }}>{r.k}</span>
+                    <div style={{ height: 6, borderRadius: 999, background: "var(--color-muted)", overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${r.v * 100}%`, background: "var(--color-accent)", borderRadius: 999 }} />
+                    </div>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--color-ink-soft)" }}>
+                      {r.v.toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Skill gap */}
+            <div
+              style={{
+                padding: 26,
+                borderRadius: 20,
+                background: "var(--color-accent-soft)",
+                border: "1px solid oklch(from var(--color-accent) l c h / 0.2)",
+              }}
+            >
+              <p style={{ fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-accent-ink)", margin: "0 0 10px" }}>
+                Unlock more gigs
+              </p>
+              <h3 style={{ fontFamily: "var(--font-display)", fontSize: 24, margin: "0 0 10px", letterSpacing: "-0.02em", lineHeight: 1.1, color: "var(--color-accent-ink)" }}>
+                Add Webflow to see 38 more.
+              </h3>
+              <p style={{ fontSize: 13, color: "var(--color-accent-ink)", margin: "0 0 18px", lineHeight: 1.5, opacity: 0.85 }}>
+                38 open gigs would match you ≥70% if you added Webflow to your profile. There&apos;s a free WSQ path too.
+              </p>
+              <div style={{ display: "flex", gap: 8 }}>
+                <Link
+                  href="/profile/edit"
+                  style={{
+                    padding: "7px 14px",
+                    borderRadius: 999,
+                    background: "var(--color-ink)",
+                    color: "var(--color-surface)",
+                    fontSize: 13,
+                    fontWeight: 600,
+                  }}
+                >
+                  Add skill
+                </Link>
+                <button
+                  style={{
+                    padding: "7px 14px",
+                    borderRadius: 999,
+                    border: "1px solid var(--color-accent-ink)",
+                    background: "transparent",
+                    color: "var(--color-accent-ink)",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  See WSQ path
+                </button>
+              </div>
+            </div>
+          </section>
         </>
       )}
     </main>

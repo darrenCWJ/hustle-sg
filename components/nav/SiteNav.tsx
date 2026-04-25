@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
-export async function SiteNav({ variant = "surface" }: { variant?: "surface" | "ink" }) {
+export async function SiteNav() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -17,65 +17,174 @@ export async function SiteNav({ variant = "surface" }: { variant?: "surface" | "
       ).data
     : null;
 
-  const isInk = variant === "ink";
-
   return (
-    <header
-      className={`sticky top-0 z-40 backdrop-blur border-b ${
-        isInk
-          ? "bg-ink/70 border-white/10 text-surface"
-          : "bg-surface/70 border-line text-ink"
-      }`}
-    >
-      <div className="mx-auto max-w-7xl px-6 py-4 flex items-center gap-8">
-        <Link href="/" className="flex items-center gap-2 font-display text-xl font-medium">
-          <span className="inline-block h-6 w-6 rounded-md bg-accent" aria-hidden />
-          Hustle<span className={isInk ? "text-accent" : "text-accent-ink"}>.sg</span>
-        </Link>
-
-        <nav className="hidden md:flex items-center gap-6 text-sm">
-          <Link href="/gigs" className="opacity-80 hover:opacity-100">Gigs</Link>
-          <Link href="/feed" className="opacity-80 hover:opacity-100">My feed</Link>
-          <Link href="/start-a-business" className="opacity-80 hover:opacity-100">
-            Start a business
-          </Link>
-        </nav>
-
-        <div className="ml-auto flex items-center gap-3">
-          {profile ? (
-            <>
-              <Link
-                href={`/profile/${profile.handle}`}
-                className="text-sm font-medium opacity-80 hover:opacity-100"
-              >
-                {profile.display_name}
-              </Link>
-              <Link
-                href="/dashboard"
-                className={`rounded-pill px-4 py-2 text-sm font-semibold ${
-                  isInk ? "bg-surface text-ink" : "bg-ink text-surface"
-                }`}
-              >
-                Dashboard
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link href="/singpass" className="text-sm font-medium opacity-80 hover:opacity-100">
-                Log in
-              </Link>
-              <Link
-                href="/singpass"
-                className={`rounded-pill px-4 py-2 text-sm font-semibold ${
-                  isInk ? "bg-accent text-ink" : "bg-ink text-surface"
-                }`}
-              >
-                Get verified →
-              </Link>
-            </>
-          )}
+    <>
+      {/* Gov.sg banner */}
+      <div style={{ background: "#f0f0f0", fontSize: 12, color: "#555", borderBottom: "1px solid var(--color-line-soft)" }}>
+        <div style={{ maxWidth: 1320, margin: "0 auto", padding: "6px 28px", display: "flex", alignItems: "center", gap: 8 }}>
+          <span>🇸🇬</span>
+          <span>A Singapore Government Agency Website</span>
+          <span style={{ color: "#1a5dc0", textDecoration: "underline", cursor: "pointer", marginLeft: 4, fontSize: 11 }}>
+            How to identify ▾
+          </span>
         </div>
       </div>
-    </header>
+
+      {/* Main header */}
+      <header
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 60,
+          background: "oklch(from var(--color-surface) l c h / 0.85)",
+          backdropFilter: "saturate(140%) blur(10px)",
+          WebkitBackdropFilter: "saturate(140%) blur(10px)",
+          borderBottom: "1px solid var(--color-line)",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1320,
+            margin: "0 auto",
+            padding: "14px 28px",
+            display: "flex",
+            alignItems: "center",
+            gap: 28,
+          }}
+        >
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span
+              aria-hidden
+              style={{
+                display: "inline-grid",
+                placeItems: "center",
+                width: 28,
+                height: 28,
+                borderRadius: 8,
+                background: "var(--color-ink)",
+                color: "var(--color-accent)",
+                fontFamily: "var(--font-display)",
+                fontWeight: 600,
+                fontSize: 18,
+              }}
+            >
+              h
+            </span>
+            <span
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: 20,
+                fontWeight: 500,
+                letterSpacing: "-0.02em",
+              }}
+            >
+              HustleSG
+            </span>
+          </Link>
+
+          <nav style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            {[
+              { href: "/feed", label: "My feed" },
+              { href: "/gigs", label: "Gigs" },
+              { href: "/start-a-business", label: "Start a business" },
+              { href: "/dashboard", label: "Dashboard" },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                style={{
+                  padding: "8px 14px",
+                  fontSize: 13.5,
+                  fontWeight: 500,
+                  borderRadius: 999,
+                  color: "var(--color-ink-soft)",
+                  transition: "color 0.15s",
+                }}
+                className="hover:text-ink"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
+            {profile ? (
+              <>
+                <Link
+                  href={`/profile/${profile.handle}`}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "5px 12px 5px 5px",
+                    borderRadius: 999,
+                    background: "var(--color-muted)",
+                    fontSize: 13,
+                    fontWeight: 600,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 26,
+                      height: 26,
+                      borderRadius: "50%",
+                      background: "oklch(78% 0.08 38)",
+                      color: "oklch(22% 0.08 38)",
+                      display: "grid",
+                      placeItems: "center",
+                      fontSize: 11,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {(profile.display_name ?? "?")
+                      .split(" ")
+                      .map((s: string) => s[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase()}
+                  </span>
+                  {profile.display_name?.split(" ")[0]}
+                </Link>
+                <Link
+                  href="/dashboard"
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: 999,
+                    background: "var(--color-ink)",
+                    color: "var(--color-surface)",
+                    fontSize: 13,
+                    fontWeight: 600,
+                  }}
+                >
+                  Dashboard
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/singpass"
+                  style={{ fontSize: 13, fontWeight: 500, color: "var(--color-ink-soft)", padding: "6px 10px" }}
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/singpass"
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: 999,
+                    background: "var(--color-ink)",
+                    color: "var(--color-surface)",
+                    fontSize: 13,
+                    fontWeight: 600,
+                  }}
+                >
+                  Get verified →
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      </header>
+    </>
   );
 }

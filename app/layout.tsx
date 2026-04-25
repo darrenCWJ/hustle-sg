@@ -2,14 +2,14 @@ import "@/styles/global.css";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Hustle SG — Verified side hustle, Singapore-made",
+  title: "HustleSG — Verified gig work, Singapore",
   description:
-    "A Singapore-first gig platform with Singpass identity, WSQ & university cert verification, portfolio videos, async video interviews, and a path to registering your own company.",
+    "Singapore's verified gig platform. Singpass identity, WSQ credential checks, AI-powered matching, and a path to registering your own company.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
   openGraph: {
-    title: "Hustle SG",
+    title: "HustleSG",
     description:
-      "Verified side hustlers. Singpass ID, WSQ-checked certs, real portfolio videos.",
+      "Verified freelancers. Singpass identity, WSQ-checked credentials, AI-powered matching.",
     type: "website",
   },
 };
@@ -21,6 +21,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en-SG">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
       <body>{children}</body>
     </html>
   );

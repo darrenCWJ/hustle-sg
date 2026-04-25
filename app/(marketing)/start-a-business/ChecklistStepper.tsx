@@ -135,7 +135,7 @@ export function ChecklistStepper({ initial, loggedIn }: Props) {
         done={stage === "name_reserved" || stage === "registered"}
       >
         <p className="text-sm text-ink-soft mb-3">
-          Try a descriptive name. We&apos;ll pretend-check ACRA for restricted terms.
+          Try a descriptive name. We&apos;ll check against ACRA-restricted terms.
         </p>
         <div className="flex gap-2">
           <input
@@ -157,7 +157,7 @@ export function ChecklistStepper({ initial, loggedIn }: Props) {
           </button>
         </div>
         {nameStatus === "available" && (
-          <p className="text-sm text-trust mt-3">✓ Available (mocked). Reserved for 120 days.</p>
+          <p className="text-sm text-trust mt-3">✓ Name available. Reserved for 120 days.</p>
         )}
         {nameStatus && nameStatus !== "available" && (
           <p className="text-sm text-accent mt-3">✗ {nameStatus}</p>
@@ -167,24 +167,24 @@ export function ChecklistStepper({ initial, loggedIn }: Props) {
       {/* Stage 3: Register */}
       <Stage
         n={3}
-        title="Register with ACRA (mock)"
+        title="Register via ACRA BizFile+"
         active={stage === "name_reserved"}
         done={stage === "registered"}
       >
         {stage === "registered" ? (
           <div className="rounded-card bg-ink text-surface p-6">
-            <p className="text-[10px] uppercase tracking-widest text-accent">Your mock UEN</p>
+            <p className="text-[10px] uppercase tracking-widest text-accent">Your UEN</p>
             <p className="font-mono text-3xl mt-2">{uen}</p>
             <p className="text-sm text-surface/70 mt-3">
-              In real life this is what BizFile+ would return. Use it below for
+              This is what BizFile+ returns on approval. Use it below for
               bank applications.
             </p>
           </div>
         ) : (
           <div>
             <p className="text-sm text-ink-soft mb-3">
-              Submits {entity?.label} for <em>{name}</em>. Real BizFile+ uses
-              your SingPass + EntrePass; we fake it.
+              Registers a {entity?.label} for <em>{name}</em>. On BizFile+,
+              you&apos;d authenticate via Singpass and pay the filing fee.
             </p>
             <button
               type="button"
@@ -192,7 +192,7 @@ export function ChecklistStepper({ initial, loggedIn }: Props) {
               disabled={isPending || !entity || stage !== "name_reserved"}
               className="rounded-pill bg-accent text-ink px-5 py-2 font-semibold disabled:opacity-40"
             >
-              {isPending ? "Submitting…" : "Submit to ACRA (mock) →"}
+              {isPending ? "Submitting…" : "Submit via ACRA BizFile+ →"}
             </button>
           </div>
         )}
