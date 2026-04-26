@@ -56,7 +56,7 @@ function FeatureVerified() {
 function FeaturePortfolio() {
   return (
     <article
-      className="cell-md"
+      className="cell-sm"
       style={{ borderRadius: 22, background: "var(--color-accent)", color: "oklch(22% 0.08 var(--accent-h))", padding: 32, position: "relative", overflow: "hidden" }}
     >
       <Eyebrow>02 · Portfolio video</Eyebrow>
@@ -97,7 +97,7 @@ function FeaturePortfolio() {
 
 function FeatureCredentials() {
   return (
-    <article className="cell-md" style={{ borderRadius: 22, background: "var(--color-surface-raised)", border: "1px solid var(--color-line)", padding: 32 }}>
+    <article className="cell-sm" style={{ borderRadius: 22, background: "var(--color-surface-raised)", border: "1px solid var(--color-line)", padding: 32 }}>
       <Eyebrow>03 · Credentials</Eyebrow>
       <h3 style={{ fontFamily: "var(--font-display)", fontSize: 32, margin: "16px 0 10px", letterSpacing: "-0.025em", lineHeight: 1 }}>
         WSQ, <span style={{ fontStyle: "italic", color: "var(--color-trust)" }}>verified</span>.
