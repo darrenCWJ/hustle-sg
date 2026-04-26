@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatSgd, timeAgo } from "@/lib/utils";
 import { DashboardCalendar } from "@/components/dashboard/DashboardCalendar";
-import { loadAvailability } from "@/app/actions/availability";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -12,7 +11,7 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/singpass?next=/dashboard");
 
-  const [myAppsRes, myPostedGigsRes, appsOnMyGigsRes, profileRes, savedSlots] = await Promise.all([
+  const [myAppsRes, myPostedGigsRes, appsOnMyGigsRes, profileRes, availRes] = await Promise.all([
     supabase
       .from("applications")
       .select("id, status, created_at, gigs(id, title, employer_id)")
@@ -34,8 +33,9 @@ export default async function DashboardPage() {
       .order("created_at", { ascending: false })
       .limit(3),
     supabase.from("profiles").select("display_name, handle").eq("id", user.id).single(),
-    loadAvailability(),
+    supabase.from("user_availability").select("slots").eq("user_id", user.id).maybeSingle(),
   ]);
+  const savedSlots: number[][] | null = (availRes.data as any)?.slots ?? null;
 
   const myApps = myAppsRes.data ?? [];
   const myPostedGigs = myPostedGigsRes.data ?? [];
