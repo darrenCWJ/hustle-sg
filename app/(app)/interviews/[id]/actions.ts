@@ -3,6 +3,27 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
+export async function decideApplication(
+  applicationId: string,
+  decision: "hired" | "shortlisted" | "rejected",
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated." };
+
+  const { data, error } = await supabase.rpc("decide_application", {
+    p_app_id:   applicationId,
+    p_decision: decision,
+    p_actor_id: user.id,
+  });
+
+  if (error) return { error: error.message };
+  revalidatePath(`/interviews/${applicationId}`);
+  return { ok: true, data };
+}
+
 export async function recordInterviewResponse({
   applicationId,
   questionId,

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useMemo } from "react";
 import type { MatchedGig } from "@/lib/ai/match";
 import { formatSgd } from "@/lib/utils";
+import { toggleSavedGig } from "@/app/actions/gigs";
 
 type FilterId = "all" | "design" | "engineering" | "saved";
 type SortId = "match" | "budget";
@@ -20,12 +21,22 @@ function getCategory(gig: MatchedGig): "design" | "engineering" | "other" {
 
 interface FeedClientPageProps {
   matches: MatchedGig[];
+  initialSavedIds?: string[];
 }
 
-export function FeedClientPage({ matches }: FeedClientPageProps) {
+export function FeedClientPage({ matches, initialSavedIds = [] }: FeedClientPageProps) {
   const [filter, setFilter] = useState<FilterId>("all");
   const [sort, setSort] = useState<SortId>("match");
-  const [saved, setSaved] = useState<Set<string>>(new Set());
+  const [saved, setSaved] = useState<Set<string>>(new Set(initialSavedIds));
+
+  async function handleToggleSave(gigId: string) {
+    setSaved((prev) => {
+      const n = new Set(prev);
+      n.has(gigId) ? n.delete(gigId) : n.add(gigId);
+      return n;
+    });
+    await toggleSavedGig(gigId);
+  }
 
   const counts = useMemo(() => ({
     all: matches.length,
@@ -192,7 +203,7 @@ export function FeedClientPage({ matches }: FeedClientPageProps) {
                     Review & apply →
                   </Link>
                   <button
-                    onClick={() => setSaved((prev) => { const n = new Set(prev); n.has(top.gig_id) ? n.delete(top.gig_id) : n.add(top.gig_id); return n; })}
+                    onClick={() => handleToggleSave(top.gig_id)}
                     style={{ padding: "10px 16px", borderRadius: 999, border: "1px solid oklch(100% 0 0 / 0.2)", background: "transparent", color: saved.has(top.gig_id) ? "var(--color-accent)" : "oklch(100% 0 0 / 0.7)", fontSize: 14, cursor: "pointer" }}
                   >
                     {saved.has(top.gig_id) ? "♥" : "♡"}
@@ -262,7 +273,7 @@ export function FeedClientPage({ matches }: FeedClientPageProps) {
                         {Math.round(m.score * 100)}% match
                       </span>
                       <button
-                        onClick={() => setSaved((prev) => { const n = new Set(prev); n.has(m.gig_id) ? n.delete(m.gig_id) : n.add(m.gig_id); return n; })}
+                        onClick={() => handleToggleSave(m.gig_id)}
                         style={{ fontSize: 16, background: "none", border: "none", cursor: "pointer", color: saved.has(m.gig_id) ? "var(--color-accent-ink)" : "var(--color-ink-mute)", padding: 0 }}
                         aria-label={saved.has(m.gig_id) ? "Unsave" : "Save"}
                       >

@@ -69,6 +69,54 @@ export default function NewGigPage() {
           />
         </div>
 
+        <div className="rounded-xl border border-line bg-surface-raised p-5 space-y-4">
+          <p className="text-xs uppercase tracking-widest text-ink-soft">Gig settings</p>
+
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              name="requires_employer_approval"
+              value="true"
+              defaultChecked
+              className="mt-0.5 accent-ink"
+            />
+            <span className="text-sm">
+              <strong>Require employer approval</strong>
+              <span className="block text-ink-soft text-xs mt-0.5">
+                You manually hire or reject each applicant after reviewing their profile and interview.
+              </span>
+            </span>
+          </label>
+
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              name="is_instant"
+              value="true"
+              className="mt-0.5 accent-ink"
+            />
+            <span className="text-sm">
+              <strong>Instant gig</strong>
+              <span className="block text-ink-soft text-xs mt-0.5">
+                Freelancers can accept immediately with no application process.
+              </span>
+            </span>
+          </label>
+
+          <div>
+            <label className="text-xs text-ink-soft">Instant urgency (if instant gig)</label>
+            <select
+              name="instant_urgency"
+              className="mt-1 w-full rounded-xl border border-line px-4 py-3 bg-surface-raised"
+            >
+              <option value="">— None —</option>
+              <option value="now">Now (within the hour)</option>
+              <option value="today">Today</option>
+              <option value="weekend">This weekend</option>
+            </select>
+          </div>
+        </div>
+
         <button
           type="submit"
           className="rounded-pill bg-ink text-surface px-6 py-3 font-semibold"

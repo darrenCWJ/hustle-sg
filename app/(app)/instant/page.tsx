@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { AcceptButton } from "./AcceptButton";
+import { acceptInstantGig } from "@/app/actions/gigs";
 
 interface InstantGig {
   id: string;
@@ -260,9 +262,7 @@ export default function InstantPage() {
                           Add credential →
                         </button>
                       ) : (
-                        <button style={{ padding: "7px 16px", borderRadius: 999, background: "var(--color-ink)", color: "var(--color-surface)", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer" }}>
-                          Accept
-                        </button>
+                        <AcceptButton gigId={g.id} onAccept={acceptInstantGig} />
                       )}
                     </div>
                   </article>

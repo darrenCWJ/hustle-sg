@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { InterviewRecorder } from "./InterviewRecorder";
+import { DecisionButtons } from "./DecisionButtons";
 
 export default async function InterviewPage({
   params,
@@ -41,7 +42,6 @@ export default async function InterviewPage({
   const answered: Record<string, any> = {};
   for (const r of responses ?? []) answered[r.question_id] = r;
 
-  // Sign URLs for employer playback
   const admin = createServiceClient();
   const signedMap: Record<string, string> = {};
   if (isEmployer || isApplicant) {
@@ -53,6 +53,22 @@ export default async function InterviewPage({
     }
   }
 
+  const statusLabel: Record<string, string> = {
+    applied: "Applied",
+    interviewing: "Shortlisted",
+    hired: "Hired",
+    rejected: "Rejected",
+    withdrawn: "Withdrawn",
+  };
+
+  const statusColor: Record<string, string> = {
+    applied: "var(--color-ink-soft)",
+    interviewing: "var(--color-trust)",
+    hired: "var(--color-jade)",
+    rejected: "var(--color-plum)",
+    withdrawn: "var(--color-ink-mute)",
+  };
+
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
       <Link href="/dashboard" className="text-xs uppercase tracking-widest text-ink-soft hover:text-ink">
@@ -63,6 +79,22 @@ export default async function InterviewPage({
           Interview for
         </p>
         <h1 className="font-display text-display-md mt-1">{gig.title}</h1>
+        <div className="mt-3 flex items-center gap-3">
+          <span
+            className="text-xs font-semibold px-3 py-1 rounded-full"
+            style={{
+              background: "var(--color-muted)",
+              color: statusColor[app.status] ?? "var(--color-ink-soft)",
+            }}
+          >
+            {statusLabel[app.status] ?? app.status}
+          </span>
+          {isEmployer && (
+            <span className="text-xs text-ink-soft">
+              Applicant ID: {app.applicant_id.slice(0, 8)}…
+            </span>
+          )}
+        </div>
       </header>
 
       {isApplicant ? (
@@ -73,6 +105,12 @@ export default async function InterviewPage({
         />
       ) : (
         <div className="space-y-6">
+          {(questions ?? []).length === 0 && (
+            <div className="rounded-card border border-line p-5 bg-surface-raised text-sm text-ink-soft">
+              No interview questions were set for this gig.
+            </div>
+          )}
+
           {(questions ?? []).map((q: any, i: number) => (
             <div key={q.id} className="rounded-card border border-line p-5 bg-surface-raised">
               <p className="text-[10px] uppercase tracking-widest text-ink-soft">
@@ -90,6 +128,29 @@ export default async function InterviewPage({
               )}
             </div>
           ))}
+
+          {app.status !== "hired" && app.status !== "rejected" && app.status !== "withdrawn" && (
+            <div className="rounded-card border border-line p-5 bg-surface-raised">
+              <p className="text-xs uppercase tracking-widest text-ink-soft mb-4">
+                Your decision
+              </p>
+              <DecisionButtons applicationId={id} currentStatus={app.status} />
+            </div>
+          )}
+
+          {(app.status === "hired" || app.status === "rejected") && (
+            <div
+              className="rounded-card p-5 text-sm font-semibold text-center"
+              style={{
+                background: app.status === "hired" ? "var(--color-jade)" : "var(--color-plum)",
+                color: "white",
+              }}
+            >
+              {app.status === "hired"
+                ? "You hired this applicant."
+                : "You declined this applicant."}
+            </div>
+          )}
         </div>
       )}
     </main>

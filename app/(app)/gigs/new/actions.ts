@@ -14,6 +14,9 @@ const gigSchema = z.object({
   budget_cents: z.coerce.number().int().min(0).max(10_000_000),
   budget_kind: z.enum(["fixed", "hourly"]),
   questions: z.string().optional(),
+  requires_employer_approval: z.string().optional(),
+  is_instant: z.string().optional(),
+  instant_urgency: z.string().optional(),
 });
 
 export async function postGig(formData: FormData) {
@@ -32,6 +35,9 @@ export async function postGig(formData: FormData) {
     budget_cents: formData.get("budget_cents") ?? 0,
     budget_kind: formData.get("budget_kind"),
     questions: formData.get("questions") ?? "",
+    requires_employer_approval: (formData.get("requires_employer_approval") as string) ?? undefined,
+    is_instant: (formData.get("is_instant") as string) ?? undefined,
+    instant_urgency: (formData.get("instant_urgency") as string) ?? undefined,
   });
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid" };
@@ -62,6 +68,11 @@ export async function postGig(formData: FormData) {
       budget_cents: parsed.data.budget_cents,
       budget_kind: parsed.data.budget_kind,
       status: "open",
+      requires_employer_approval: parsed.data.requires_employer_approval === "true",
+      is_instant: parsed.data.is_instant === "true",
+      instant_urgency: parsed.data.is_instant === "true" && parsed.data.instant_urgency
+        ? parsed.data.instant_urgency
+        : null,
     })
     .select()
     .single();

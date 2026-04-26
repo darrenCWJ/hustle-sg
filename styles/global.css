@@ -145,3 +145,76 @@ a {
   .bento > .cell-xl { grid-column: span 2; }
   .bento > .tall { grid-row: auto; }
 }
+
+.category-card { transition: transform 0.22s var(--ease-out-smooth), box-shadow 0.22s; }
+.category-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); }
+
+/* === Scroll reveal === */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.65s var(--ease-out-expo), transform 0.65s var(--ease-out-expo);
+  will-change: opacity, transform;
+}
+.reveal.in-view {
+  opacity: 1;
+  transform: none;
+}
+
+/* === Card hover lift === */
+.card-hover {
+  transition: transform 0.25s var(--ease-out-smooth), box-shadow 0.25s var(--ease-out-smooth);
+}
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lift);
+}
+
+/* === Bento cell hover === */
+.bento article {
+  transition: transform 0.25s var(--ease-out-smooth), box-shadow 0.25s var(--ease-out-smooth), border-color 0.2s;
+  cursor: default;
+}
+.bento article:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lift);
+}
+
+/* === Testimonial figure hover === */
+.testimonial {
+  transition: transform 0.25s var(--ease-out-smooth), box-shadow 0.25s var(--ease-out-smooth) !important;
+}
+.testimonial:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: var(--shadow-lift) !important;
+}
+
+/* === Nav link hover pill === */
+.nav-link {
+  transition: background 0.15s, color 0.15s !important;
+}
+.nav-link:hover {
+  background: var(--color-muted) !important;
+  color: var(--color-ink) !important;
+}
+
+/* === Float keyframe for decorative elements === */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-7px); }
+}
+
+/* === Scale-in for cards entering viewport === */
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* === Footer link hover === */
+footer a {
+  transition: color 0.15s, opacity 0.15s;
+}
+footer a:hover {
+  color: var(--color-ink) !important;
+  opacity: 1 !important;
+}

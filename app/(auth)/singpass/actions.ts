@@ -86,6 +86,19 @@ export async function mockSingpassSignIn(formData: FormData) {
     .update({ singpass_verified_at: new Date().toISOString(), nric_hash: hash })
     .eq("id", user.id);
 
+  // Auto-verify any WSQ certs for this user via Singpass trust
+  await admin
+    .from("certifications")
+    .update({
+      verification_status: "verified",
+      verification_method: "singpass",
+      verified_at: new Date().toISOString(),
+      verified: true,
+    })
+    .eq("user_id", user.id)
+    .eq("kind", "wsq")
+    .eq("verification_status", "pending");
+
   redirect(next);
 }
 

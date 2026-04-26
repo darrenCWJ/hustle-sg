@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatSgd, timeAgo } from "@/lib/utils";
+import { DashboardCalendar } from "@/components/dashboard/DashboardCalendar";
+import { loadAvailability } from "@/app/actions/availability";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -10,7 +12,7 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/singpass?next=/dashboard");
 
-  const [myAppsRes, myPostedGigsRes, appsOnMyGigsRes, profileRes] = await Promise.all([
+  const [myAppsRes, myPostedGigsRes, appsOnMyGigsRes, profileRes, savedSlots] = await Promise.all([
     supabase
       .from("applications")
       .select("id, status, created_at, gigs(id, title, employer_id)")
@@ -32,6 +34,7 @@ export default async function DashboardPage() {
       .order("created_at", { ascending: false })
       .limit(3),
     supabase.from("profiles").select("display_name, handle").eq("id", user.id).single(),
+    loadAvailability(),
   ]);
 
   const myApps = myAppsRes.data ?? [];
@@ -223,122 +226,9 @@ export default async function DashboardPage() {
       </section>
 
       {/* Calendar + Matches */}
-      <section style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 20, marginBottom: 40 }}>
-        {/* 7-day calendar grid */}
-        <div style={{ padding: 26, borderRadius: 22, background: "var(--color-surface-raised)", border: "1px solid var(--color-line)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-            <h2 style={{ fontFamily: "var(--font-display)", fontSize: 24, margin: 0, letterSpacing: "-0.02em" }}>
-              Your calendar this week
-            </h2>
-            <span style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--color-ink-soft)" }}>
-              8am – 10pm
-            </span>
-          </div>
-          {(() => {
-            const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-            // 0 = day job blocked, 1 = free, 2 = booked gig
-            const slots: number[][] = [
-              [0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-              [0,0,0,0,0,0,0,0,0,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1],
-              [0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1],
-              [0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-              [0,0,0,0,0,0,0,0,0,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1],
-              [1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,1,1],
-              [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-            ];
-            return (
-              <div style={{ display: "grid", gridTemplateColumns: "36px repeat(7, 1fr)", gap: 3 }}>
-                <div />
-                {days.map((d) => (
-                  <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 600, color: "var(--color-ink-soft)", letterSpacing: "0.06em", textTransform: "uppercase", paddingBottom: 6 }}>
-                    {d}
-                  </div>
-                ))}
-                {Array.from({ length: 24 }).map((_, si) => {
-                  const hour = 8 + Math.floor(si / 2);
-                  const isHalf = si % 2 === 1;
-                  return (
-                    <>
-                      <div key={`label-${si}`} style={{ fontSize: 9, color: "var(--color-ink-mute)", textAlign: "right", paddingRight: 6, lineHeight: 1, paddingTop: 2 }}>
-                        {!isHalf ? `${hour}` : ""}
-                      </div>
-                      {slots.map((day, di) => {
-                        const v = day[si];
-                        return (
-                          <div
-                            key={`${di}-${si}`}
-                            style={{
-                              height: 10,
-                              borderRadius: 2,
-                              background: v === 0
-                                ? "var(--color-muted)"
-                                : v === 2
-                                  ? "var(--color-accent)"
-                                  : "var(--color-jade-soft)",
-                              opacity: v === 0 ? 0.4 : 1,
-                            }}
-                          />
-                        );
-                      })}
-                    </>
-                  );
-                })}
-              </div>
-            );
-          })()}
-          <div style={{ display: "flex", gap: 16, marginTop: 14 }}>
-            {[["Day job", "var(--color-muted)", 0.4], ["Free", "var(--color-jade-soft)", 1], ["Booked gig", "var(--color-accent)", 1]].map(([l, bg, op]) => (
-              <div key={String(l)} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <span style={{ width: 10, height: 10, borderRadius: 2, background: String(bg), opacity: Number(op), display: "inline-block" }} />
-                <span style={{ fontSize: 11, color: "var(--color-ink-soft)" }}>{String(l)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Matching gigs for free slots */}
-        <div
-          className="grain"
-          style={{ padding: 24, borderRadius: 22, background: "var(--color-ink)", color: "var(--color-surface)" }}
-        >
-          <p style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--color-accent)", fontWeight: 600, margin: "0 0 8px" }}>
-            Fits your free slots
-          </p>
-          <h3 style={{ fontFamily: "var(--font-display)", fontSize: 22, margin: "0 0 18px", letterSpacing: "-0.02em" }}>
-            3 gigs match your gaps.
-          </h3>
-          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
-            {[
-              { t: "Brand shoot (2h)", d: "Sat 2–4pm", pay: "S$160", cat: "Design" },
-              { t: "Content writing brief", d: "Thu eve", pay: "S$95", cat: "Writing" },
-              { t: "Event helper (3h)", d: "Sun morn", pay: "S$90", cat: "F&B" },
-            ].map((g, i) => (
-              <li
-                key={i}
-                style={{
-                  padding: "12px 14px",
-                  borderRadius: 14,
-                  background: "oklch(100% 0 0 / 0.06)",
-                  border: "1px solid oklch(100% 0 0 / 0.12)",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: 10,
-                  cursor: "pointer",
-                }}
-              >
-                <div>
-                  <p style={{ margin: 0, fontWeight: 600, fontSize: 13.5 }}>{g.t}</p>
-                  <p style={{ margin: "3px 0 0", fontSize: 11, color: "oklch(100% 0 0 / 0.55)" }}>{g.d} · {g.cat}</p>
-                </div>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: "var(--color-accent)", whiteSpace: "nowrap" }}>
-                  {g.pay}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
+      <div style={{ marginBottom: 40 }}>
+        <DashboardCalendar initialSlots={savedSlots} authenticated />
+      </div>
 
       {/* Applications + Inbound */}
       <section style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 20, marginBottom: 40 }}>
