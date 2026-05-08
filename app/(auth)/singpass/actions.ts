@@ -13,6 +13,7 @@ import { redirect } from "next/navigation";
 export async function mockSingpassSignIn(formData: FormData) {
   const nric = String(formData.get("nric") ?? "").trim().toUpperCase();
   const next = String(formData.get("next") ?? "/feed");
+  const displayName = String(formData.get("display_name") ?? "").trim() || null;
 
   if (!isValidNric(nric)) {
     return { ok: false as const, error: "Invalid NRIC. Check the digits and suffix letter." };
@@ -69,7 +70,7 @@ export async function mockSingpassSignIn(formData: FormData) {
     await admin.from("profiles").insert({
       id: user.id,
       handle,
-      display_name: prefill?.full_name ?? `User ${hash.slice(0, 4)}`,
+      display_name: prefill?.full_name ?? displayName ?? `User ${hash.slice(0, 4)}`,
       headline: prefill?.headline ?? null,
       bio: prefill?.bio ?? null,
       role: prefill?.suggested_role ?? "freelancer",

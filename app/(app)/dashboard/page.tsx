@@ -32,7 +32,7 @@ export default async function DashboardPage() {
       .eq("gigs.employer_id", user.id)
       .order("created_at", { ascending: false })
       .limit(3),
-    supabase.from("profiles").select("display_name, handle").eq("id", user.id).single(),
+    supabase.from("profiles").select("display_name, handle, role").eq("id", user.id).single(),
     supabase.from("user_availability").select("slots").eq("user_id", user.id).maybeSingle(),
   ]);
   const savedSlots: number[][] | null = (availRes.data as any)?.slots ?? null;
@@ -41,6 +41,9 @@ export default async function DashboardPage() {
   const myPostedGigs = myPostedGigsRes.data ?? [];
   const appsOnMyGigs = appsOnMyGigsRes.data ?? [];
   const profile = profileRes.data;
+  const role = profile?.role ?? "freelancer";
+  const isEmployer = role === "employer" || role === "both";
+  const isWorker = role === "freelancer" || role === "both";
 
   const statusConfig: Record<string, { bg: string; fg: string; label: string }> = {
     applied: { bg: "var(--color-muted)", fg: "var(--color-ink-soft)", label: "Applied" },
@@ -80,8 +83,11 @@ export default async function DashboardPage() {
               letterSpacing: "-0.035em",
             }}
           >
-            Your gig work,{" "}
-            <span style={{ color: "var(--color-accent-ink)" }}>tracked</span>.
+            {isEmployer && !isWorker ? (
+              <>Your talent pipeline, <span style={{ color: "var(--color-accent-ink)" }}>organised</span>.</>
+            ) : (
+              <>Your gig work, <span style={{ color: "var(--color-accent-ink)" }}>tracked</span>.</>
+            )}
           </h1>
         </div>
         <Link
@@ -100,9 +106,9 @@ export default async function DashboardPage() {
         </Link>
       </header>
 
-      {/* Top row: earnings + streak + profile completion */}
+      {/* Top row: metrics + profile */}
       <section style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr", gap: 16, marginBottom: 40 }}>
-        {/* Earnings card — dark */}
+        {/* Primary metric card — dark */}
         <div
           className="grain"
           style={{
@@ -114,71 +120,100 @@ export default async function DashboardPage() {
             overflow: "hidden",
           }}
         >
-          <p style={{ fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--color-accent)", fontWeight: 600, margin: "0 0 10px" }}>
-            Applications · this month
-          </p>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 4 }}>
-            <span style={{ fontFamily: "var(--font-display)", fontSize: 52, letterSpacing: "-0.04em", lineHeight: 1 }}>
-              {myApps.length}
-            </span>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--color-accent)" }}>active</span>
-          </div>
-          <p style={{ fontSize: 12, color: "oklch(100% 0 0 / 0.55)", margin: "8px 0 0" }}>
-            Track your gig applications and inbound interest
-          </p>
+          {isEmployer && !isWorker ? (
+            <>
+              <p style={{ fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--color-accent)", fontWeight: 600, margin: "0 0 10px" }}>
+                Assignments posted
+              </p>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 4 }}>
+                <span style={{ fontFamily: "var(--font-display)", fontSize: 52, letterSpacing: "-0.04em", lineHeight: 1 }}>
+                  {myPostedGigs.length}
+                </span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--color-accent)" }}>active</span>
+              </div>
+              <p style={{ fontSize: 12, color: "oklch(100% 0 0 / 0.55)", margin: "8px 0 0" }}>
+                {appsOnMyGigs.length} applicant{appsOnMyGigs.length !== 1 ? "s" : ""} waiting for review
+              </p>
+            </>
+          ) : (
+            <>
+              <p style={{ fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--color-accent)", fontWeight: 600, margin: "0 0 10px" }}>
+                Applications · this month
+              </p>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 4 }}>
+                <span style={{ fontFamily: "var(--font-display)", fontSize: 52, letterSpacing: "-0.04em", lineHeight: 1 }}>
+                  {myApps.length}
+                </span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--color-accent)" }}>active</span>
+              </div>
+              <p style={{ fontSize: 12, color: "oklch(100% 0 0 / 0.55)", margin: "8px 0 0" }}>
+                Track your gig applications and inbound interest
+              </p>
+            </>
+          )}
           {/* Mini bar chart */}
           <div style={{ marginTop: 22, display: "flex", alignItems: "end", gap: 5, height: 60 }}>
-            {[0.3, 0.5, 0.4, 0.7, 0.6, 0.8, 0.9, 1.0, 0.85, 0.95, 0.7, myApps.length > 0 ? 1 : 0.3].map(
-              (v, i, arr) => (
-                <div
-                  key={i}
-                  style={{
-                    flex: 1,
-                    height: `${v * 100}%`,
-                    background: i === arr.length - 1 ? "var(--color-accent)" : "oklch(100% 0 0 / 0.2)",
-                    borderRadius: 4,
-                  }}
-                />
-              ),
-            )}
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 10, color: "oklch(100% 0 0 / 0.4)", marginTop: 6 }}>
-            <span>Feb</span>
-            <span>Mar</span>
-            <span>Apr</span>
-          </div>
-        </div>
-
-        {/* Posted gigs card — accent */}
-        <div style={{ padding: 24, borderRadius: 22, background: "var(--color-accent-soft)", color: "var(--color-accent-ink)" }}>
-          <p style={{ fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-accent-ink)", margin: "0 0 10px" }}>
-            Gigs posted
-          </p>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 4 }}>
-            <span style={{ fontFamily: "var(--font-display)", fontSize: 52, letterSpacing: "-0.04em", lineHeight: 1 }}>
-              {myPostedGigs.length}
-            </span>
-            <span style={{ fontSize: 14 }}>assignments</span>
-          </div>
-          <p style={{ fontSize: 12.5, margin: "8px 0 14px", opacity: 0.85 }}>
-            {myPostedGigs.length > 0
-              ? "Track responses and shortlist applicants."
-              : "Post your first assignment to start receiving applications."}
-          </p>
-          <div style={{ display: "flex", gap: 3 }}>
-            {Array.from({ length: 5 }).map((_, i) => (
-              <span
+            {[0.3, 0.5, 0.4, 0.7, 0.6, 0.8, 0.9, 1.0, 0.85, 0.95, 0.7,
+              (isEmployer && !isWorker ? myPostedGigs.length : myApps.length) > 0 ? 1 : 0.3
+            ].map((v, i, arr) => (
+              <div
                 key={i}
                 style={{
                   flex: 1,
-                  height: 6,
-                  borderRadius: 2,
-                  background: "var(--color-accent-ink)",
-                  opacity: i < myPostedGigs.length ? 0.9 : 0.15,
+                  height: `${v * 100}%`,
+                  background: i === arr.length - 1 ? "var(--color-accent)" : "oklch(100% 0 0 / 0.2)",
+                  borderRadius: 4,
                 }}
               />
             ))}
           </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 10, color: "oklch(100% 0 0 / 0.4)", marginTop: 6 }}>
+            <span>Feb</span><span>Mar</span><span>Apr</span>
+          </div>
+        </div>
+
+        {/* Secondary metric card — accent */}
+        <div style={{ padding: 24, borderRadius: 22, background: "var(--color-accent-soft)", color: "var(--color-accent-ink)" }}>
+          {isEmployer && !isWorker ? (
+            <>
+              <p style={{ fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-accent-ink)", margin: "0 0 10px" }}>
+                Applicants
+              </p>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 4 }}>
+                <span style={{ fontFamily: "var(--font-display)", fontSize: 52, letterSpacing: "-0.04em", lineHeight: 1 }}>
+                  {appsOnMyGigs.length}
+                </span>
+                <span style={{ fontSize: 14 }}>to review</span>
+              </div>
+              <p style={{ fontSize: 12.5, margin: "8px 0 14px", opacity: 0.85 }}>
+                {appsOnMyGigs.length > 0
+                  ? "Watch async interviews and shortlist."
+                  : "Applications will appear once your gig is live."}
+              </p>
+            </>
+          ) : (
+            <>
+              <p style={{ fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-accent-ink)", margin: "0 0 10px" }}>
+                Gigs posted
+              </p>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 4 }}>
+                <span style={{ fontFamily: "var(--font-display)", fontSize: 52, letterSpacing: "-0.04em", lineHeight: 1 }}>
+                  {myPostedGigs.length}
+                </span>
+                <span style={{ fontSize: 14 }}>assignments</span>
+              </div>
+              <p style={{ fontSize: 12.5, margin: "8px 0 14px", opacity: 0.85 }}>
+                {myPostedGigs.length > 0
+                  ? "Track responses and shortlist applicants."
+                  : "Post your first assignment to start receiving applications."}
+              </p>
+              <div style={{ display: "flex", gap: 3 }}>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <span key={i} style={{ flex: 1, height: 6, borderRadius: 2, background: "var(--color-accent-ink)", opacity: i < myPostedGigs.length ? 0.9 : 0.15 }} />
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Profile completion */}
@@ -225,13 +260,15 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      {/* Calendar + Matches */}
-      <div style={{ marginBottom: 40 }}>
-        <DashboardCalendar initialSlots={savedSlots} authenticated />
-      </div>
+      {/* Calendar — worker only */}
+      {isWorker && (
+        <div style={{ marginBottom: 40 }}>
+          <DashboardCalendar initialSlots={savedSlots} authenticated />
+        </div>
+      )}
 
       {/* Applications + Inbound */}
-      <section style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 20, marginBottom: 40 }}>
+      <section style={{ display: "grid", gridTemplateColumns: isEmployer && !isWorker ? "1fr 1.3fr" : "1.3fr 1fr", gap: 20, marginBottom: 40 }}>
         {/* Your applications */}
         <div
           style={{
@@ -525,11 +562,15 @@ export default async function DashboardPage() {
             Your <span style={{ color: "var(--color-accent)" }}>2026</span> playbook.
           </h2>
           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 0 }}>
-            {[
+            {(isEmployer && !isWorker ? [
+              { t: "Post an assignment to start receiving applications", cta: "Post now", href: "/gigs/new" },
+              { t: "Complete your profile so candidates can trust you", cta: "Edit profile", href: "/profile/edit" },
+              { t: "Ready to scale up? Register your business", cta: "Start guide", href: "/start-a-business" },
+            ] : [
               { t: "Complete your profile to get matched to more gigs", cta: "Edit profile", href: "/profile/edit" },
               { t: "Browse open assignments and find your next gig", cta: "Browse gigs", href: "/gigs" },
               { t: "Ready to go full-time? Register your business", cta: "Start guide", href: "/start-a-business" },
-            ].map((s, i) => (
+            ]).map((s, i) => (
               <li
                 key={i}
                 style={{

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { isValidNric } from "@/lib/singpass/nric";
 import { mockSingpassSignIn } from "@/app/(auth)/singpass/actions";
-import { FaceScanMock } from "./FaceScanMock";
+import { MOCK_MYINFO } from "@/lib/singpass/mock-profiles";
 
 interface Props {
   next?: string;
@@ -11,39 +11,36 @@ interface Props {
 
 export function NRICForm({ next = "/feed" }: Props) {
   const [nric, setNric] = useState("");
-  const [stage, setStage] = useState<"enter" | "scan" | "submitting">("enter");
+  const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const isValid = isValidNric(nric);
+  const needsName = isValid && !MOCK_MYINFO[nric];
 
   const onContinue = () => {
     if (!isValid) {
       setError("Enter a valid NRIC (e.g. S1234567D).");
       return;
     }
+    if (needsName && !name.trim()) {
+      setError("Please enter your name.");
+      return;
+    }
     setError(null);
-    setStage("scan");
-  };
 
-  const onScanComplete = () => {
-    setStage("submitting");
     const fd = new FormData();
     fd.set("nric", nric);
     fd.set("next", next);
+    if (name.trim()) fd.set("display_name", name.trim());
 
     startTransition(async () => {
       const res = await mockSingpassSignIn(fd);
       if (res && !res.ok) {
         setError(res.error);
-        setStage("enter");
       }
     });
   };
-
-  if (stage === "scan") {
-    return <FaceScanMock onComplete={onScanComplete} />;
-  }
 
   return (
     <div className="w-full max-w-md">
@@ -77,6 +74,20 @@ export function NRICForm({ next = "/feed" }: Props) {
           className="mt-2 w-full rounded-xl border border-line bg-surface-raised px-4 py-3 font-mono tracking-wider focus:border-trust focus:outline-none focus:ring-4 focus:ring-trust-soft transition"
         />
       </label>
+
+      {needsName && (
+        <label className="block mt-5">
+          <span className="text-sm font-medium">Full name</span>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => { setName(e.target.value); setError(null); }}
+            placeholder="e.g. John Tan"
+            autoComplete="name"
+            className="mt-2 w-full rounded-xl border border-line bg-surface-raised px-4 py-3 focus:border-trust focus:outline-none focus:ring-4 focus:ring-trust-soft transition"
+          />
+        </label>
+      )}
 
       {error && <p className="text-sm text-accent mt-3">{error}</p>}
 
@@ -112,7 +123,7 @@ export function NRICForm({ next = "/feed" }: Props) {
         disabled={!isValid || isPending}
         className="mt-8 w-full rounded-xl bg-ink text-surface py-3 font-semibold hover:bg-accent-ink disabled:opacity-40 transition"
       >
-        {isPending ? "Verifying…" : "Continue to face verification"}
+        {isPending ? "Verifying…" : "Log in"}
       </button>
 
       <p className="text-xs text-ink-soft mt-6 leading-relaxed">
