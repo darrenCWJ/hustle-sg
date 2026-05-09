@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IES – Professional Engineer Certificate</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #f4f0e8; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 40px 20px; font-family: 'Inter', sans-serif; }
+  .cert { width: 794px; background: #fff; position: relative; box-shadow: 0 8px 40px rgba(0,0,0,0.12); overflow: hidden; }
+  .gold-header { background: #1a3a5c; padding: 32px 56px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .ies-logo { display: flex; flex-direction: column; }
+  .ies-name { font-family: 'Cormorant Garamond', serif; font-size: 24px; color: #fff; font-weight: 600; letter-spacing: 0.01em; }
+  .ies-sub { font-size: 10px; color: rgba(255,255,255,0.55); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 2px; }
+  .ies-emblem { text-align: right; }
+  .ies-abbr { font-family: 'Cormorant Garamond', serif; font-size: 48px; color: #c9a84c; font-weight: 700; line-height: 1; }
+  .gold-stripe { height: 4px; background: linear-gradient(90deg, #c9a84c, #e8cc7a, #c9a84c); }
+  .body { padding: 44px 60px 40px; }
+  .certifies { font-size: 12px; color: #888; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+  .recipient { font-family: 'Cormorant Garamond', serif; font-size: 36px; color: #1a1a1a; margin-bottom: 4px; }
+  .reg-no { font-family: 'Courier New', monospace; font-size: 10px; color: #aaa; margin-bottom: 20px; }
+  .award-text { font-size: 13px; color: #555; line-height: 1.7; margin-bottom: 10px; max-width: 520px; }
+  .cert-name { font-family: 'Cormorant Garamond', serif; font-size: 28px; color: #1a3a5c; font-weight: 700; margin: 10px 0 4px; }
+  .discipline { font-size: 14px; color: #777; font-style: italic; margin-bottom: 28px; }
+  .skills-section { margin-bottom: 28px; }
+  .skills-label { font-size: 9px; font-weight: 600; color: #888; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 10px; }
+  .skills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .skill { background: #f0f4f8; border: 1px solid #b8cce0; border-radius: 4px; padding: 4px 12px; font-size: 11px; color: #1a3a5c; font-weight: 500; }
+  .footer { display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #e8e0cc; padding-top: 20px; margin-top: 8px; }
+  .sig-block { display: flex; flex-direction: column; gap: 4px; }
+  .sig-line { width: 150px; border-bottom: 1px solid #333; margin-bottom: 4px; }
+  .sig-name { font-size: 11px; font-weight: 600; color: #333; }
+  .sig-title { font-size: 10px; color: #888; }
+  .cert-meta { text-align: right; font-size: 10px; color: #888; line-height: 1.8; }
+  .cert-no { font-family: 'Courier New', monospace; font-size: 9px; color: #bbb; margin-top: 4px; }
+  .bottom-stripe { height: 4px; background: linear-gradient(90deg, #c9a84c, #e8cc7a, #c9a84c); }
+  @media print { body { background: #fff; padding: 0; } .cert { box-shadow: none; } }
+</style>
+</head>
+<body>
+<div class="cert">
+  <div class="gold-header">
+    <div class="ies-logo">
+      <span class="ies-name">Institution of Engineers, Singapore</span>
+      <span class="ies-sub">Professional Engineering Certification</span>
+    </div>
+    <div class="ies-emblem">
+      <div class="ies-abbr">IES</div>
+    </div>
+  </div>
+  <div class="gold-stripe"></div>
+
+  <div class="body">
+    <p class="certifies">This is to certify that</p>
+    <p class="recipient">RAJESH KUMAR S/O KRISHNAN</p>
+    <p class="reg-no">IES Registration No: PE-EE-2021-04523</p>
+
+    <p class="award-text">
+      having satisfied all requirements under the Engineers Act (Cap 92A) and demonstrated
+      the requisite competency, experience, and professional conduct, is hereby admitted as a
+    </p>
+    <p class="cert-name">Professional Engineer</p>
+    <p class="discipline">Discipline: Electrical Engineering</p>
+
+    <div class="skills-section">
+      <p class="skills-label">Certified Competency Areas</p>
+      <div class="skills">
+        <span class="skill">Power Systems Design</span>
+        <span class="skill">Electrical Installation</span>
+        <span class="skill">Building Electrical Systems</span>
+        <span class="skill">Circuit Analysis</span>
+        <span class="skill">Safety Regulations (BCA)</span>
+        <span class="skill">Technical Documentation</span>
+        <span class="skill">Project Supervision</span>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="sig-block">
+        <div class="sig-line"></div>
+        <span class="sig-name">Er. Chan Ewe Jin</span>
+        <span class="sig-title">President, Institution of Engineers Singapore</span>
+      </div>
+      <div class="cert-meta">
+        <div><strong>Date of Registration:</strong> 6 June 2021</div>
+        <div><strong>Issuer:</strong> Institution of Engineers Singapore (IES)</div>
+        <div><strong>Renewal Due:</strong> 31 December 2025</div>
+        <div class="cert-no">Cert No: IES-PE-EE-2021-04523</div>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-stripe"></div>
+</div>
+</body>
+</html>

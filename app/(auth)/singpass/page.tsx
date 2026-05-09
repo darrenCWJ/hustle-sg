@@ -212,10 +212,10 @@ export default function SingpassPage() {
               letterSpacing: "-0.03em",
               lineHeight: 1.1,
             }}>
-              Log in with Singpass
+              Log in or sign up with Singpass
             </h1>
             <p style={{ fontSize: 16, color: "#555", margin: 0 }}>
-              Your trusted digital identity
+              New users will be guided through a quick profile setup
             </p>
           </div>
 
@@ -287,7 +287,7 @@ export default function SingpassPage() {
             {/* Demo hint */}
             <div style={{ padding: "12px 24px", background: "#fafafa", borderTop: "1px solid #eee", fontSize: 12, color: "#888" }}>
               <b style={{ color: "#555" }}>Demo:</b>{" "}
-              {["S1234567D", "S2345678H", "T0123456G"].map((n) => (
+              {["S1111111A", "S2222222B", "M1001001A"].map((n) => (
                 <code key={n} style={{ background: "#eee", padding: "1px 5px", borderRadius: 4, marginRight: 6 }}>{n}</code>
               ))}
             </div>

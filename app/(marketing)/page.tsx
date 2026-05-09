@@ -175,10 +175,10 @@ export default function Landing() {
               <span style={{ fontStyle: "italic", color: "var(--color-accent)" }}>Singapore</span>.
             </h2>
             <p style={{ color: "oklch(100% 0 0 / 0.7)", maxWidth: 480, marginBottom: 32, fontSize: 15, lineHeight: 1.5 }}>
-              Sign in with Singpass. Identity, credentials and payouts are handled end-to-end through Government-grade infrastructure.
+              Log in or sign up with Singpass. Identity, credentials and payouts are handled end-to-end through Government-grade infrastructure.
             </p>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              <Button variant="accent" size="lg" href="/singpass">Sign in with Singpass</Button>
+              <Button variant="accent" size="lg" href="/singpass">Log in / Sign up</Button>
               <Button variant="ink" size="lg" href="/gigs">Browse assignments first</Button>
             </div>
           </div>

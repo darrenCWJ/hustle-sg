@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatSgd, timeAgo } from "@/lib/utils";
 import { DashboardCalendar } from "@/components/dashboard/DashboardCalendar";
+import { NotificationsToggle } from "@/components/notifications/NotificationsToggle";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -90,20 +91,23 @@ export default async function DashboardPage() {
             )}
           </h1>
         </div>
-        <Link
-          href="/gigs/new"
-          style={{
-            padding: "10px 20px",
-            borderRadius: 999,
-            background: "var(--color-ink)",
-            color: "var(--color-surface)",
-            fontSize: 14,
-            fontWeight: 600,
-            whiteSpace: "nowrap",
-          }}
-        >
-          + Post an assignment
-        </Link>
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <NotificationsToggle />
+          <Link
+            href="/gigs/new"
+            style={{
+              padding: "10px 20px",
+              borderRadius: 999,
+              background: "var(--color-ink)",
+              color: "var(--color-surface)",
+              fontSize: 14,
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+            }}
+          >
+            + Post an assignment
+          </Link>
+        </div>
       </header>
 
       {/* Top row: metrics + profile */}
@@ -282,7 +286,9 @@ export default async function DashboardPage() {
             <h2 style={{ fontFamily: "var(--font-display)", fontSize: 26, margin: 0, letterSpacing: "-0.025em" }}>
               Your applications
             </h2>
-            <span style={{ fontSize: 12, color: "var(--color-ink-soft)" }}>{myApps.length} active</span>
+            <Link href="/applications" style={{ fontSize: 12, color: "var(--color-ink-soft)", fontWeight: 600 }}>
+              View all →
+            </Link>
           </div>
 
           {myApps.length > 0 ? (
@@ -387,11 +393,9 @@ export default async function DashboardPage() {
             <h2 style={{ fontFamily: "var(--font-display)", fontSize: 26, margin: 0, letterSpacing: "-0.025em" }}>
               Applicants
             </h2>
-            {appsOnMyGigs.length > 0 && (
-              <span style={{ fontSize: 12, color: "var(--color-accent-ink)", fontWeight: 600 }}>
-                {appsOnMyGigs.length} new
-              </span>
-            )}
+            <Link href="/applicants" style={{ fontSize: 12, color: "var(--color-ink-soft)", fontWeight: 600 }}>
+              View all →
+            </Link>
           </div>
 
           {appsOnMyGigs.length > 0 ? (

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LinkedIn Learning – UX Design Certificate</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #f3f2ef; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 40px 20px; font-family: 'Inter', sans-serif; }
+  .cert { width: 794px; background: #fff; padding: 0; box-shadow: 0 4px 24px rgba(0,0,0,0.10); overflow: hidden; }
+  .blue-bar { height: 8px; background: #0a66c2; }
+  .cert-body { padding: 48px 60px 44px; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+  .li-logo { display: flex; align-items: center; gap: 10px; }
+  .li-icon { width: 36px; height: 36px; background: #0a66c2; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; font-weight: 900; line-height: 1; }
+  .li-text { display: flex; flex-direction: column; }
+  .li-name { font-size: 18px; font-weight: 700; color: #1a1a1a; letter-spacing: -0.02em; }
+  .li-sub { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; }
+  .completion-badge { background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 8px; padding: 8px 16px; display: flex; flex-direction: column; align-items: flex-end; }
+  .completion-label { font-size: 9px; color: #15803d; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; }
+  .completion-val { font-size: 16px; font-weight: 800; color: #15803d; margin-top: 1px; }
+  .divider { border: none; border-top: 1px solid #f1f5f9; margin: 0 0 30px; }
+  .certifies { font-size: 12px; color: #94a3b8; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
+  .recipient { font-size: 34px; font-weight: 800; color: #0f172a; letter-spacing: -0.03em; margin-bottom: 4px; }
+  .profile-url { font-size: 11px; color: #0a66c2; margin-bottom: 22px; }
+  .completed-text { font-size: 13px; color: #64748b; line-height: 1.65; margin-bottom: 8px; }
+  .cert-name { font-size: 26px; font-weight: 700; color: #0f172a; letter-spacing: -0.02em; margin: 8px 0 4px; }
+  .cert-sub { font-size: 12px; color: #64748b; margin-bottom: 8px; }
+  .hours { font-size: 11px; color: #0a66c2; font-weight: 600; margin-bottom: 28px; }
+  .skills-section { margin-bottom: 28px; }
+  .skills-label { font-size: 9px; font-weight: 600; color: #94a3b8; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; }
+  .skills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .skill { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 5px 12px; font-size: 11px; color: #334155; font-weight: 500; }
+  .footer { display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #f1f5f9; padding-top: 20px; }
+  .ll-branding { font-size: 10px; color: #94a3b8; }
+  .ll-branding b { color: #0a66c2; }
+  .cert-meta { text-align: right; font-size: 10px; color: #94a3b8; line-height: 1.8; }
+  .cert-no { font-family: 'Courier New', monospace; font-size: 9px; color: #cbd5e1; }
+  .verify-link { font-size: 10px; color: #0a66c2; }
+  @media print { body { background: #fff; padding: 0; } .cert { box-shadow: none; } }
+</style>
+</head>
+<body>
+<div class="cert">
+  <div class="blue-bar"></div>
+  <div class="cert-body">
+    <div class="header">
+      <div class="li-logo">
+        <div class="li-icon">in</div>
+        <div class="li-text">
+          <span class="li-name">LinkedIn Learning</span>
+          <span class="li-sub">Certificate of Completion</span>
+        </div>
+      </div>
+      <div class="completion-badge">
+        <span class="completion-label">Score</span>
+        <span class="completion-val">100%</span>
+      </div>
+    </div>
+    <hr class="divider" />
+
+    <p class="certifies">This certificate is awarded to</p>
+    <p class="recipient">SARAH TAN YI LING</p>
+    <p class="profile-url">linkedin.com/in/sarahtanyiling</p>
+
+    <p class="completed-text">for completing the learning path</p>
+    <p class="cert-name">UX Design: From Concept to Prototype</p>
+    <p class="cert-sub">LinkedIn Learning Path · 6 courses</p>
+    <p class="hours">⏱ 18 hours 42 minutes of learning</p>
+
+    <div class="skills-section">
+      <p class="skills-label">Skills Covered</p>
+      <div class="skills">
+        <span class="skill">User Research</span>
+        <span class="skill">Wireframing</span>
+        <span class="skill">Figma</span>
+        <span class="skill">Prototyping</span>
+        <span class="skill">Usability Testing</span>
+        <span class="skill">Design Systems</span>
+        <span class="skill">Information Architecture</span>
+        <span class="skill">Interaction Design</span>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="ll-branding">
+        <p>Issued by <b>LinkedIn Learning</b></p>
+        <p style="margin-top:3px; font-size:9px;">Note: This certificate does not constitute<br/>an accredited qualification.</p>
+      </div>
+      <div class="cert-meta">
+        <div><strong>Date Completed:</strong> 8 August 2024</div>
+        <div><strong>Issuer:</strong> LinkedIn Learning</div>
+        <div class="verify-link">linkedin.com/learning/certificates/STYL-UX-2024</div>
+        <div class="cert-no">ID: LIL-2024-UX-STYL-88203</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

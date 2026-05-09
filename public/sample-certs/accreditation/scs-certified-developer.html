@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SCS – Certified IT Project Manager</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #1a1a2e; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 40px 20px; font-family: 'Inter', sans-serif; }
+  .cert { width: 794px; background: #0f1117; padding: 0; position: relative; box-shadow: 0 0 60px rgba(99,179,237,0.2); overflow: hidden; }
+  .top-bar { height: 5px; background: linear-gradient(90deg, #2563eb, #7c3aed, #2563eb); }
+  .cert-body { padding: 48px 60px 44px; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+  .scs-logo { display: flex; flex-direction: column; }
+  .scs-abbr { font-size: 32px; font-weight: 800; color: #fff; letter-spacing: -0.03em; line-height: 1; }
+  .scs-full { font-size: 10px; color: #64748b; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
+  .scs-since { font-size: 9px; color: #334155; margin-top: 1px; }
+  .badge { background: linear-gradient(135deg, #2563eb20, #7c3aed20); border: 1px solid #2563eb60; border-radius: 8px; padding: 8px 16px; text-align: right; }
+  .badge-label { font-size: 9px; color: #64748b; letter-spacing: 0.1em; text-transform: uppercase; }
+  .badge-title { font-size: 13px; font-weight: 700; color: #93c5fd; margin-top: 2px; }
+  .divider { border: none; border-top: 1px solid #1e293b; margin: 0 0 32px; }
+  .presents { font-size: 11px; color: #475569; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+  .recipient { font-family: 'Merriweather', serif; font-size: 34px; color: #f1f5f9; margin-bottom: 4px; }
+  .member-id { font-family: 'Courier New', monospace; font-size: 10px; color: #334155; margin-bottom: 24px; }
+  .award-text { font-size: 13px; color: #64748b; line-height: 1.7; margin-bottom: 8px; }
+  .cert-name { font-family: 'Merriweather', serif; font-size: 26px; color: #93c5fd; font-weight: 700; margin: 12px 0 4px; }
+  .cert-code { font-size: 11px; color: #475569; font-family: 'Courier New', monospace; margin-bottom: 28px; }
+  .skills-section { margin-bottom: 32px; }
+  .skills-label { font-size: 9px; font-weight: 600; color: #475569; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 10px; }
+  .skills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .skill { background: #1e293b; border: 1px solid #2563eb40; border-radius: 6px; padding: 5px 12px; font-size: 11px; color: #93c5fd; font-weight: 500; font-family: 'Courier New', monospace; }
+  .footer { display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #1e293b; padding-top: 20px; }
+  .sig-block { display: flex; flex-direction: column; gap: 4px; }
+  .sig-line { width: 150px; border-bottom: 1px solid #334155; margin-bottom: 4px; }
+  .sig-name { font-size: 11px; font-weight: 600; color: #94a3b8; }
+  .sig-title { font-size: 10px; color: #475569; }
+  .cert-meta { text-align: right; font-size: 10px; color: #475569; line-height: 1.8; }
+  .cert-no { font-family: 'Courier New', monospace; font-size: 9px; color: #334155; margin-top: 4px; }
+  .expiry { color: #fbbf24; font-size: 10px; margin-top: 4px; }
+  .bottom-bar { height: 5px; background: linear-gradient(90deg, #7c3aed, #2563eb, #7c3aed); }
+  @media print { body { background: #fff; padding: 0; } .cert { box-shadow: none; } .cert, .cert-body { background: #fff !important; } .scs-abbr, .recipient, .cert-name { color: #000 !important; } .skill { color: #000 !important; background: #f0f0f0 !important; } }
+</style>
+</head>
+<body>
+<div class="cert">
+  <div class="top-bar"></div>
+  <div class="cert-body">
+    <div class="header">
+      <div class="scs-logo">
+        <span class="scs-abbr">SCS</span>
+        <span class="scs-full">Singapore Computer Society</span>
+        <span class="scs-since">Professional Certification · Est. 1967</span>
+      </div>
+      <div class="badge">
+        <div class="badge-label">Certification Level</div>
+        <div class="badge-title">Professional ★★★</div>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <p class="presents">This certifies that</p>
+    <p class="recipient">MUHAMMAD FARIZ BIN JALIL</p>
+    <p class="member-id">SCS Member ID: SCS-P-2024-00847</p>
+
+    <p class="award-text">
+      has successfully met all examination and practical requirements and is hereby awarded the designation of
+    </p>
+    <p class="cert-name">SCS Certified IT Project Manager</p>
+    <p class="cert-code">Credential ID: SCS-CITPM-2024-0847 · Examination Score: 84 / 100</p>
+
+    <div class="skills-section">
+      <p class="skills-label">Verified Competency Areas</p>
+      <div class="skills">
+        <span class="skill">Agile Project Management</span>
+        <span class="skill">Risk Management</span>
+        <span class="skill">Stakeholder Engagement</span>
+        <span class="skill">Scrum Framework</span>
+        <span class="skill">SDLC</span>
+        <span class="skill">Budget Planning</span>
+        <span class="skill">IT Governance</span>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="sig-block">
+        <div class="sig-line"></div>
+        <span class="sig-name">Sam Liew</span>
+        <span class="sig-title">President, Singapore Computer Society</span>
+      </div>
+      <div class="cert-meta">
+        <div><strong>Issue Date:</strong> 15 January 2024</div>
+        <div><strong>Issuer:</strong> Singapore Computer Society (SCS)</div>
+        <div class="expiry">Valid until: 14 January 2027 (CPE required)</div>
+        <div class="cert-no">Verify: scs.org.sg/verify/SCS-CITPM-2024-0847</div>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-bar"></div>
+</div>
+</body>
+</html>

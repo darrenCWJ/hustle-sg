@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 
 export async function applyToGig(gigId: string, formData: FormData) {
   const supabase = await createClient();
@@ -23,6 +23,30 @@ export async function applyToGig(gigId: string, formData: FormData) {
     .select("id")
     .single();
   if (error || !app) return;
+
+  // Notify employer via service client (bypasses RLS)
+  const service = createServiceClient();
+  const { data: gig } = await service
+    .from("gigs")
+    .select("employer_id, title, profiles!gigs_employer_id_fkey(display_name)")
+    .eq("id", gigId)
+    .single();
+  const applicantProfile = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", user.id)
+    .single();
+  const applicantName = applicantProfile.data?.display_name ?? "Someone";
+  if (gig?.employer_id) {
+    await service.from("notifications").insert({
+      user_id: gig.employer_id,
+      kind: "application_received",
+      title: `${applicantName} applied for "${gig.title}"`,
+      body: "Review their profile and async video responses.",
+      link: `/interviews/${app.id}`,
+      data: { application_id: app.id, gig_id: gigId },
+    });
+  }
 
   // Check if interviews exist → route to record flow
   const { data: qs } = await supabase

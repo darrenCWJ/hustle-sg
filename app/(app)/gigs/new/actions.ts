@@ -4,6 +4,7 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { regenerateGigEmbedding } from "@/lib/ai/match";
+import { notifyMatchedFreelancers } from "@/lib/push/notify";
 
 const gigSchema = z.object({
   title: z.string().min(3).max(160),
@@ -96,6 +97,8 @@ export async function postGig(formData: FormData) {
     );
   }
 
-  regenerateGigEmbedding(gig.id).catch(() => {});
+  // Await embedding so match_users_for_gig sees the vector before notifying.
+  await regenerateGigEmbedding(gig.id).catch(() => {});
+  notifyMatchedFreelancers(gig.id).catch(() => {});
   redirect(`/gigs/${gig.id}`);
 }

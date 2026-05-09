@@ -1,9 +1,9 @@
-// Seed realistic SG data + AI embeddings.
-// Run: SUPABASE_URL=... SERVICE_ROLE_KEY=... OPENAI_API_KEY=... npx tsx lib/db/seed.ts
+// Seed realistic SG data + AI embeddings + Pinecone upsert.
+// Run: npx tsx lib/db/seed.ts
+// Reset (wipe first): npx tsx lib/db/seed.ts --reset
 
 import { config as loadEnv } from "dotenv";
 import path from "node:path";
-// Load .env.local first (Next.js convention), then fall back to .env
 loadEnv({ path: path.resolve(process.cwd(), ".env.local") });
 loadEnv({ path: path.resolve(process.cwd(), ".env") });
 
@@ -20,9 +20,7 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!SUPABASE_URL || !SERVICE_ROLE) {
-  console.error(
-    "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY. Set in .env.local.",
-  );
+  console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
   process.exit(1);
 }
 
@@ -30,8 +28,36 @@ const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
+// ─── WIPE ─────────────────────────────────────────────────────────────────────
+// Deletes in FK-safe order so no constraint violations.
+
+async function wipe() {
+  console.log("Wiping database…");
+
+  // Leaf tables first
+  await admin.from("notifications").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  await admin.from("interview_responses").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  await admin.from("applications").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  await admin.from("interview_questions").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  await admin.from("gigs").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  await admin.from("certifications").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  await admin.from("portfolio_items").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  await admin.from("user_availability").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  await admin.from("profiles").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+
+  // Delete auth users
+  const { data: list } = await admin.auth.admin.listUsers({ perPage: 500 });
+  for (const u of list?.users ?? []) {
+    await admin.auth.admin.deleteUser(u.id);
+  }
+
+  console.log("  ✓ Wiped all tables and auth users.");
+}
+
+// ─── PROFILES ─────────────────────────────────────────────────────────────────
+
 async function ensureUser(email: string, password: string, nricHash: string) {
-  const { data: list } = await admin.auth.admin.listUsers({ perPage: 200 });
+  const { data: list } = await admin.auth.admin.listUsers({ perPage: 500 });
   const existing = list?.users.find((u) => u.email === email);
   if (existing) return existing;
 
@@ -42,7 +68,7 @@ async function ensureUser(email: string, password: string, nricHash: string) {
     user_metadata: { nric_hash: nricHash },
   });
   if (error) throw error;
-  if (!data.user) throw new Error("no user");
+  if (!data.user) throw new Error("no user created");
   return data.user;
 }
 
@@ -73,10 +99,6 @@ async function seedProfiles() {
 
     handleToId[p.handle] = user.id;
 
-    // Clear prior certs/portfolio for idempotency
-    await admin.from("certifications").delete().eq("user_id", user.id);
-    await admin.from("portfolio_items").delete().eq("user_id", user.id);
-
     if (p.certs.length) {
       await admin.from("certifications").insert(
         p.certs.map((c) => ({
@@ -90,6 +112,7 @@ async function seedProfiles() {
         })),
       );
     }
+
     if (p.portfolio.length) {
       await admin.from("portfolio_items").insert(
         p.portfolio.map((pp, i) => ({
@@ -103,20 +126,17 @@ async function seedProfiles() {
         })),
       );
     }
-    console.log(`  → ${p.handle}`);
+
+    console.log(`  → ${p.handle} (${p.role})`);
   }
 
   return handleToId;
 }
 
-async function seedGigs(handleToId: Record<string, string>) {
-  const map: Record<string, string> = {};
+// ─── GIGS ─────────────────────────────────────────────────────────────────────
 
-  // Clean slate
-  for (const [handle, uid] of Object.entries(handleToId)) {
-    if (!handle.startsWith("kopitiam") && !handle.startsWith("nova") && !handle.startsWith("edutech") && !handle.startsWith("sunrise")) continue;
-    await admin.from("gigs").delete().eq("employer_id", uid);
-  }
+async function seedGigs(handleToId: Record<string, string>) {
+  const gigMap: Record<string, string> = {};
 
   for (const g of GIGS) {
     const employerId = handleToId[g.employer_handle];
@@ -124,6 +144,7 @@ async function seedGigs(handleToId: Record<string, string>) {
       console.warn(`  ! employer not found: ${g.employer_handle}`);
       continue;
     }
+
     const { data, error } = await admin
       .from("gigs")
       .insert({
@@ -139,8 +160,9 @@ async function seedGigs(handleToId: Record<string, string>) {
       })
       .select("id")
       .single();
-    if (error || !data) throw error ?? new Error("no gig");
-    map[g.title] = data.id;
+    if (error || !data) throw error ?? new Error("no gig returned");
+
+    gigMap[g.title] = data.id;
 
     if (g.questions?.length) {
       await admin.from("interview_questions").insert(
@@ -152,37 +174,56 @@ async function seedGigs(handleToId: Record<string, string>) {
         })),
       );
     }
+
     console.log(`  → gig: ${g.title}`);
   }
 
-  return map;
+  return gigMap;
 }
 
-async function seedApplications(handleToId: Record<string, string>, gigMap: Record<string, string>) {
+// ─── APPLICATIONS ─────────────────────────────────────────────────────────────
+
+async function seedApplications(
+  handleToId: Record<string, string>,
+  gigMap: Record<string, string>,
+) {
   for (const a of APPLICATIONS) {
     const applicantId = handleToId[a.applicant_handle];
     const gigId = gigMap[a.gig_title];
+
     if (!applicantId || !gigId) {
-      console.warn(`  ! skipping application: ${a.applicant_handle} → "${a.gig_title}" (missing ref)`);
+      console.warn(`  ! skipping: ${a.applicant_handle} → "${a.gig_title}" (missing ref)`);
       continue;
     }
 
-    await admin
-      .from("applications")
-      .upsert(
-        {
-          gig_id: gigId,
-          applicant_id: applicantId,
-          cover_note: a.cover_note ?? null,
-          status: a.status,
-        },
-        { onConflict: "gig_id,applicant_id" },
-      );
-    console.log(`  → application: ${a.applicant_handle} → "${a.gig_title}" (${a.status})`);
+    await admin.from("applications").upsert(
+      {
+        gig_id: gigId,
+        applicant_id: applicantId,
+        cover_note: a.cover_note ?? null,
+        status: a.status,
+      },
+      { onConflict: "gig_id,applicant_id" },
+    );
+    console.log(`  → ${a.applicant_handle} → "${a.gig_title}" (${a.status})`);
   }
 }
 
-async function computeEmbeddings(handleToId: Record<string, string>, gigMap: Record<string, string>) {
+// ─── EMBEDDINGS ───────────────────────────────────────────────────────────────
+
+interface EmbeddingRecord {
+  id: string;
+  label: string;
+  kind: "profile" | "gig";
+  vector: number[];
+}
+
+async function computeEmbeddings(
+  handleToId: Record<string, string>,
+  gigMap: Record<string, string>,
+): Promise<EmbeddingRecord[]> {
+  const records: EmbeddingRecord[] = [];
+
   console.log("Embedding profiles…");
   for (const p of [...FREELANCERS, ...EMPLOYERS]) {
     const userId = handleToId[p.handle];
@@ -192,10 +233,13 @@ async function computeEmbeddings(handleToId: Record<string, string>, gigMap: Rec
       certTitles: p.certs.map((c) => c.title),
       extractedSkills: p.certs.flatMap((c) => c.extracted_skills),
       portfolioTags: p.portfolio.flatMap((pp) => pp.tags),
-      portfolioDescriptions: p.portfolio.map((pp) => pp.description).filter(Boolean) as string[],
+      portfolioDescriptions: p.portfolio
+        .map((pp) => pp.description)
+        .filter(Boolean) as string[],
     });
-    const v = await generateEmbedding(text || p.headline);
-    await admin.from("profiles").update({ embedding: v as any }).eq("id", userId);
+    const vector = await generateEmbedding(text || p.headline);
+    await admin.from("profiles").update({ embedding: vector as unknown as string }).eq("id", userId);
+    records.push({ id: `profile_${userId}`, label: p.display_name, kind: "profile", vector });
     process.stdout.write(".");
   }
   process.stdout.write("\n");
@@ -204,7 +248,7 @@ async function computeEmbeddings(handleToId: Record<string, string>, gigMap: Rec
   for (const g of GIGS) {
     const gigId = gigMap[g.title];
     if (!gigId) continue;
-    const v = await generateEmbedding(
+    const vector = await generateEmbedding(
       buildGigEmbeddingText({
         title: g.title,
         description: g.description,
@@ -212,13 +256,54 @@ async function computeEmbeddings(handleToId: Record<string, string>, gigMap: Rec
         category: g.category,
       }),
     );
-    await admin.from("gigs").update({ embedding: v as any }).eq("id", gigId);
+    await admin.from("gigs").update({ embedding: vector as unknown as string }).eq("id", gigId);
+    records.push({ id: `gig_${gigId}`, label: g.title, kind: "gig", vector });
     process.stdout.write(".");
   }
   process.stdout.write("\n");
+
+  return records;
 }
 
+// ─── PINECONE UPSERT ─────────────────────────────────────────────────────────
+
+async function upsertToPinecone(records: EmbeddingRecord[]) {
+  const apiKey = process.env.PINECONE_API_KEY;
+  const indexName = process.env.PINECONE_INDEX ?? "hustlesg";
+  if (!apiKey) {
+    console.warn("⚠ PINECONE_API_KEY not set — skipping Pinecone upsert.");
+    return;
+  }
+
+  try {
+    const { Pinecone } = await import("@pinecone-database/pinecone");
+    const pc = new Pinecone({ apiKey });
+    const index = pc.index(indexName);
+
+    const BATCH = 100;
+    for (let i = 0; i < records.length; i += BATCH) {
+      const batch = records.slice(i, i + BATCH);
+      await index.upsert({
+        records: batch.map((r) => ({
+          id: r.id,
+          values: r.vector,
+          metadata: { label: r.label, kind: r.kind },
+        })),
+      });
+      console.log(`  → Pinecone: upserted ${i + batch.length}/${records.length}`);
+    }
+    console.log(`  ✓ Pinecone index "${indexName}" updated.`);
+  } catch (err) {
+    console.warn("  ⚠ Pinecone upsert failed:", err);
+  }
+}
+
+// ─── MAIN ─────────────────────────────────────────────────────────────────────
+
 async function main() {
+  const reset = process.argv.includes("--reset");
+  if (reset) await wipe();
+
   console.log("Seeding profiles…");
   const handleToId = await seedProfiles();
 
@@ -229,12 +314,15 @@ async function main() {
   await seedApplications(handleToId, gigMap);
 
   if (process.env.OPENAI_API_KEY) {
-    await computeEmbeddings(handleToId, gigMap);
+    const records = await computeEmbeddings(handleToId, gigMap);
+    await upsertToPinecone(records);
   } else {
-    console.warn("⚠ OPENAI_API_KEY not set — skipping embeddings. Matching will return empty results.");
+    console.warn("⚠ OPENAI_API_KEY not set — skipping embeddings + Pinecone.");
   }
 
-  console.log("Done. Demo NRICs: S1234567D, S2345678D, S3456789C, T0123456A.");
+  const allNrics = [...FREELANCERS, ...EMPLOYERS].map((p) => `${p.nric} (${p.handle})`);
+  console.log("\nDone. NRICs for demo login:");
+  allNrics.forEach((n) => console.log(" ", n));
 }
 
 main().catch((e) => {

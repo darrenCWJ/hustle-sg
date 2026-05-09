@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/actions/auth";
+import { NavLinks } from "./NavLinks";
 
 export async function SiteNav() {
   const supabase = await createClient();
@@ -84,30 +85,7 @@ export async function SiteNav() {
             </span>
           </Link>
 
-          <nav style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            {[
-              { href: "/feed", label: "My feed" },
-              { href: "/gigs", label: "Gigs" },
-              { href: "/instant", label: "Instant" },
-              { href: "/start-a-business", label: "Start a business" },
-              { href: "/dashboard", label: "Dashboard" },
-            ].map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                style={{
-                  padding: "8px 14px",
-                  fontSize: 13.5,
-                  fontWeight: 500,
-                  borderRadius: 999,
-                  color: "var(--color-ink-soft)",
-                }}
-                className="nav-link"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+          <NavLinks />
 
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
             {profile ? (
@@ -213,7 +191,7 @@ export async function SiteNav() {
                   href="/singpass"
                   style={{ fontSize: 13, fontWeight: 500, color: "var(--color-ink-soft)", padding: "6px 10px" }}
                 >
-                  Log in
+                  Log in / Sign up
                 </Link>
                 <Link
                   href="/singpass"

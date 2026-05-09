@@ -12,6 +12,7 @@ export const metadata: Metadata = {
       "Verified freelancers. Singpass identity, WSQ-checked credentials, AI-powered matching.",
     type: "website",
   },
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
@@ -24,8 +25,18 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="theme-color" content="#1a1a1a" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}`,
+          }}
+        />
+      </body>
     </html>
   );
 }

@@ -73,28 +73,22 @@ async function collectUserSkills(userId: string): Promise<Set<string>> {
 export async function regenerateUserEmbedding(userId: string): Promise<void> {
   const admin = createServiceClient();
 
-  const [{ data: profile }, { data: certs }, { data: portfolio }] =
-    await Promise.all([
-      admin.from("profiles").select("headline, bio").eq("id", userId).single(),
-      admin
-        .from("certifications")
-        .select("title, extracted_skills")
-        .eq("user_id", userId),
-      admin
-        .from("portfolio_items")
-        .select("tags, description")
-        .eq("user_id", userId),
-    ]);
+  // Only verified certs are used — unverified ones and portfolio items can be
+  // freely typed by anyone and would let users game their position in vector space.
+  const [{ data: profile }, { data: certs }] = await Promise.all([
+    admin.from("profiles").select("headline, bio").eq("id", userId).single(),
+    admin
+      .from("certifications")
+      .select("title, extracted_skills")
+      .eq("user_id", userId)
+      .eq("verified", true),
+  ]);
 
   const text = buildProfileEmbeddingText({
     headline: profile?.headline,
     bio: profile?.bio,
     certTitles: (certs ?? []).map((c: any) => c.title),
     extractedSkills: (certs ?? []).flatMap((c: any) => c.extracted_skills ?? []),
-    portfolioTags: (portfolio ?? []).flatMap((p: any) => p.tags ?? []),
-    portfolioDescriptions: (portfolio ?? [])
-      .map((p: any) => p.description)
-      .filter(Boolean) as string[],
   });
 
   const vector = await generateEmbedding(text || " ");

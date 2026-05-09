@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HustleSG – Sample Certificates</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0a0f; color: #e2e8f0; font-family: 'Inter', sans-serif; padding: 40px 24px 80px; }
+  .container { max-width: 900px; margin: 0 auto; }
+  .hero { margin-bottom: 52px; }
+  .eyebrow { font-size: 10px; font-weight: 700; color: #f59e0b; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 12px; }
+  h1 { font-size: 40px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; margin-bottom: 14px; color: #fff; }
+  .hero-desc { font-size: 14px; color: #64748b; line-height: 1.65; max-width: 540px; }
+  .how-to { background: #13131f; border: 1px solid #1e293b; border-radius: 12px; padding: 20px 24px; margin-bottom: 52px; }
+  .how-to h2 { font-size: 13px; font-weight: 600; color: #94a3b8; margin-bottom: 12px; letter-spacing: 0.04em; }
+  .steps { display: flex; flex-direction: column; gap: 10px; }
+  .step { display: flex; gap: 12px; align-items: flex-start; }
+  .step-num { width: 22px; height: 22px; border-radius: 50%; background: #1e293b; color: #f59e0b; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .step-text { font-size: 13px; color: #64748b; line-height: 1.5; }
+  .step-text b { color: #94a3b8; }
+  .section-label { font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 16px; }
+  .section { margin-bottom: 40px; }
+  .wsq-label { color: #ef4444; }
+  .uni-label { color: #3b82f6; }
+  .acc-label { color: #8b5cf6; }
+  .other-label { color: #10b981; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+  .card { background: #13131f; border: 1px solid #1e293b; border-radius: 14px; padding: 22px; text-decoration: none; color: inherit; display: block; transition: border-color 0.15s, transform 0.15s; }
+  .card:hover { border-color: #334155; transform: translateY(-2px); }
+  .card-type { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 8px; }
+  .wsq-type { color: #ef4444; }
+  .uni-type { color: #3b82f6; }
+  .acc-type { color: #8b5cf6; }
+  .other-type { color: #10b981; }
+  .card-title { font-size: 15px; font-weight: 600; color: #e2e8f0; margin-bottom: 4px; line-height: 1.3; }
+  .card-issuer { font-size: 12px; color: #475569; margin-bottom: 12px; }
+  .card-skills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .card-skill { background: #1e293b; border-radius: 4px; padding: 2px 8px; font-size: 10px; color: #64748b; }
+  .card-link { margin-top: 14px; font-size: 11px; color: #3b82f6; display: flex; align-items: center; gap: 4px; }
+  .verified-badge { display: inline-flex; align-items: center; gap: 4px; background: #052e16; border: 1px solid #166534; border-radius: 4px; padding: 2px 8px; font-size: 10px; color: #4ade80; font-weight: 600; margin-bottom: 10px; }
+  .unverified-note { display: inline-flex; align-items: center; gap: 4px; background: #1c1917; border: 1px solid #44403c; border-radius: 4px; padding: 2px 8px; font-size: 10px; color: #78716c; font-weight: 500; margin-bottom: 10px; }
+  .footer-note { text-align: center; font-size: 12px; color: #1e293b; margin-top: 52px; border-top: 1px solid #0f172a; padding-top: 24px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="hero">
+    <p class="eyebrow">HustleSG · Test Resources</p>
+    <h1>Sample Certificates</h1>
+    <p class="hero-desc">
+      Use these as test certs for the cert parser demo, or reference them when adding your own real credentials.
+      Open any cert, copy its text, and paste into the Cert Parser on the demo page to see Claude extract the details.
+    </p>
+  </div>
+
+  <div class="how-to">
+    <h2>HOW TO USE</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">Click any cert below → opens the certificate HTML page.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text"><b>Select all text</b> on the page (Ctrl+A / Cmd+A) and copy it.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text">Go to your <b>Profile → Edit → Certifications</b>, paste the text into the cert parser, and let Claude extract issuer, title, and skills automatically.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text">For your <b>real certificates</b> — paste the text from your actual PDF or add the URL directly in the URL field. WSQ/polytechnic/university certs will be marked <b style="color:#4ade80">Verified</b>.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WSQ -->
+  <div class="section">
+    <p class="section-label wsq-label">WSQ Certs — <span style="color:#64748b;font-weight:400">Verified ✓ (SkillsFuture SG whitelist)</span></p>
+    <div class="cards">
+      <a class="card" href="wsq/digital-marketing.html" target="_blank">
+        <div class="card-type wsq-type">WSQ · Advanced Certificate</div>
+        <div class="verified-badge">✓ Verified Issuer</div>
+        <div class="card-title">Digital Marketing</div>
+        <div class="card-issuer">SkillsFuture Singapore · NTUC LearningHub</div>
+        <div class="card-skills">
+          <span class="card-skill">Social Media Marketing</span>
+          <span class="card-skill">SEO</span>
+          <span class="card-skill">Google Analytics</span>
+          <span class="card-skill">SEM</span>
+        </div>
+        <div class="card-link">View certificate →</div>
+      </a>
+      <a class="card" href="wsq/customer-service.html" target="_blank">
+        <div class="card-type wsq-type">WSQ · Specialist Diploma</div>
+        <div class="verified-badge">✓ Verified Issuer</div>
+        <div class="card-title">Customer Service Excellence</div>
+        <div class="card-issuer">SkillsFuture Singapore · WSG</div>
+        <div class="card-skills">
+          <span class="card-skill">Service Quality</span>
+          <span class="card-skill">CRM</span>
+          <span class="card-skill">Complaint Handling</span>
+        </div>
+        <div class="card-link">View certificate →</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- University -->
+  <div class="section">
+    <p class="section-label uni-label">University / Polytechnic — <span style="color:#64748b;font-weight:400">Verified ✓ (NUS, NTU, SMU, SIT, SUTD, Polys)</span></p>
+    <div class="cards">
+      <a class="card" href="university/nus-computing.html" target="_blank">
+        <div class="card-type uni-type">University · Bachelor's Degree</div>
+        <div class="verified-badge">✓ Verified Issuer</div>
+        <div class="card-title">Bachelor of Computing – AI</div>
+        <div class="card-issuer">National University of Singapore (NUS)</div>
+        <div class="card-skills">
+          <span class="card-skill">Machine Learning</span>
+          <span class="card-skill">NLP</span>
+          <span class="card-skill">Python</span>
+          <span class="card-skill">Software Engineering</span>
+        </div>
+        <div class="card-link">View certificate →</div>
+      </a>
+      <a class="card" href="university/np-business.html" target="_blank">
+        <div class="card-type uni-type">Polytechnic · Diploma</div>
+        <div class="verified-badge">✓ Verified Issuer</div>
+        <div class="card-title">Diploma in Business Studies</div>
+        <div class="card-issuer">Ngee Ann Polytechnic (NP)</div>
+        <div class="card-skills">
+          <span class="card-skill">Marketing</span>
+          <span class="card-skill">E-Commerce</span>
+          <span class="card-skill">Business Analytics</span>
+        </div>
+        <div class="card-link">View certificate →</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Accreditation -->
+  <div class="section">
+    <p class="section-label acc-label">Professional Accreditation — <span style="color:#64748b;font-weight:400">Verified ✓ (IES, SCS, ISACA SG)</span></p>
+    <div class="cards">
+      <a class="card" href="accreditation/scs-certified-developer.html" target="_blank">
+        <div class="card-type acc-type">SCS · Professional Certification</div>
+        <div class="verified-badge">✓ Verified Issuer</div>
+        <div class="card-title">SCS Certified IT Project Manager</div>
+        <div class="card-issuer">Singapore Computer Society (SCS)</div>
+        <div class="card-skills">
+          <span class="card-skill">Agile</span>
+          <span class="card-skill">Scrum</span>
+          <span class="card-skill">Risk Management</span>
+          <span class="card-skill">IT Governance</span>
+        </div>
+        <div class="card-link">View certificate →</div>
+      </a>
+      <a class="card" href="accreditation/ies-professional-engineer.html" target="_blank">
+        <div class="card-type acc-type">IES · Professional Registration</div>
+        <div class="verified-badge">✓ Verified Issuer</div>
+        <div class="card-title">Professional Engineer – Electrical</div>
+        <div class="card-issuer">Institution of Engineers Singapore (IES)</div>
+        <div class="card-skills">
+          <span class="card-skill">Power Systems</span>
+          <span class="card-skill">Electrical Installation</span>
+          <span class="card-skill">BCA Regulations</span>
+        </div>
+        <div class="card-link">View certificate →</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Other -->
+  <div class="section">
+    <p class="section-label other-label">Other / Online Courses — <span style="color:#64748b;font-weight:400">Not verified (adds to profile but not to embedding)</span></p>
+    <div class="cards">
+      <a class="card" href="other/coursera-ml.html" target="_blank">
+        <div class="card-type other-type">Coursera · Specialization</div>
+        <div class="unverified-note">ℹ Not a verified issuer</div>
+        <div class="card-title">Machine Learning Specialization</div>
+        <div class="card-issuer">Coursera · DeepLearning.AI / Stanford</div>
+        <div class="card-skills">
+          <span class="card-skill">Supervised Learning</span>
+          <span class="card-skill">Neural Networks</span>
+          <span class="card-skill">Python</span>
+        </div>
+        <div class="card-link">View certificate →</div>
+      </a>
+      <a class="card" href="other/linkedin-ux-design.html" target="_blank">
+        <div class="card-type other-type">LinkedIn Learning · Path</div>
+        <div class="unverified-note">ℹ Not a verified issuer</div>
+        <div class="card-title">UX Design: Concept to Prototype</div>
+        <div class="card-issuer">LinkedIn Learning</div>
+        <div class="card-skills">
+          <span class="card-skill">User Research</span>
+          <span class="card-skill">Figma</span>
+          <span class="card-skill">Prototyping</span>
+        </div>
+        <div class="card-link">View certificate →</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    Sample certificates for HustleSG demo purposes · Not official government documents
+  </div>
+</div>
+</body>
+</html>
