@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "HustleSG — Verified gig work, Singapore",
   description:
     "Singapore's verified gig platform. Singpass identity, WSQ credential checks, AI-powered matching, and a path to registering your own company.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+  metadataBase: new URL((process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/^﻿/, "")),
   openGraph: {
     title: "HustleSG",
     description:
