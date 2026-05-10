@@ -151,19 +151,28 @@ export function FeedClientPage({ matches, initialSavedIds = [] }: FeedClientPage
       ) : (
         <>
           {/* Featured top match */}
-          {top && (
+          {top && (() => {
+            const topClosed = top.applications_close_at
+              ? new Date(top.applications_close_at) < new Date()
+              : false;
+            return (
             <article
               className="grain"
               style={{ position: "relative", borderRadius: 24, overflow: "hidden", background: "var(--color-ink)", color: "var(--color-surface)", padding: 36, display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 36, alignItems: "start", marginBottom: 20, boxShadow: "var(--shadow-lift)" }}
             >
               <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
                   <span className="pill" style={{ background: "var(--color-accent)", color: "oklch(22% 0.08 38)" }}>
                     Top match today
                   </span>
                   <span style={{ fontSize: 11, color: "oklch(100% 0 0 / 0.5)", letterSpacing: "0.14em", textTransform: "uppercase" }}>
                     {top.category ?? "Gig"}
                   </span>
+                  {topClosed && (
+                    <span style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700, padding: "3px 8px", borderRadius: 999, background: "oklch(100% 0 0 / 0.1)", color: "#f77" }}>
+                      Applications closed
+                    </span>
+                  )}
                 </div>
                 <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.8rem, 3vw, 2.8rem)", margin: "0 0 18px", lineHeight: 1.02, letterSpacing: "-0.03em" }}>
                   {top.title}
@@ -198,9 +207,9 @@ export function FeedClientPage({ matches, initialSavedIds = [] }: FeedClientPage
                 <div style={{ display: "flex", gap: 10 }}>
                   <Link
                     href={`/gigs/${top.gig_id}`}
-                    style={{ display: "inline-block", padding: "10px 20px", borderRadius: 999, background: "var(--color-accent)", color: "oklch(22% 0.08 38)", fontSize: 14, fontWeight: 600 }}
+                    style={{ display: "inline-block", padding: "10px 20px", borderRadius: 999, background: topClosed ? "oklch(100% 0 0 / 0.1)" : "var(--color-accent)", color: topClosed ? "oklch(100% 0 0 / 0.4)" : "oklch(22% 0.08 38)", fontSize: 14, fontWeight: 600 }}
                   >
-                    Review & apply →
+                    {topClosed ? "View gig" : "Review & apply →"}
                   </Link>
                   <button
                     onClick={() => handleToggleSave(top.gig_id)}
@@ -249,7 +258,8 @@ export function FeedClientPage({ matches, initialSavedIds = [] }: FeedClientPage
                 </div>
               </div>
             </article>
-          )}
+            );
+          })()}
 
           {/* Rest of matches */}
           {rest.length > 0 && (
@@ -272,6 +282,11 @@ export function FeedClientPage({ matches, initialSavedIds = [] }: FeedClientPage
                       <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 999, background: "var(--color-jade-soft)", color: "var(--color-jade-ink)", whiteSpace: "nowrap" }}>
                         {Math.round(m.score * 100)}% match
                       </span>
+                      {m.applications_close_at && new Date(m.applications_close_at) < new Date() && (
+                        <span style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "var(--color-muted)", color: "#e55", whiteSpace: "nowrap" }}>
+                          Closed
+                        </span>
+                      )}
                       <button
                         onClick={() => handleToggleSave(m.gig_id)}
                         style={{ fontSize: 16, background: "none", border: "none", cursor: "pointer", color: saved.has(m.gig_id) ? "var(--color-accent-ink)" : "var(--color-ink-mute)", padding: 0 }}

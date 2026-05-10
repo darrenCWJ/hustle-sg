@@ -43,6 +43,20 @@ export default async function GigDetailPage({
   }
 
   const employerVerified = Boolean(gig.employer?.singpass_verified_at);
+  const isClosed = gig.applications_close_at
+    ? new Date(gig.applications_close_at) < new Date()
+    : false;
+
+  function formatDeadline(iso: string) {
+    return new Date(iso).toLocaleString("en-SG", {
+      day: "numeric",
+      month: "short",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Singapore",
+    });
+  }
   const similarGigsRes = await supabase
     .from("gigs")
     .select("id, title, budget_cents, budget_kind, category")
@@ -140,6 +154,17 @@ export default async function GigDetailPage({
                 <span style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--color-ink-soft)", fontWeight: 600 }}>Location</span>
                 <p style={{ fontSize: 14, fontWeight: 600, margin: "2px 0 0" }}>
                   {gig.location}
+                </p>
+              </div>
+            </>
+          )}
+          {gig.applications_close_at && (
+            <>
+              <span style={{ width: 1, height: 32, background: "var(--color-line)" }} />
+              <div>
+                <span style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--color-ink-soft)", fontWeight: 600 }}>Applications</span>
+                <p style={{ fontSize: 14, fontWeight: 600, margin: "2px 0 0", color: isClosed ? "#e55" : "inherit" }}>
+                  {isClosed ? "Closed" : `Closes ${formatDeadline(gig.applications_close_at)}`}
                 </p>
               </div>
             </>
@@ -343,7 +368,23 @@ export default async function GigDetailPage({
 
             {/* Apply form */}
             <div>
-              {existingApp ? (
+              {isClosed ? (
+                <div
+                  style={{
+                    background: "oklch(100% 0 0 / 0.08)",
+                    borderRadius: 12,
+                    padding: 16,
+                    fontSize: 13,
+                    textAlign: "center",
+                    color: "oklch(100% 0 0 / 0.65)",
+                  }}
+                >
+                  <p style={{ margin: "0 0 4px", fontWeight: 600 }}>Applications closed</p>
+                  <p style={{ margin: 0, fontSize: 11, opacity: 0.7 }}>
+                    Closed {formatDeadline(gig.applications_close_at!)}
+                  </p>
+                </div>
+              ) : existingApp ? (
                 <div
                   style={{
                     background: "oklch(100% 0 0 / 0.08)",

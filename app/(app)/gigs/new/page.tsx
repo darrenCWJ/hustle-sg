@@ -115,6 +115,18 @@ export default function NewGigPage() {
               <option value="weekend">This weekend</option>
             </select>
           </div>
+
+          <div>
+            <label className="text-xs text-ink-soft block mb-1">
+              Application deadline <span className="opacity-50">(optional — leave blank for no deadline)</span>
+            </label>
+            <input
+              type="datetime-local"
+              name="applications_close_at"
+              className="w-full rounded-xl border border-line px-4 py-3 bg-surface-raised"
+            />
+            <p className="text-xs text-ink-mute mt-1">Time is in Singapore time (SGT, UTC+8).</p>
+          </div>
         </div>
 
         <button

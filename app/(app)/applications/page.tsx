@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatSgd, timeAgo } from "@/lib/utils";
+import { acceptOffer, declineOffer } from "./actions";
 
 const STATUS_CONFIG: Record<
   string,
@@ -35,6 +36,12 @@ const STATUS_CONFIG: Record<
     bg: "var(--color-muted)",
     fg: "var(--color-ink-mute)",
     label: "Not selected",
+    step: 0,
+  },
+  offered: {
+    bg: "var(--color-accent-soft)",
+    fg: "var(--color-accent-ink)",
+    label: "Direct offer",
     step: 0,
   },
 };
@@ -202,6 +209,7 @@ export default async function ApplicationsPage() {
             const config =
               STATUS_CONFIG[a.status] ?? STATUS_CONFIG.applied;
             const isRejected = a.status === "rejected";
+            const isOffer = a.status === "offered";
 
             return (
               <article
@@ -210,7 +218,9 @@ export default async function ApplicationsPage() {
                   padding: 22,
                   borderRadius: 20,
                   background: "var(--color-surface-raised)",
-                  border: "1px solid var(--color-line)",
+                  border: isOffer
+                    ? "1px solid var(--color-accent)"
+                    : "1px solid var(--color-line)",
                   opacity: isRejected ? 0.6 : 1,
                 }}
               >
@@ -314,8 +324,8 @@ export default async function ApplicationsPage() {
                   </div>
                 </div>
 
-                {/* Progress track — hide for rejected */}
-                {!isRejected && (
+                {/* Progress track — hide for rejected and direct offers */}
+                {!isRejected && !isOffer && (
                   <div
                     style={{
                       display: "grid",
@@ -370,7 +380,7 @@ export default async function ApplicationsPage() {
                     gap: 10,
                   }}
                 >
-                  {a.cover_note ? (
+                  {a.cover_note && !isOffer ? (
                     <p
                       style={{
                         margin: 0,
@@ -387,37 +397,90 @@ export default async function ApplicationsPage() {
                   ) : (
                     <span />
                   )}
-                  <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                    {gig?.id && (
+                  {isOffer ? (
+                    <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                      {gig?.id && (
+                        <Link
+                          href={`/gigs/${gig.id}`}
+                          style={{
+                            padding: "6px 12px",
+                            borderRadius: 999,
+                            border: "1px solid var(--color-line)",
+                            fontSize: 12,
+                            fontWeight: 600,
+                          }}
+                        >
+                          View gig
+                        </Link>
+                      )}
+                      <form action={declineOffer.bind(null, a.id)}>
+                        <button
+                          type="submit"
+                          style={{
+                            padding: "6px 14px",
+                            borderRadius: 999,
+                            border: "1px solid var(--color-line)",
+                            background: "transparent",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            color: "var(--color-ink-soft)",
+                          }}
+                        >
+                          Decline
+                        </button>
+                      </form>
+                      <form action={acceptOffer.bind(null, a.id)}>
+                        <button
+                          type="submit"
+                          style={{
+                            padding: "6px 14px",
+                            borderRadius: 999,
+                            background: "var(--color-ink)",
+                            color: "var(--color-surface)",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            border: "none",
+                          }}
+                        >
+                          Accept ✓
+                        </button>
+                      </form>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                      {gig?.id && (
+                        <Link
+                          href={`/gigs/${gig.id}`}
+                          style={{
+                            padding: "6px 12px",
+                            borderRadius: 999,
+                            border: "1px solid var(--color-line)",
+                            fontSize: 12,
+                            fontWeight: 600,
+                          }}
+                        >
+                          View gig
+                        </Link>
+                      )}
                       <Link
-                        href={`/gigs/${gig.id}`}
+                        href={`/interviews/${a.id}`}
                         style={{
-                          padding: "6px 12px",
+                          padding: "6px 14px",
                           borderRadius: 999,
-                          border: "1px solid var(--color-line)",
+                          background: "var(--color-ink)",
+                          color: "var(--color-surface)",
                           fontSize: 12,
                           fontWeight: 600,
                         }}
                       >
-                        View gig
+                        {a.status === "interviewing"
+                          ? "Record answers →"
+                          : "View →"}
                       </Link>
-                    )}
-                    <Link
-                      href={`/interviews/${a.id}`}
-                      style={{
-                        padding: "6px 14px",
-                        borderRadius: 999,
-                        background: "var(--color-ink)",
-                        color: "var(--color-surface)",
-                        fontSize: 12,
-                        fontWeight: 600,
-                      }}
-                    >
-                      {a.status === "interviewing"
-                        ? "Record answers →"
-                        : "View →"}
-                    </Link>
-                  </div>
+                    </div>
+                  )}
                 </div>
               </article>
             );

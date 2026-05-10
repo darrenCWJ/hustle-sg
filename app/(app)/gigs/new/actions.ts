@@ -18,6 +18,7 @@ const gigSchema = z.object({
   requires_employer_approval: z.string().optional(),
   is_instant: z.string().optional(),
   instant_urgency: z.string().optional(),
+  applications_close_at: z.string().optional(),
 });
 
 export async function postGig(formData: FormData) {
@@ -39,9 +40,21 @@ export async function postGig(formData: FormData) {
     requires_employer_approval: (formData.get("requires_employer_approval") as string) ?? undefined,
     is_instant: (formData.get("is_instant") as string) ?? undefined,
     instant_urgency: (formData.get("instant_urgency") as string) ?? undefined,
+    applications_close_at: (formData.get("applications_close_at") as string) || undefined,
   });
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid" };
+  }
+
+  // Parse deadline — datetime-local has no tz; platform is SGT (UTC+8, no DST).
+  let closeAt: Date | null = null;
+  if (parsed.data.is_instant !== "true" && parsed.data.applications_close_at) {
+    closeAt = new Date(`${parsed.data.applications_close_at}:00+08:00`);
+    const now = new Date();
+    const maxFuture = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+    if (isNaN(closeAt.getTime()) || closeAt <= now || closeAt > maxFuture) {
+      return { ok: false as const, error: "Deadline must be between now and 90 days from today." };
+    }
   }
 
   const skills = parsed.data.skills_required
@@ -74,6 +87,7 @@ export async function postGig(formData: FormData) {
       instant_urgency: parsed.data.is_instant === "true" && parsed.data.instant_urgency
         ? parsed.data.instant_urgency
         : null,
+      applications_close_at: closeAt?.toISOString() ?? null,
     })
     .select()
     .single();

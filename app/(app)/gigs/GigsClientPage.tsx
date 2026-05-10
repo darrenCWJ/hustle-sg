@@ -13,6 +13,7 @@ interface Gig {
   location: string | null;
   category: string | null;
   created_at: string;
+  applications_close_at?: string | null;
   employer?: { display_name: string | null; singpass_verified_at: string | null } | null;
   match_score?: number;
 }
@@ -33,6 +34,9 @@ function GigRow({ gig }: { gig: Gig }) {
   const [hovered, setHovered] = useState(false);
   const budget = formatSgd(gig.budget_cents);
   const employerVerified = Boolean(gig.employer?.singpass_verified_at);
+  const isClosed = gig.applications_close_at
+    ? new Date(gig.applications_close_at) < new Date()
+    : false;
 
   return (
     <article
@@ -122,6 +126,20 @@ function GigRow({ gig }: { gig: Gig }) {
           <p style={{ fontSize: 10.5, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--color-ink-soft)", margin: 0 }}>
             {gig.budget_kind}
           </p>
+          {isClosed && (
+            <span style={{
+              fontSize: 10,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              fontWeight: 600,
+              padding: "3px 8px",
+              borderRadius: 999,
+              background: "var(--color-muted)",
+              color: "#e55",
+            }}>
+              Closed
+            </span>
+          )}
         </div>
       </Link>
     </article>

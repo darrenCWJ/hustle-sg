@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/utils";
+import { RehireForm } from "./RehireForm";
 
 const STATUS_CONFIG: Record<string, { bg: string; fg: string; label: string }> =
   {
@@ -29,6 +30,11 @@ const STATUS_CONFIG: Record<string, { bg: string; fg: string; label: string }> =
       bg: "var(--color-muted)",
       fg: "var(--color-ink-mute)",
       label: "Not selected",
+    },
+    offered: {
+      bg: "var(--color-accent-soft)",
+      fg: "var(--color-accent-ink)",
+      label: "Offer sent",
     },
   };
 
@@ -62,6 +68,20 @@ export default async function ApplicantsPage() {
     .order("created_at", { ascending: false });
 
   const applications = apps ?? [];
+  const openGigs = (myGigs.data ?? []).filter((g) => g.status === "open");
+
+  // Build per-worker set of gig IDs they've already applied to (among this employer's gigs)
+  const appliedByWorker = new Map<string, Set<string>>();
+  for (const a of applications) {
+    const gig = a.gigs as any;
+    const applicant = a.applicant as any;
+    const wId = applicant?.id as string | undefined;
+    const gId = gig?.id as string | undefined;
+    if (wId && gId) {
+      if (!appliedByWorker.has(wId)) appliedByWorker.set(wId, new Set());
+      appliedByWorker.get(wId)!.add(gId);
+    }
+  }
 
   // Group by gig
   const byGig = new Map<
@@ -453,6 +473,15 @@ export default async function ApplicantsPage() {
                           </Link>
                         </div>
                       </div>
+                      {a.status === "hired" && (
+                        <RehireForm
+                          workerId={applicant?.id}
+                          workerName={applicant?.display_name ?? "this worker"}
+                          openGigs={openGigs.filter(
+                            (g) => !appliedByWorker.get(applicant?.id)?.has(g.id),
+                          )}
+                        />
+                      )}
                     </article>
                   );
                 })}

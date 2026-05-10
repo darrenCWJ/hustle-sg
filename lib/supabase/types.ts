@@ -11,7 +11,8 @@ export type ApplicationStatus =
   | "interviewing"
   | "hired"
   | "rejected"
-  | "withdrawn";
+  | "withdrawn"
+  | "offered";
 export type EntityType = "sole_prop" | "pte_ltd";
 export type RegistrationStage = "exploring" | "name_reserved" | "registered";
 
@@ -66,6 +67,7 @@ export interface Gig {
   budget_kind: BudgetKind;
   category: string | null;
   status: GigStatus;
+  applications_close_at: string | null;
   created_at: string;
 }
 
@@ -119,4 +121,5 @@ export interface MatchGigRow {
   category: string | null;
   location: string | null;
   score: number;
+  applications_close_at: string | null;
 }

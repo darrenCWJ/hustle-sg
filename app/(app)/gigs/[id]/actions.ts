@@ -10,6 +10,15 @@ export async function applyToGig(gigId: string, formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) redirect(`/singpass?next=/gigs/${gigId}`);
 
+  // Guard: reject if gig is closed or past its application deadline.
+  const { data: gigMeta } = await supabase
+    .from("gigs")
+    .select("status, applications_close_at")
+    .eq("id", gigId)
+    .single();
+  if (!gigMeta || gigMeta.status !== "open") return;
+  if (gigMeta.applications_close_at && new Date(gigMeta.applications_close_at) < new Date()) return;
+
   const cover = String(formData.get("cover_note") ?? "").slice(0, 2000);
 
   const { data: app, error } = await supabase
