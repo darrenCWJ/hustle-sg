@@ -15,7 +15,7 @@
     "reset": "tsx lib/db/seed.ts --reset"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.32.1",
+    "@anthropic-ai/sdk": "^0.95.1",
     "@pinecone-database/pinecone": "^7.2.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",

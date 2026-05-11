@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: "/freelancers", label: "Talent" },
   { href: "/start-a-business", label: "Start a business" },
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/accounts", label: "Test Accounts" },
 ];
 
 export function NavLinks() {
