@@ -179,3 +179,12 @@ export async function deleteCertification(id: string): Promise<void> {
   regenerateUserEmbedding(user.id).catch(() => {});
   revalidatePath("/profile/edit");
 }
+
+export async function saveLocation(lat: number, lon: number): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase.from("profiles").update({ lat, lon }).eq("id", user.id);
+}

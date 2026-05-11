@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { saveRole } from "./actions";
+import { PushAutoSubscribe } from "@/components/notifications/PushAutoSubscribe";
 
 const BOTH_STEPS = [
   {
@@ -129,6 +130,7 @@ export function OnboardingFlow({ displayName, next }: Props) {
 
   return (
     <div className="w-full max-w-xl">
+      {role !== "employer" && <PushAutoSubscribe />}
       <p className="text-xs uppercase tracking-widest text-trust font-semibold">
         ✓ Singpass verified
       </p>

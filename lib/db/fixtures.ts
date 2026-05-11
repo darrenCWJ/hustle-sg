@@ -9,6 +9,8 @@ export interface SeedProfile {
   headline: string;
   bio: string;
   role: "freelancer" | "employer" | "both";
+  lat: number | null;
+  lon: number | null;
   certs: SeedCert[];
   portfolio: SeedPortfolio[];
 }
@@ -58,6 +60,7 @@ export const FREELANCERS: SeedProfile[] = [
     handle: "aisha_ml",
     display_name: "Aisha Binte Rahmat",
     headline: "ML Engineer · NLP & LLM fine-tuning · ex-DSO",
+    lat: 1.2940, lon: 103.7953, // Queenstown (near DSO)
     bio: "5 years building production NLP systems at DSO National Laboratories and a Series B AI startup. Specialise in LLM fine-tuning (LoRA/QLoRA), RAG pipelines, and MLOps on AWS. Now freelancing — available for 4–16 week contracts.",
     role: "freelancer",
     certs: [
@@ -98,6 +101,7 @@ export const FREELANCERS: SeedProfile[] = [
     handle: "jun_wei",
     display_name: "Jun Wei Chen",
     headline: "Full-stack engineer · Next.js · Go · Supabase",
+    lat: 1.3536, lon: 103.9443, // Bedok
     bio: "NUS Computer Science 2022. Year in Tokyo at a payments fintech, now freelancing full-time. Ship production apps fast — Next.js App Router, Go microservices, Postgres, Redis. Love working with small teams that move quickly.",
     role: "freelancer",
     certs: [
@@ -140,6 +144,7 @@ export const FREELANCERS: SeedProfile[] = [
     handle: "nadia_ux",
     display_name: "Nadia Lim",
     headline: "Senior UX designer · fintech & healthtech · ex-GovTech",
+    lat: 1.3343, lon: 103.8456, // Toa Payoh
     bio: "8 years in product design. Led UX for LifeSG and MyInfo at GovTech, then 2 years at a Series A healthtech. Expertise: research-led design, complex data-dense flows, design systems. Available for 8–16 week fintech/govtech engagements.",
     role: "freelancer",
     certs: [
@@ -180,6 +185,7 @@ export const FREELANCERS: SeedProfile[] = [
     handle: "ravi_motion",
     display_name: "Ravi Kumar",
     headline: "Motion + brand designer · After Effects · Rive · Figma",
+    lat: 1.3508, lon: 103.8490, // Bishan
     bio: "7 years crafting motion graphics and brand identities for SG startups. Fluent in After Effects, Rive, Cinema 4D, and Figma. Shipped 40+ product launch reels and 12 full brand systems. Remote-first.",
     role: "freelancer",
     certs: [
@@ -214,6 +220,7 @@ export const FREELANCERS: SeedProfile[] = [
     handle: "priya_tutor",
     display_name: "Priya Krishnan",
     headline: "H2 Maths & Physics tutor · ACTA-certified · 92% distinctions",
+    lat: 1.3343, lon: 103.8456, // Toa Payoh
     bio: "Six years teaching H2 Maths and H2 Physics. Previous batches: 92% distinctions in Maths, 85% in Physics. Small group (≤4) and 1-on-1. Also available for curriculum review and exam paper writing.",
     role: "freelancer",
     certs: [
@@ -248,6 +255,7 @@ export const FREELANCERS: SeedProfile[] = [
     handle: "marcus_psle",
     display_name: "Marcus Tay",
     headline: "PSLE English & Chinese tutor · curriculum writer · 11 years",
+    lat: 1.3525, lon: 103.9434, // Tampines
     bio: "11 years of PSLE coaching at MOE schools and private tuition. Write my own exam papers and compo scaffolds. Tampines-based, can travel east/central. Also available to review and write curriculum for ed-tech companies.",
     role: "freelancer",
     certs: [
@@ -284,6 +292,7 @@ export const FREELANCERS: SeedProfile[] = [
     handle: "siti_emcee",
     display_name: "Siti Nurhaliza Bte Razak",
     headline: "Corporate emcee · EN / Malay / Mandarin · 180+ events",
+    lat: 1.4297, lon: 103.8344, // Yishun
     bio: "Trilingual emcee specialising in corporate D&Ds, product launches, and Malay weddings. 180+ events, including Changi Airport Group, DBS, and MAS annual dinners. Based in Yishun, happy to travel nationwide.",
     role: "freelancer",
     certs: [
@@ -316,6 +325,7 @@ export const FREELANCERS: SeedProfile[] = [
     handle: "jasmine_events",
     display_name: "Jasmine Ong",
     headline: "Wedding & event coordinator · 120 weddings · island-wide",
+    lat: 1.3072, lon: 103.7899, // Buona Vista
     bio: "Freelance wedding and event coordinator with 120 weddings under my belt (Chinese, Malay, Indian, Western). Full-day coverage, day-of coordination, and vendor liaison. Also do corporate retreats and gala dinners.",
     role: "freelancer",
     certs: [
@@ -342,6 +352,7 @@ export const FREELANCERS: SeedProfile[] = [
     handle: "jayden_video",
     display_name: "Jayden Lee",
     headline: "Videographer · Sony FX3 · drone · weddings & corporate",
+    lat: 1.4009, lon: 103.9069, // Punggol
     bio: "Sony FX3 + DJI Mavic 3 Pro setup. 80 weddings shot. Also do corporate launch films, product demos, and event coverage. 2-week delivery on highlight reels. Based in Punggol.",
     role: "freelancer",
     certs: [],
@@ -367,6 +378,7 @@ export const FREELANCERS: SeedProfile[] = [
     handle: "chef_hafiz",
     display_name: "Hafiz Bin Osman",
     headline: "Halal caterer · up to 300 pax · Malay & fusion cuisine",
+    lat: 1.2940, lon: 103.7953, // Queenstown
     bio: "Halal-certified home kitchen catering for corporate lunches, wedding receptions, and community events. Specialise in Malay cuisine and Southeast Asian fusion. 5 years of catering, 200+ events served. Based in Queenstown.",
     role: "freelancer",
     certs: [
@@ -401,6 +413,7 @@ export const FREELANCERS: SeedProfile[] = [
     handle: "eden_tiktok",
     display_name: "Eden Goh",
     headline: "TikTok creator · 210k followers · F&B & lifestyle · SG",
+    lat: 1.3244, lon: 103.7985, // Bukit Timah
     bio: "210k followers on TikTok, 95% Singapore audience, average 500k views per hawker review. I cover hawker finds, restaurant openings, and F&B brand collabs. Paid partnerships only — rates and media kit available on request.",
     role: "freelancer",
     certs: [],
@@ -424,6 +437,7 @@ export const FREELANCERS: SeedProfile[] = [
     handle: "zara_copy",
     display_name: "Zara Ng",
     headline: "Brand copywriter · fintech & SaaS · conversion-first",
+    lat: 1.2753, lon: 103.8433, // Tanjong Pagar
     bio: "Ex-McCann Singapore. Freelancing since 2022. Worked with 15 SG startups on websites, email sequences, and pitch decks. My last 3 landing pages outperformed client benchmarks by 2–4x conversion lift. Conversion-first, not clever-first.",
     role: "freelancer",
     certs: [
@@ -461,6 +475,7 @@ export const EMPLOYERS: SeedProfile[] = [
     handle: "techsg_ventures",
     display_name: "Marcus Ho at TechSG Ventures",
     headline: "Fintech startup · Series A · hiring AI & eng talent",
+    lat: 1.2847, lon: 103.8514, // Raffles Place
     bio: "We're a Series A payments fintech (12 full-timers). Hire ML contractors, full-stack engineers, and UX designers on project engagements.",
     role: "employer",
     certs: [],
@@ -471,6 +486,7 @@ export const EMPLOYERS: SeedProfile[] = [
     handle: "nova_studio",
     display_name: "Clara Tan at Nova Studio",
     headline: "Design studio · fintech & healthtech · Tanjong Pagar",
+    lat: 1.2753, lon: 103.8397, // Tanjong Pagar
     bio: "Boutique design studio. We hire UX contractors and motion designers for 6–12 week client engagements.",
     role: "employer",
     certs: [],
@@ -481,6 +497,7 @@ export const EMPLOYERS: SeedProfile[] = [
     handle: "brightmind",
     display_name: "Sarah Lim at BrightMind Academy",
     headline: "Tuition centre network · 8 branches islandwide",
+    lat: 1.3508, lon: 103.8490, // Bishan
     bio: "8 centres island-wide. We hire subject tutors, curriculum designers, and relief teachers on flexible contracts.",
     role: "employer",
     certs: [],
@@ -491,6 +508,7 @@ export const EMPLOYERS: SeedProfile[] = [
     handle: "sunrise_events",
     display_name: "Lydia Chan at Sunrise Events",
     headline: "Full-service events agency · D&Ds, weddings, launches",
+    lat: 1.2897, lon: 103.8501, // City Hall
     bio: "15-year-old events agency. We hire freelance emcees, videographers, event coordinators, and caterers for every event.",
     role: "employer",
     certs: [],
@@ -501,6 +519,7 @@ export const EMPLOYERS: SeedProfile[] = [
     handle: "kopicraft",
     display_name: "Amir at KopiCraft Co",
     headline: "F&B brand · 18 outlets · Kopitiam-first",
+    lat: 1.3099, lon: 103.8691, // Kallang
     bio: "Fast-growing kopitiam-style chain. Hire content creators, copywriters, and designers for brand campaigns and outlet launches.",
     role: "employer",
     certs: [],

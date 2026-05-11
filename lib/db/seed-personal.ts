@@ -71,6 +71,8 @@ interface ResidentProfile {
   headline: string;
   bio: string;
   neighborhood: string;
+  lat: number;
+  lon: number;
 }
 
 const RESIDENTS: ResidentProfile[] = [
@@ -81,6 +83,7 @@ const RESIDENTS: ResidentProfile[] = [
     headline: "Retired civil servant · Ang Mo Kio",
     bio: "Retired HDB officer living in AMK since 1985. Love my dog Biscuit, morning kopi, and helping neighbours. Posting tasks I need help with around the house.",
     neighborhood: "Ang Mo Kio",
+    lat: 1.3691, lon: 103.8454,
   },
   {
     nric: "S8765432Z",
@@ -89,6 +92,7 @@ const RESIDENTS: ResidentProfile[] = [
     headline: "Logistics coordinator · Bishan",
     bio: "Work full-time in logistics, live in Bishan with my wife and two kids. Need occasional help around the house — assembly, errands, handyman stuff.",
     neighborhood: "Bishan",
+    lat: 1.3508, lon: 103.8490,
   },
   {
     nric: "S7654321F",
@@ -97,6 +101,7 @@ const RESIDENTS: ResidentProfile[] = [
     headline: "Homemaker · Sengkang",
     bio: "Stay-at-home mum with two young kids in Sengkang. Occasionally need reliable help with childcare, house cleaning, and errands when my hands are full.",
     neighborhood: "Sengkang",
+    lat: 1.3868, lon: 103.8914,
   },
   {
     nric: "S6543210B",
@@ -105,6 +110,7 @@ const RESIDENTS: ResidentProfile[] = [
     headline: "NUS student · Clementi",
     bio: "Final-year CS student at NUS. Living in Clementi near campus. Post odd jobs I need done — car wash, tech help for family, general errands.",
     neighborhood: "Clementi",
+    lat: 1.3152, lon: 103.7649,
   },
   {
     nric: "S5432109J",
@@ -113,6 +119,7 @@ const RESIDENTS: ResidentProfile[] = [
     headline: "Part-time admin · Bedok",
     bio: "Works part-time, lives in Bedok with elderly parents. Post tasks related to caring for ageing parents, pet care, and household upkeep.",
     neighborhood: "Bedok",
+    lat: 1.3373, lon: 103.9299,
   },
 ];
 
@@ -546,6 +553,8 @@ async function seedResidents(): Promise<Record<string, string>> {
         role: "both",
         nric_hash: hash,
         singpass_verified_at: new Date().toISOString(),
+        lat: r.lat,
+        lon: r.lon,
       },
       { onConflict: "id" },
     );

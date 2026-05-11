@@ -92,6 +92,8 @@ async function seedProfiles() {
         role: p.role,
         nric_hash: hash,
         singpass_verified_at: new Date().toISOString(),
+        lat: p.lat ?? null,
+        lon: p.lon ?? null,
       },
       { onConflict: "id" },
     );

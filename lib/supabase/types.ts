@@ -26,6 +26,8 @@ export interface Profile {
   role: Role;
   nric_hash: string | null;
   singpass_verified_at: string | null;
+  lat: number | null;
+  lon: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -122,4 +124,5 @@ export interface MatchGigRow {
   location: string | null;
   score: number;
   applications_close_at: string | null;
+  distance_km: number | null;
 }

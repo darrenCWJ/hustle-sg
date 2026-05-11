@@ -319,9 +319,16 @@ export function FeedClientPage({ matches, initialSavedIds = [] }: FeedClientPage
                     </div>
                   )}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 10, borderTop: "1px dashed var(--color-line)" }}>
-                    <div style={{ fontSize: 12, color: "var(--color-ink-soft)" }}>
+                    <div style={{ fontSize: 12, color: "var(--color-ink-soft)", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                       <span style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 700, color: "var(--color-ink)" }}>{formatSgd(m.budget_cents)}</span>
-                      {m.employer_display_name && <span> · {m.employer_display_name}</span>}
+                      {m.employer_display_name && <span>· {m.employer_display_name}</span>}
+                      {m.distance_km != null && (
+                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, padding: "2px 7px", borderRadius: 999, background: "var(--color-muted)", color: "var(--color-ink-soft)" }}>
+                          {m.distance_km < 1
+                            ? `${Math.round(m.distance_km * 1000)} m`
+                            : `${m.distance_km.toFixed(1)} km`}
+                        </span>
+                      )}
                     </div>
                     <Link href={`/gigs/${m.gig_id}`} style={{ fontSize: 13, fontWeight: 600, color: "var(--color-ink)" }}>
                       View →
