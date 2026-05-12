@@ -118,14 +118,9 @@ export default async function ProfilePage({
                 Edit profile
               </Link>
             ) : (
-              <>
-                <Link href="/singpass" style={{ padding: "9px 18px", borderRadius: 999, background: "var(--color-ink)", color: "var(--color-surface)", fontSize: 13, fontWeight: 600 }}>
-                  Hire for a gig
-                </Link>
-                <Link href="/gigs/new" style={{ padding: "9px 18px", borderRadius: 999, border: "1px solid var(--color-line)", fontSize: 13, fontWeight: 600 }}>
-                  Post an assignment
-                </Link>
-              </>
+              <Link href="/singpass" style={{ padding: "9px 18px", borderRadius: 999, background: "var(--color-ink)", color: "var(--color-surface)", fontSize: 13, fontWeight: 600 }}>
+                Hire for a gig
+              </Link>
             )}
           </div>
 

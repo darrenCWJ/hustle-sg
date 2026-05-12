@@ -198,7 +198,9 @@ export function GigsClientPage({ gigs }: { gigs: Gig[] }) {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("all");
   const [loc, setLoc] = useState("all");
-  const [maxBudget, setMaxBudget] = useState(2000000);
+  const [budgetKind, setBudgetKind] = useState<"all" | "fixed" | "hourly">("all");
+  const [maxFixed, setMaxFixed] = useState(2000000);
+  const [maxHourly, setMaxHourly] = useState(20000);
   const [sort, setSort] = useState("new");
 
   const cats = Array.from(new Set(gigs.map((g) => g.category).filter(Boolean))) as string[];
@@ -216,18 +218,29 @@ export function GigsClientPage({ gigs }: { gigs: Gig[] }) {
       if (cat !== "all" && g.category?.toLowerCase() !== cat.toLowerCase()) return false;
       if (loc === "remote" && !g.location?.toLowerCase().includes("remote")) return false;
       if (loc === "inperson" && g.location?.toLowerCase().includes("remote")) return false;
-      if (g.budget_cents > maxBudget) return false;
+      if (budgetKind !== "all" && g.budget_kind !== budgetKind) return false;
+      if (budgetKind === "fixed" && g.budget_cents > maxFixed) return false;
+      if (budgetKind === "hourly" && g.budget_cents > maxHourly) return false;
       return true;
     });
     if (sort === "budget") list.sort((a, b) => b.budget_cents - a.budget_cents);
     if (sort === "new") list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     return list;
-  }, [gigs, q, cat, loc, maxBudget, sort]);
+  }, [gigs, q, cat, loc, budgetKind, maxFixed, maxHourly, sort]);
 
   return (
-    <main style={{ maxWidth: 1320, margin: "0 auto", padding: "50px 28px 80px" }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "end", marginBottom: 30, gap: 20, flexWrap: "wrap" }}>
+    <main style={{ maxWidth: 1320, margin: "0 auto", padding: "0 28px", display: "flex", flexDirection: "column", height: "calc(100vh - 84px)", overflow: "hidden" }}>
+      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "end", paddingTop: 50, marginBottom: 30, gap: 20, flexWrap: "wrap", flexShrink: 0 }}>
         <div>
+          <div style={{ display: "inline-flex", borderRadius: 999, background: "var(--color-muted)", padding: 3, gap: 2, marginBottom: 14 }}>
+            <span style={{ padding: "6px 16px", borderRadius: 999, background: "var(--color-ink)", color: "var(--color-surface)", fontSize: 13, fontWeight: 600 }}>
+              Gigs
+            </span>
+            <Link href="/instant" style={{ padding: "6px 16px", borderRadius: 999, fontSize: 13, fontWeight: 500, color: "var(--color-ink-soft)", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "oklch(52% 0.22 25)", display: "inline-block" }} />
+              Instant
+            </Link>
+          </div>
           <p style={{ fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-ink-soft)", margin: 0 }}>
             Browse · {gigs.length} open assignments
           </p>
@@ -256,13 +269,13 @@ export function GigsClientPage({ gigs }: { gigs: Gig[] }) {
             whiteSpace: "nowrap",
           }}
         >
-          + Post an assignment
+          + Post a gig
         </Link>
       </header>
 
-      <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: 28, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: 28, flex: 1, overflow: "hidden", minHeight: 0 }}>
         {/* Filters sidebar */}
-        <aside style={{ position: "sticky", top: 84, display: "flex", flexDirection: "column", gap: 16 }}>
+        <aside style={{ overflowY: "auto", display: "flex", flexDirection: "column", gap: 16, paddingBottom: 80 }}>
           <div
             style={{
               padding: 18,
@@ -306,25 +319,57 @@ export function GigsClientPage({ gigs }: { gigs: Gig[] }) {
             <FilterRow active={loc === "inperson"} onClick={() => setLoc("inperson")}>In-person / hybrid</FilterRow>
           </FilterGroup>
 
-          <FilterGroup label={`Budget · up to S$${(maxBudget / 100).toLocaleString()}`}>
-            <input
-              type="range"
-              min="50000"
-              max="2000000"
-              step="50000"
-              value={maxBudget}
-              onChange={(e) => setMaxBudget(parseInt(e.target.value))}
-              style={{ width: "100%", accentColor: "var(--color-accent)" }}
-            />
-            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--color-ink-soft)", marginTop: 4 }}>
-              <span>S$0</span>
-              <span>S$20k</span>
-            </div>
+          <FilterGroup label="Budget">
+            <FilterRow active={budgetKind === "all"} onClick={() => setBudgetKind("all")}>Any type</FilterRow>
+            <FilterRow active={budgetKind === "fixed"} onClick={() => setBudgetKind("fixed")}>Fixed price</FilterRow>
+            <FilterRow active={budgetKind === "hourly"} onClick={() => setBudgetKind("hourly")}>Hourly rate</FilterRow>
+            {budgetKind === "fixed" && (
+              <div style={{ marginTop: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 12, marginBottom: 6 }}>
+                  <span style={{ color: "var(--color-ink-soft)" }}>Up to</span>
+                  <span style={{ fontWeight: 700 }}>S${(maxFixed / 100).toLocaleString()}</span>
+                </div>
+                <input
+                  type="range"
+                  min="10000"
+                  max="2000000"
+                  step="10000"
+                  value={maxFixed}
+                  onChange={(e) => setMaxFixed(parseInt(e.target.value))}
+                  style={{ width: "100%", accentColor: "var(--color-accent)" }}
+                />
+                <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--color-ink-soft)", marginTop: 4 }}>
+                  <span>S$100</span>
+                  <span>S$20k</span>
+                </div>
+              </div>
+            )}
+            {budgetKind === "hourly" && (
+              <div style={{ marginTop: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 12, marginBottom: 6 }}>
+                  <span style={{ color: "var(--color-ink-soft)" }}>Up to</span>
+                  <span style={{ fontWeight: 700 }}>S${(maxHourly / 100).toLocaleString()}/hr</span>
+                </div>
+                <input
+                  type="range"
+                  min="1000"
+                  max="20000"
+                  step="500"
+                  value={maxHourly}
+                  onChange={(e) => setMaxHourly(parseInt(e.target.value))}
+                  style={{ width: "100%", accentColor: "var(--color-accent)" }}
+                />
+                <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--color-ink-soft)", marginTop: 4 }}>
+                  <span>S$10/hr</span>
+                  <span>S$200/hr</span>
+                </div>
+              </div>
+            )}
           </FilterGroup>
         </aside>
 
         {/* Results */}
-        <div>
+        <div style={{ overflowY: "auto", paddingBottom: 80 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <p style={{ margin: 0, fontSize: 13, color: "var(--color-ink-soft)" }}>
               <b style={{ color: "var(--color-ink)", fontFamily: "var(--font-mono)" }}>{filtered.length}</b> gigs

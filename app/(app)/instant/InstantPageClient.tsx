@@ -87,8 +87,12 @@ function DistanceDots({ km }: { km: number | null }) {
   );
 }
 
-function GuestSidebar() {
-  const [kmMax, setKmMax] = useState(15);
+function GuestSidebar({ kmMax, setKmMax, hasLocation, geoLoading }: {
+  kmMax: number;
+  setKmMax: (v: number) => void;
+  hasLocation: boolean;
+  geoLoading: boolean;
+}) {
   return (
     <aside>
       <div className="grain" style={{ position: "relative", padding: 24, borderRadius: 20, background: "var(--color-ink)", color: "var(--color-surface)", marginBottom: 16 }}>
@@ -131,13 +135,18 @@ function GuestSidebar() {
         <p style={{ fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-ink-soft)", margin: "0 0 12px" }}>
           Filters
         </p>
-        <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <label style={{ display: "flex", flexDirection: "column", gap: 8, opacity: hasLocation ? 1 : 0.5 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: 12, color: "var(--color-ink-soft)" }}>Max distance</span>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700 }}>{kmMax} km</span>
           </div>
-          <input type="range" min={1} max={30} value={kmMax} onChange={(e) => setKmMax(Number(e.target.value))} style={{ width: "100%", accentColor: "var(--color-ink)" }} />
+          <input type="range" min={1} max={30} value={kmMax} onChange={(e) => setKmMax(Number(e.target.value))} style={{ width: "100%", accentColor: "var(--color-ink)" }} disabled={!hasLocation} />
         </label>
+        {!hasLocation && (
+          <p style={{ fontSize: 11, color: "var(--color-ink-soft)", margin: "8px 0 0", lineHeight: 1.4 }}>
+            {geoLoading ? "Locating you…" : "Allow location access to filter by distance."}
+          </p>
+        )}
       </div>
     </aside>
   );
@@ -242,6 +251,17 @@ export function InstantPageClient({ isLoggedIn, isEmployer, initialGigs }: Props
     <main style={{ maxWidth: 1320, margin: "0 auto", padding: isMobile ? "28px 16px 60px" : "50px 28px 80px" }}>
       {/* Header */}
       <header style={{ marginBottom: 32 }}>
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ display: "inline-flex", borderRadius: 999, background: "var(--color-muted)", padding: 3, gap: 2 }}>
+            <Link href="/gigs" style={{ padding: "6px 16px", borderRadius: 999, fontSize: 13, fontWeight: 500, color: "var(--color-ink-soft)", textDecoration: "none" }}>
+              Gigs
+            </Link>
+            <span style={{ padding: "6px 16px", borderRadius: 999, background: "var(--color-ink)", color: "var(--color-surface)", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "oklch(52% 0.22 25)", display: "inline-block" }} />
+              Instant
+            </span>
+          </div>
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 999, background: "oklch(52% 0.22 25)", color: "#fff", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>
             <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff", animation: "pulse 1.4s ease-in-out infinite" }} />
@@ -318,7 +338,7 @@ export function InstantPageClient({ isLoggedIn, isEmployer, initialGigs }: Props
                   </button>
                 ))}
               </div>
-              <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: 8, opacity: userLat !== null ? 1 : 0.5 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontSize: 12, color: "var(--color-ink-soft)" }}>Max distance</span>
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700 }}>{kmMax} km</span>
@@ -327,12 +347,23 @@ export function InstantPageClient({ isLoggedIn, isEmployer, initialGigs }: Props
                   type="range" min={1} max={30} value={kmMax}
                   onChange={(e) => setKmMax(Number(e.target.value))}
                   style={{ width: "100%", accentColor: "var(--color-ink)" }}
+                  disabled={userLat === null}
                 />
               </label>
+              {userLat === null && (
+                <p style={{ fontSize: 11, color: "var(--color-ink-soft)", margin: "8px 0 0", lineHeight: 1.4 }}>
+                  {geoLoading ? "Locating you…" : "Allow location access to filter by distance."}
+                </p>
+              )}
             </div>
           </aside>
         ) : (
-          <GuestSidebar />
+          <GuestSidebar
+            kmMax={kmMax}
+            setKmMax={setKmMax}
+            hasLocation={userLat !== null}
+            geoLoading={geoLoading}
+          />
         )}
 
         {/* Gig grid */}
