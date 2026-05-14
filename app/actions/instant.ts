@@ -8,6 +8,7 @@ import { buildGigEmbeddingText, generateEmbedding } from "@/lib/ai/embeddings";
 export interface InstantGigRow {
   id: string;
   title: string;
+  description: string;
   location: string;
   lat: number | null;
   lon: number | null;
@@ -15,6 +16,10 @@ export interface InstantGigRow {
   budget_kind: "fixed" | "hourly";
   instant_urgency: "now" | "today" | "weekend";
   skills_required: string[];
+  duration_label: string | null;
+  hours_required: number | null;
+  start_time: string | null;
+  end_time: string | null;
   employerName: string;
   score: number;
 }
@@ -36,13 +41,16 @@ export async function fetchTodayInstantGigs(userId?: string): Promise<InstantGig
 
   const { data: gigs, error } = await service
     .from("gigs")
-    .select("id, title, location, lat, lon, budget_cents, budget_kind, instant_urgency, skills_required, employer_id")
+    .select("id, title, description, location, lat, lon, budget_cents, budget_kind, instant_urgency, skills_required, duration_label, hours_required, start_time, end_time, employer_id")
     .eq("is_instant", true)
     .eq("status", "open")
-    .gte("start_at", sgtMidnight.toISOString())
-    .lt("start_at", sgtEndOfDay.toISOString());
+    .or(
+      `start_at.is.null,and(start_at.gte.${sgtMidnight.toISOString()},start_at.lt.${sgtEndOfDay.toISOString()})`,
+    )
+    .order("created_at", { ascending: false })
+    .limit(30);
 
-  if (error || !gigs?.length) return [];
+  if (error) return [];
 
   // Fetch employer display names
   const employerIds = [...new Set(gigs.map((g) => g.employer_id))];
@@ -71,6 +79,7 @@ export async function fetchTodayInstantGigs(userId?: string): Promise<InstantGig
   return gigs.map((g) => ({
     id: g.id,
     title: g.title,
+    description: g.description ?? "",
     location: g.location,
     lat: g.lat,
     lon: g.lon,
@@ -78,6 +87,10 @@ export async function fetchTodayInstantGigs(userId?: string): Promise<InstantGig
     budget_kind: g.budget_kind,
     instant_urgency: g.instant_urgency,
     skills_required: g.skills_required ?? [],
+    duration_label: g.duration_label ?? null,
+    hours_required: g.hours_required ?? null,
+    start_time: g.start_time ?? null,
+    end_time: g.end_time ?? null,
     employerName: nameMap[g.employer_id] ?? "Employer",
     score: scoreMap[g.id] ?? 0.5,
   }));

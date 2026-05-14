@@ -19,7 +19,7 @@ export default async function ProfilePage({
     .maybeSingle();
   if (!profile) notFound();
 
-  const [{ data: certs }, { data: items }, { data: hiredApps }] = await Promise.all([
+  const [{ data: certs }, { data: items }, { data: hiredApps }, { data: workHistory }] = await Promise.all([
     supabase
       .from("certifications")
       .select("*")
@@ -37,6 +37,11 @@ export default async function ProfilePage({
       .eq("status", "hired")
       .order("created_at", { ascending: false })
       .limit(6),
+    supabase
+      .from("work_history")
+      .select("*")
+      .eq("user_id", profile.id)
+      .order("start_date", { ascending: false }),
   ]);
 
   const {
@@ -45,7 +50,7 @@ export default async function ProfilePage({
   const isOwner = user?.id === profile.id;
 
   const verified = Boolean(profile.singpass_verified_at);
-  const verifiedCerts = (certs ?? []).filter((c: any) => c.verified_at);
+  const verifiedCerts = (certs ?? []).filter((c: any) => c.verified);
   const totalCerts = (certs ?? []).length;
   const hiredCount = (hiredApps ?? []).length;
 
@@ -118,8 +123,8 @@ export default async function ProfilePage({
                 Edit profile
               </Link>
             ) : (
-              <Link href="/singpass" style={{ padding: "9px 18px", borderRadius: 999, background: "var(--color-ink)", color: "var(--color-surface)", fontSize: 13, fontWeight: 600 }}>
-                Hire for a gig
+              <Link href="/gigs/new" style={{ padding: "9px 18px", borderRadius: 999, background: "var(--color-ink)", color: "var(--color-surface)", fontSize: 13, fontWeight: 600 }}>
+                Post a gig →
               </Link>
             )}
           </div>
@@ -287,6 +292,35 @@ export default async function ProfilePage({
         )}
       </section>
 
+      {/* ── Work History ── */}
+      {workHistory && workHistory.length > 0 && (
+        <section style={{ marginBottom: 70 }}>
+          <h2 style={{ fontFamily: "var(--font-display)", fontSize: 38, margin: "0 0 24px", letterSpacing: "-0.03em" }}>
+            Work History
+          </h2>
+          <div style={{ position: "relative", paddingLeft: 24 }}>
+            <div style={{ position: "absolute", left: 5, top: 6, bottom: 0, width: 2, background: "var(--color-line)" }} />
+            {workHistory.map((w: any, i: number) => (
+              <div key={w.id} style={{ position: "relative", marginBottom: 28, paddingLeft: 20 }}>
+                <span style={{ position: "absolute", left: -22, top: 6, width: 12, height: 12, borderRadius: "50%", background: i === 0 ? "var(--color-ink)" : "var(--color-surface)", border: "2px solid var(--color-ink)" }} />
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 10 }}>
+                  <div>
+                    <h4 style={{ fontFamily: "var(--font-display)", fontSize: 18, margin: 0, letterSpacing: "-0.02em" }}>{w.title}</h4>
+                    <p style={{ fontSize: 13, color: "var(--color-ink-soft)", margin: "3px 0 0" }}>{w.company}</p>
+                    {w.description && (
+                      <p style={{ fontSize: 13, color: "var(--color-ink-mute)", margin: "6px 0 0", lineHeight: 1.5, maxWidth: 560 }}>{w.description}</p>
+                    )}
+                  </div>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--color-ink-mute)", whiteSpace: "nowrap" }}>
+                    {formatWorkDate(w.start_date)} – {w.is_current ? "Present" : formatWorkDate(w.end_date)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* ── Credentials ── */}
       <section style={{ marginBottom: 70 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end", marginBottom: 20 }}>
@@ -313,6 +347,13 @@ export default async function ProfilePage({
       </section>
     </main>
   );
+}
+
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function formatWorkDate(ym: string | null): string {
+  if (!ym) return "";
+  const [y, m] = ym.split("-");
+  return `${MONTHS[parseInt(m) - 1]} ${y}`;
 }
 
 function PortfolioCell({ item, cellClass }: { item: any; cellClass: string }) {
@@ -365,7 +406,7 @@ function PortfolioCell({ item, cellClass }: { item: any; cellClass: string }) {
 }
 
 function CertCard({ cert }: { cert: any }) {
-  const isVerified = Boolean(cert.verified_at);
+  const isVerified = Boolean(cert.verified);
   const bg = isVerified ? "var(--color-trust-soft)" : "oklch(96% 0.04 80)";
   const ink = isVerified ? "var(--color-trust-ink)" : "oklch(35% 0.1 78)";
   const initials = cert.issuer.split(" ").map((w: string) => w[0]).slice(0, 2).join("");

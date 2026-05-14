@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { isValidNric } from "@/lib/singpass/nric";
-import { mockSingpassSignIn } from "@/app/(auth)/singpass/actions";
+import { mockSingpassSignIn, checkNricExists } from "@/app/(auth)/singpass/actions";
 import { MOCK_MYINFO } from "@/lib/singpass/mock-profiles";
 
 interface Props {
@@ -14,9 +14,21 @@ export function NRICForm({ next = "/feed" }: Props) {
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [isReturning, setIsReturning] = useState<boolean | null>(null);
 
   const isValid = isValidNric(nric);
-  const needsName = isValid && !MOCK_MYINFO[nric];
+  const hasMockProfile = isValid && Boolean(MOCK_MYINFO[nric]);
+  const needsName = isValid && !hasMockProfile && isReturning === false;
+
+  useEffect(() => {
+    if (!isValid) { setIsReturning(null); return; }
+    if (hasMockProfile) { setIsReturning(true); return; }
+    let cancelled = false;
+    checkNricExists(nric).then((exists) => {
+      if (!cancelled) setIsReturning(exists);
+    });
+    return () => { cancelled = true; };
+  }, [nric, isValid, hasMockProfile]);
 
   const onContinue = () => {
     if (!isValid) {

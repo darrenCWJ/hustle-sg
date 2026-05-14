@@ -34,9 +34,11 @@ function GigRow({ gig }: { gig: Gig }) {
   const [hovered, setHovered] = useState(false);
   const budget = formatSgd(gig.budget_cents);
   const employerVerified = Boolean(gig.employer?.singpass_verified_at);
-  const isClosed = gig.applications_close_at
-    ? new Date(gig.applications_close_at) < new Date()
-    : false;
+  const now = new Date();
+  const closeAt = gig.applications_close_at ? new Date(gig.applications_close_at) : null;
+  const isClosed = closeAt ? closeAt < now : false;
+  const hoursLeft = closeAt && !isClosed ? (closeAt.getTime() - now.getTime()) / 3600000 : null;
+  const isClosingSoon = hoursLeft !== null && hoursLeft < 24;
 
   return (
     <article
@@ -138,6 +140,21 @@ function GigRow({ gig }: { gig: Gig }) {
               color: "#e55",
             }}>
               Closed
+            </span>
+          )}
+          {isClosingSoon && !isClosed && (
+            <span style={{
+              fontSize: 10,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              fontWeight: 700,
+              padding: "3px 8px",
+              borderRadius: 999,
+              background: "oklch(96% 0.04 38)",
+              color: "oklch(38% 0.12 38)",
+              border: "1px solid oklch(88% 0.06 38)",
+            }}>
+              ⚡ {Math.ceil(hoursLeft!)}h left
             </span>
           )}
         </div>

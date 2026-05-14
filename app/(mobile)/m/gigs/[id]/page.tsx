@@ -32,14 +32,19 @@ export default async function MobileGigDetailPage({
   } = await supabase.auth.getUser();
 
   let existingStatus: string | null = null;
+  let userRole: string | null = null;
   if (user) {
-    const { data } = await supabase
-      .from("applications")
-      .select("status")
-      .eq("gig_id", id)
-      .eq("applicant_id", user.id)
-      .maybeSingle();
-    existingStatus = data?.status ?? null;
+    const [appRes, profileRes] = await Promise.all([
+      supabase
+        .from("applications")
+        .select("status")
+        .eq("gig_id", id)
+        .eq("applicant_id", user.id)
+        .maybeSingle(),
+      supabase.from("profiles").select("role").eq("id", user.id).single(),
+    ]);
+    existingStatus = appRes.data?.status ?? null;
+    userRole = profileRes.data?.role ?? null;
   }
 
   const employer = Array.isArray(gig.employer) ? gig.employer[0] : gig.employer;
@@ -278,10 +283,10 @@ export default async function MobileGigDetailPage({
       <div
         style={{
           position: "absolute",
-          bottom: 58,
+          bottom: "calc(58px + env(safe-area-inset-bottom, 0px))",
           left: 0,
           right: 0,
-          padding: "12px 20px",
+          padding: "12px 20px calc(12px + env(safe-area-inset-bottom, 0px))",
           background: "var(--color-surface-raised)",
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
@@ -293,6 +298,8 @@ export default async function MobileGigDetailPage({
           isLoggedIn={!!user}
           existingStatus={existingStatus}
           isInstant={Boolean(gig.is_instant)}
+          isOwnGig={!!user && user.id === gig.employer_id}
+          isEmployerOnly={userRole === "employer"}
         />
       </div>
     </div>

@@ -3,6 +3,7 @@
 
 export type Role = "freelancer" | "employer" | "both";
 export type CertKind = "wsq" | "university" | "accreditation" | "other";
+export type VerificationStatus = "pending" | "verified" | "rejected" | "manual_review";
 export type PortfolioKind = "video" | "website" | "image" | "writeup";
 export type GigStatus = "open" | "closed" | "filled";
 export type BudgetKind = "fixed" | "hourly";
@@ -41,7 +42,22 @@ export interface Certification {
   issued_at: string | null;
   doc_url: string | null;
   verified: boolean;
+  verification_status: VerificationStatus;
+  verification_method: string | null;
+  verified_at: string | null;
   extracted_skills: string[];
+  created_at: string;
+}
+
+export interface WorkHistory {
+  id: string;
+  user_id: string;
+  company: string;
+  title: string;
+  description: string | null;
+  start_date: string;
+  end_date: string | null;
+  is_current: boolean;
   created_at: string;
 }
 
@@ -69,7 +85,22 @@ export interface Gig {
   budget_kind: BudgetKind;
   category: string | null;
   status: GigStatus;
+  requires_employer_approval: boolean;
+  is_instant: boolean;
+  instant_urgency: string | null;
+  lat: number | null;
+  lon: number | null;
+  start_at: string | null;
   applications_close_at: string | null;
+  starts_at: string | null;
+  ends_at: string | null;
+  duration_label: string | null;
+  hours_required: number | null;
+  recurrence_cadence: string | null;
+  milestones: unknown[];
+  start_time: string | null;
+  end_time: string | null;
+  days_of_week: number[];
   created_at: string;
 }
 

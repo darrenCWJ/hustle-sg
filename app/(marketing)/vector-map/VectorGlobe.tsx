@@ -162,8 +162,9 @@ function NearestLines({
   k?: number;
 }) {
   const nearest = useMemo(() => {
+    const oppositeKind = selected.kind === "profile" ? "gig" : "profile";
     return [...all]
-      .filter((p) => p.id !== selected.id)
+      .filter((p) => p.kind === oppositeKind)
       .sort((a, b) => dist(a, selected) - dist(b, selected))
       .slice(0, k);
   }, [selected, all, k]);
@@ -276,15 +277,22 @@ export default function VectorGlobe({
 
   const nearestIds = useMemo(() => {
     if (!selected) return new Set<string>();
-    const others = points.filter((p) => p.id !== selected.id);
+    const oppositeKind = selected.kind === "profile" ? "gig" : "profile";
+    const others = points.filter((p) => p.kind === oppositeKind);
     others.sort((a, b) => dist(a, selected) - dist(b, selected));
     return new Set(others.slice(0, 5).map((p) => p.id));
   }, [selected, points]);
 
-  const handleSelect = useCallback(
-    (p: VectorPoint) => setSelected((s) => (s?.id === p.id ? null : p)),
-    [],
-  );
+  const handleSelect = useCallback((p: VectorPoint) => {
+    setSelected((s) => {
+      if (s?.id === p.id) {
+        setFilter("all");
+        return null;
+      }
+      setFilter(p.kind === "profile" ? "gig" : "profile");
+      return p;
+    });
+  }, []);
 
   const isEmpty = points.length === 0;
 
@@ -434,7 +442,7 @@ export default function VectorGlobe({
             </p>
           )}
           <p style={{ fontSize: 12, color: "#475569", margin: 0 }}>
-            Lines show 5 nearest neighbours in vector space
+            Lines show 5 nearest {selected.kind === "profile" ? "matching gigs" : "matching freelancers"}
           </p>
           <button
             onClick={() => setSelected(null)}
@@ -501,7 +509,7 @@ export default function VectorGlobe({
       <Canvas
         camera={{ position: [0, 2, 12], fov: 60 }}
         style={{ background: "transparent" }}
-        onPointerMissed={() => setSelected(null)}
+        onPointerMissed={() => { setSelected(null); setFilter("all"); }}
       >
         <ambientLight intensity={0.3} />
         <pointLight position={[10, 10, 10]} intensity={1.2} color="#ffffff" />

@@ -29,9 +29,8 @@ export default async function MobileFeedPage() {
     )
     .eq("is_instant", true)
     .eq("status", "open")
-    .gte("start_at", start.toISOString())
-    .lt("start_at", end.toISOString())
-    .order("start_at", { ascending: true })
+    .or(`start_at.is.null,and(start_at.gte.${start.toISOString()},start_at.lt.${end.toISOString()})`)
+    .order("created_at", { ascending: false })
     .limit(20);
 
   const employerIds = [...new Set((raw ?? []).map((g) => g.employer_id))];

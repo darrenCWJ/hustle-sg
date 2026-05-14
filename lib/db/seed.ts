@@ -36,12 +36,15 @@ async function wipe() {
 
   // Leaf tables first
   await admin.from("notifications").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  await admin.from("push_subscriptions").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   await admin.from("interview_responses").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   await admin.from("applications").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   await admin.from("interview_questions").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  await admin.from("saved_gigs").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   await admin.from("gigs").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   await admin.from("certifications").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   await admin.from("portfolio_items").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  await admin.from("work_history").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   await admin.from("user_availability").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   await admin.from("profiles").delete().neq("id", "00000000-0000-0000-0000-000000000000");
 
@@ -102,31 +105,47 @@ async function seedProfiles() {
     handleToId[p.handle] = user.id;
 
     if (p.certs.length) {
-      await admin.from("certifications").insert(
-        p.certs.map((c) => ({
-          user_id: user.id,
-          kind: c.kind,
-          issuer: c.issuer,
-          title: c.title,
-          issued_at: c.issued_at,
-          extracted_skills: c.extracted_skills,
-          verified: c.verified ?? false,
-        })),
-      );
+      const { count: certCount } = await admin
+        .from("certifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id);
+      if (!certCount) {
+        const now = new Date().toISOString();
+        await admin.from("certifications").insert(
+          p.certs.map((c) => ({
+            user_id: user.id,
+            kind: c.kind,
+            issuer: c.issuer,
+            title: c.title,
+            issued_at: c.issued_at,
+            extracted_skills: c.extracted_skills,
+            verified: c.verified ?? false,
+            verification_status: c.verified ? "verified" : "pending",
+            verification_method: c.verified ? "singpass" : null,
+            verified_at: c.verified ? now : null,
+          })),
+        );
+      }
     }
 
     if (p.portfolio.length) {
-      await admin.from("portfolio_items").insert(
-        p.portfolio.map((pp, i) => ({
-          user_id: user.id,
-          kind: pp.kind,
-          title: pp.title,
-          description: pp.description ?? null,
-          external_url: pp.external_url ?? null,
-          tags: pp.tags,
-          display_order: i,
-        })),
-      );
+      const { count: portfolioCount } = await admin
+        .from("portfolio_items")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id);
+      if (!portfolioCount) {
+        await admin.from("portfolio_items").insert(
+          p.portfolio.map((pp, i) => ({
+            user_id: user.id,
+            kind: pp.kind,
+            title: pp.title,
+            description: pp.description ?? null,
+            external_url: pp.external_url ?? null,
+            tags: pp.tags,
+            display_order: i,
+          })),
+        );
+      }
     }
 
     console.log(`  → ${p.handle} (${p.role})`);
@@ -159,6 +178,15 @@ async function seedGigs(handleToId: Record<string, string>) {
         budget_cents: g.budget_cents,
         budget_kind: g.budget_kind,
         status: "open",
+        requires_employer_approval: g.requires_employer_approval ?? null,
+        is_instant: g.is_instant ?? null,
+        instant_urgency: g.instant_urgency ?? null,
+        applications_close_at: g.applications_close_at ?? null,
+        starts_at: g.starts_at ?? null,
+        ends_at: g.ends_at ?? null,
+        duration_label: g.duration_label ?? null,
+        lat: g.lat ?? null,
+        lon: g.lon ?? null,
       })
       .select("id")
       .single();

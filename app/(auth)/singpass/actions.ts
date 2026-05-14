@@ -10,6 +10,18 @@ import {
 import { MOCK_MYINFO } from "@/lib/singpass/mock-profiles";
 import { redirect } from "next/navigation";
 
+export async function checkNricExists(nric: string): Promise<boolean> {
+  if (!isValidNric(nric)) return false;
+  const hash = await hashNric(nric);
+  const admin = createServiceClient();
+  const { data } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("nric_hash", hash)
+    .maybeSingle();
+  return Boolean(data);
+}
+
 export async function mockSingpassSignIn(formData: FormData) {
   const nric = String(formData.get("nric") ?? "").trim().toUpperCase();
   const next = String(formData.get("next") ?? "/feed");
@@ -62,21 +74,26 @@ export async function mockSingpassSignIn(formData: FormData) {
 
   if (!existing) {
     const prefill = MOCK_MYINFO[nric];
-    const handleBase =
-      prefill?.handle_hint ?? `user_${hash.slice(0, 6)}`;
+    const handleBase = prefill?.handle_hint ?? `user_${hash.slice(0, 6)}`;
     const handle = await uniqueHandle(handleBase);
 
-    // Use service client to bypass RLS for initial insert
-    await admin.from("profiles").insert({
-      id: user.id,
-      handle,
-      display_name: prefill?.full_name ?? displayName ?? `User ${hash.slice(0, 4)}`,
-      headline: prefill?.headline ?? null,
-      bio: prefill?.bio ?? null,
-      role: prefill?.suggested_role ?? "freelancer",
-      nric_hash: hash,
-      singpass_verified_at: new Date().toISOString(),
-    });
+    const { error: insertErr } = await admin.from("profiles").upsert(
+      {
+        id: user.id,
+        handle,
+        display_name: prefill?.full_name ?? displayName ?? `User ${hash.slice(0, 4)}`,
+        headline: prefill?.headline ?? null,
+        bio: prefill?.bio ?? null,
+        role: prefill?.suggested_role ?? "freelancer",
+        nric_hash: hash,
+        singpass_verified_at: new Date().toISOString(),
+      },
+      { onConflict: "id" },
+    );
+
+    if (insertErr) {
+      return { ok: false as const, error: `Profile creation failed: ${insertErr.message}` };
+    }
 
     redirect(`/onboarding?next=${encodeURIComponent(next)}`);
   }
@@ -87,7 +104,7 @@ export async function mockSingpassSignIn(formData: FormData) {
     .update({ singpass_verified_at: new Date().toISOString(), nric_hash: hash })
     .eq("id", user.id);
 
-  // Auto-verify any WSQ certs for this user via Singpass trust
+  // Auto-verify all pending certs for this user via Singpass trust
   await admin
     .from("certifications")
     .update({
@@ -97,7 +114,6 @@ export async function mockSingpassSignIn(formData: FormData) {
       verified: true,
     })
     .eq("user_id", user.id)
-    .eq("kind", "wsq")
     .eq("verification_status", "pending");
 
   redirect(next);

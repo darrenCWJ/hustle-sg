@@ -5,7 +5,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 
 export async function decideApplication(
   applicationId: string,
-  decision: "hired" | "shortlisted" | "rejected",
+  decision: "hired" | "shortlisted" | "offered" | "rejected",
 ) {
   const supabase = await createClient();
   const {

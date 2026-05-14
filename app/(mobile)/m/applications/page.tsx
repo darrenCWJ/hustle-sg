@@ -149,7 +149,7 @@ export default async function MobileApplicationsPage() {
               return (
                 <Link
                   key={app.id}
-                  href={`/gigs/${gig.id}`}
+                  href={`/m/gigs/${gig.id}`}
                   style={{
                     display: "block",
                     borderRadius: 14,

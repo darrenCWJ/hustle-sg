@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { signOut } from "@/app/actions/auth";
 import { NavLinks } from "./NavLinks";
+import { UserMenu } from "./UserMenu";
 
 export async function SiteNav() {
   const supabase = await createClient();
@@ -11,7 +11,7 @@ export async function SiteNav() {
 
   const [profileRes, notifsRes] = await Promise.all([
     user
-      ? supabase.from("profiles").select("handle, display_name").eq("id", user.id).single()
+      ? supabase.from("profiles").select("handle, display_name, role").eq("id", user.id).single()
       : Promise.resolve({ data: null }),
     user
       ? supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", user.id).is("read_at", null)
@@ -119,94 +119,26 @@ export async function SiteNav() {
                     </span>
                   )}
                 </Link>
-                <Link
-                  href={`/profile/${profile.handle}`}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "5px 12px 5px 5px",
-                    borderRadius: 999,
-                    background: "var(--color-muted)",
-                    fontSize: 13,
-                    fontWeight: 600,
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 26,
-                      height: 26,
-                      borderRadius: "50%",
-                      background: "oklch(78% 0.08 38)",
-                      color: "oklch(22% 0.08 38)",
-                      display: "grid",
-                      placeItems: "center",
-                      fontSize: 11,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {(profile.display_name ?? "?")
-                      .split(" ")
-                      .map((s: string) => s[0])
-                      .join("")
-                      .slice(0, 2)
-                      .toUpperCase()}
-                  </span>
-                  {profile.display_name?.split(" ")[0]}
-                </Link>
-                <Link
-                  href="/dashboard"
-                  style={{
-                    padding: "8px 16px",
-                    borderRadius: 999,
-                    background: "var(--color-ink)",
-                    color: "var(--color-surface)",
-                    fontSize: 13,
-                    fontWeight: 600,
-                  }}
-                >
-                  Dashboard
-                </Link>
-                <form action={signOut}>
-                  <button
-                    type="submit"
-                    style={{
-                      padding: "8px 14px",
-                      borderRadius: 999,
-                      background: "transparent",
-                      border: "1px solid var(--color-line)",
-                      color: "var(--color-ink-soft)",
-                      fontSize: 13,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Sign out
-                  </button>
-                </form>
+                <UserMenu
+                  displayName={profile.display_name ?? "User"}
+                  handle={profile.handle ?? ""}
+                  role={profile.role ?? "freelancer"}
+                />
               </>
             ) : (
-              <>
-                <Link
-                  href="/singpass"
-                  style={{ fontSize: 13, fontWeight: 500, color: "var(--color-ink-soft)", padding: "6px 10px" }}
-                >
-                  Log in / Sign up
-                </Link>
-                <Link
-                  href="/singpass"
-                  style={{
-                    padding: "8px 16px",
-                    borderRadius: 999,
-                    background: "var(--color-ink)",
-                    color: "var(--color-surface)",
-                    fontSize: 13,
-                    fontWeight: 600,
-                  }}
-                >
-                  Get verified →
-                </Link>
-              </>
+              <Link
+                href="/singpass"
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: 999,
+                  background: "var(--color-ink)",
+                  color: "var(--color-surface)",
+                  fontSize: 13,
+                  fontWeight: 600,
+                }}
+              >
+                Sign in with Singpass
+              </Link>
             )}
           </div>
         </div>

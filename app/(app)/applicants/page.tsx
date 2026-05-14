@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/utils";
 import { RehireForm } from "./RehireForm";
+import { CloseGigButton } from "./CloseGigButton";
 
 const STATUS_CONFIG: Record<string, { bg: string; fg: string; label: string }> =
   {
@@ -42,19 +43,25 @@ function sc(status: string) {
   return STATUS_CONFIG[status] ?? STATUS_CONFIG.applied;
 }
 
-export default async function ApplicantsPage() {
+export default async function ApplicantsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ gig?: string }>;
+}) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/singpass?next=/applicants");
 
+  const { gig: filterGigId } = await searchParams;
+
   // All applications across all gigs this employer posted
   const { data: apps } = await supabase
     .from("applications")
     .select(
       `id, status, created_at, cover_note,
-       gigs!inner(id, title, employer_id),
+       gigs!inner(id, title, status, employer_id),
        applicant:profiles!applications_applicant_id_fkey(id, handle, display_name, headline, singpass_verified_at)`,
     )
     .eq("gigs.employer_id", user.id)
@@ -86,11 +93,11 @@ export default async function ApplicantsPage() {
   // Group by gig
   const byGig = new Map<
     string,
-    { title: string; apps: (typeof applications)[number][] }
+    { title: string; status: string; apps: (typeof applications)[number][] }
   >();
   for (const a of applications) {
     const gig = a.gigs as any;
-    if (!byGig.has(gig.id)) byGig.set(gig.id, { title: gig.title, apps: [] });
+    if (!byGig.has(gig.id)) byGig.set(gig.id, { title: gig.title, status: gig.status, apps: [] });
     byGig.get(gig.id)!.apps.push(a);
   }
 
@@ -244,7 +251,15 @@ export default async function ApplicantsPage() {
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-          {Array.from(byGig.entries()).map(([gigId, { title, apps: gigApps }]) => (
+          {filterGigId && byGig.has(filterGigId) && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 10, background: "var(--color-accent-soft)", color: "var(--color-accent-ink)", fontSize: 13 }}>
+              <span>Showing applicants for: <b>{byGig.get(filterGigId)!.title}</b></span>
+              <Link href="/applicants" style={{ marginLeft: "auto", fontSize: 12, fontWeight: 600, color: "var(--color-accent-ink)", textDecoration: "underline" }}>
+                Show all
+              </Link>
+            </div>
+          )}
+          {Array.from(byGig.entries()).filter(([gigId]) => !filterGigId || gigId === filterGigId).map(([gigId, { title, status: gigStatus, apps: gigApps }]) => (
             <section key={gigId}>
               <div
                 style={{
@@ -252,6 +267,7 @@ export default async function ApplicantsPage() {
                   alignItems: "center",
                   gap: 12,
                   marginBottom: 14,
+                  flexWrap: "wrap",
                 }}
               >
                 <h2
@@ -260,6 +276,7 @@ export default async function ApplicantsPage() {
                     fontSize: 22,
                     margin: 0,
                     letterSpacing: "-0.02em",
+                    opacity: gigStatus !== "open" ? 0.55 : 1,
                   }}
                 >
                   {title}
@@ -276,6 +293,11 @@ export default async function ApplicantsPage() {
                 >
                   {gigApps.length} applicant{gigApps.length !== 1 ? "s" : ""}
                 </span>
+                {gigStatus !== "open" && (
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: "var(--color-muted)", color: "var(--color-ink-soft)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                    {gigStatus}
+                  </span>
+                )}
                 <Link
                   href={`/gigs/${gigId}`}
                   style={{
@@ -287,6 +309,11 @@ export default async function ApplicantsPage() {
                 >
                   View gig →
                 </Link>
+                {gigStatus === "open" && (
+                  <span style={{ marginLeft: "auto" }}>
+                    <CloseGigButton gigId={gigId} />
+                  </span>
+                )}
               </div>
 
               <div
@@ -299,12 +326,15 @@ export default async function ApplicantsPage() {
                 {gigApps.map((a) => {
                   const applicant = a.applicant as any;
                   const config = sc(a.status);
-                  const initials = (applicant?.display_name ?? "?")
+                  const aName = applicant?.display_name ?? "?";
+                  const initials = aName
                     .split(" ")
                     .map((s: string) => s[0])
                     .join("")
                     .slice(0, 2)
                     .toUpperCase();
+                  const AVATAR_HUES = [250, 165, 340, 38, 260, 200, 78, 310, 190, 50];
+                  const aHue = AVATAR_HUES[(aName.charCodeAt(0) + (aName.charCodeAt(1) || 0)) % AVATAR_HUES.length];
                   const isVerified = Boolean(applicant?.singpass_verified_at);
 
                   return (
@@ -332,8 +362,8 @@ export default async function ApplicantsPage() {
                             width: 44,
                             height: 44,
                             borderRadius: "50%",
-                            background: "oklch(78% 0.08 250)",
-                            color: "oklch(22% 0.08 250)",
+                            background: `oklch(78% 0.08 ${aHue})`,
+                            color: `oklch(22% 0.08 ${aHue})`,
                             display: "grid",
                             placeItems: "center",
                             fontSize: 14,

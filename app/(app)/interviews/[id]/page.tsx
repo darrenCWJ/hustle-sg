@@ -18,13 +18,14 @@ export default async function InterviewPage({
 
   const { data: app } = await supabase
     .from("applications")
-    .select("id, applicant_id, gig_id, status, gigs(title, employer_id)")
+    .select("id, applicant_id, gig_id, status, gigs(title, employer_id), applicant:profiles!applications_applicant_id_fkey(display_name, handle)")
     .eq("id", id)
     .maybeSingle();
   if (!app) notFound();
 
   const isApplicant = app.applicant_id === user.id;
   const gig = (app.gigs ?? {}) as any;
+  const applicant = (app.applicant ?? {}) as any;
   const isEmployer = gig.employer_id === user.id;
   if (!isApplicant && !isEmployer) notFound();
 
@@ -55,7 +56,9 @@ export default async function InterviewPage({
 
   const statusLabel: Record<string, string> = {
     applied: "Applied",
-    interviewing: "Shortlisted",
+    interviewing: "Interviewing",
+    shortlisted: "Shortlisted",
+    offered: "Offer received",
     hired: "Hired",
     rejected: "Rejected",
     withdrawn: "Withdrawn",
@@ -63,7 +66,9 @@ export default async function InterviewPage({
 
   const statusColor: Record<string, string> = {
     applied: "var(--color-ink-soft)",
-    interviewing: "var(--color-trust)",
+    interviewing: "var(--color-accent-ink)",
+    shortlisted: "var(--color-trust)",
+    offered: "var(--color-accent-ink)",
     hired: "var(--color-jade)",
     rejected: "var(--color-plum)",
     withdrawn: "var(--color-ink-mute)",
@@ -71,12 +76,12 @@ export default async function InterviewPage({
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
-      <Link href="/dashboard" className="text-xs uppercase tracking-widest text-ink-soft hover:text-ink">
-        ← Dashboard
+      <Link href={isEmployer ? "/applicants" : "/applications"} className="text-xs uppercase tracking-widest text-ink-soft hover:text-ink">
+        ← {isEmployer ? "All applicants" : "My applications"}
       </Link>
       <header className="mt-6 mb-10">
         <p className="text-xs uppercase tracking-widest text-ink-soft">
-          Interview for
+          {isEmployer ? "Reviewing application for" : "Interview for"}
         </p>
         <h1 className="font-display text-display-md mt-1">{gig.title}</h1>
         <div className="mt-3 flex items-center gap-3">
@@ -89,9 +94,14 @@ export default async function InterviewPage({
           >
             {statusLabel[app.status] ?? app.status}
           </span>
-          {isEmployer && (
-            <span className="text-xs text-ink-soft">
-              Applicant ID: {app.applicant_id.slice(0, 8)}…
+          {isEmployer && applicant?.display_name && (
+            <span className="text-xs font-semibold text-ink-soft">
+              {applicant.display_name}
+              {applicant.handle && (
+                <Link href={`/profile/${applicant.handle}`} className="ml-2 underline hover:text-ink">
+                  View profile →
+                </Link>
+              )}
             </span>
           )}
         </div>
@@ -129,7 +139,7 @@ export default async function InterviewPage({
             </div>
           ))}
 
-          {app.status !== "hired" && app.status !== "rejected" && app.status !== "withdrawn" && (
+          {!["hired", "rejected", "withdrawn"].includes(app.status) && (
             <div className="rounded-card border border-line p-5 bg-surface-raised">
               <p className="text-xs uppercase tracking-widest text-ink-soft mb-4">
                 Your decision

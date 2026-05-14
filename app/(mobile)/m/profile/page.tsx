@@ -83,7 +83,7 @@ export default async function MobileProfilePage() {
   const { data: certs } = await supabase
     .from("certifications")
     .select("title, issuer, verified_at")
-    .eq("profile_id", user.id)
+    .eq("user_id", user.id)
     .limit(5);
 
   const { data: apps } = await supabase
@@ -307,6 +307,8 @@ export default async function MobileProfilePage() {
         {profile?.handle && (
           <Link
             href={`/profile/${profile.handle}`}
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               display: "block",
               padding: "14px 20px",
@@ -320,11 +322,13 @@ export default async function MobileProfilePage() {
               textAlign: "center",
             }}
           >
-            View full profile →
+            View full profile ↗
           </Link>
         )}
         <Link
           href="/profile/edit"
+          target="_blank"
+          rel="noopener noreferrer"
           style={{
             display: "block",
             padding: "14px 20px",
@@ -338,7 +342,7 @@ export default async function MobileProfilePage() {
             textAlign: "center",
           }}
         >
-          Edit profile
+          Edit profile ↗
         </Link>
       </div>
     </div>

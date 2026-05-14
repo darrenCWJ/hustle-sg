@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ProfileForm } from "./ProfileForm";
 import { PortfolioEditor } from "./PortfolioEditor";
 import { CertificationsEditor } from "./CertificationsEditor";
+import { WorkHistoryEditor } from "./WorkHistoryEditor";
 
 export default async function EditProfilePage() {
   const supabase = await createClient();
@@ -12,18 +13,11 @@ export default async function EditProfilePage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/singpass?next=/profile/edit");
 
-  const [{ data: profile }, { data: items }, { data: certs }] = await Promise.all([
+  const [{ data: profile }, { data: items }, { data: certs }, { data: workHistory }] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).single(),
-    supabase
-      .from("portfolio_items")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("display_order"),
-    supabase
-      .from("certifications")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false }),
+    supabase.from("portfolio_items").select("*").eq("user_id", user.id).order("display_order"),
+    supabase.from("certifications").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+    supabase.from("work_history").select("*").eq("user_id", user.id).order("start_date", { ascending: false }),
   ]);
 
   if (!profile) redirect("/singpass");
@@ -52,8 +46,12 @@ export default async function EditProfilePage() {
         <PortfolioEditor items={(items ?? []) as any} />
       </section>
 
-      <section>
+      <section className="mb-14">
         <CertificationsEditor certs={(certs ?? []) as any} />
+      </section>
+
+      <section>
+        <WorkHistoryEditor items={(workHistory ?? []) as any} />
       </section>
     </main>
   );

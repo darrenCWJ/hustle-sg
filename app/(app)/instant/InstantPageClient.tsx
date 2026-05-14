@@ -158,6 +158,13 @@ interface Props {
   initialGigs: InstantGigRow[];
 }
 
+function formatTime(t: string): string {
+  const [h, m] = t.split(":").map(Number);
+  const ampm = h >= 12 ? "pm" : "am";
+  const h12 = h > 12 ? h - 12 : h === 0 ? 12 : h;
+  return `${h12}${m ? `:${String(m).padStart(2, "0")}` : ""}${ampm}`;
+}
+
 export function InstantPageClient({ isLoggedIn, isEmployer, initialGigs }: Props) {
   const [kmMax, setKmMax] = useState(30);
   const [urgencyFilter, setUrgencyFilter] = useState<"all" | "now" | "today" | "weekend">("all");
@@ -167,6 +174,15 @@ export function InstantPageClient({ isLoggedIn, isEmployer, initialGigs }: Props
   const [geoLoading, setGeoLoading] = useState(false);
   const [gigs, setGigs] = useState<InstantGigRow[]>(initialGigs);
   const [isMobile, setIsMobile] = useState(false);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  function toggleExpand(id: string) {
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
 
   // Responsive layout detection
   useEffect(() => {
@@ -370,19 +386,47 @@ export function InstantPageClient({ isLoggedIn, isEmployer, initialGigs }: Props
         <div>
           {visible.length === 0 ? (
             <div style={{ padding: 48, textAlign: "center", borderRadius: 20, border: "1px dashed var(--color-line)" }}>
+              <p style={{ fontSize: 32, margin: "0 0 12px" }}>
+                {gigs.length === 0 ? "⚡" : "🔍"}
+              </p>
               <p style={{ fontFamily: "var(--font-display)", fontSize: 24, margin: "0 0 8px" }}>
                 {gigs.length === 0 ? "No instant gigs today yet." : "No gigs in this range."}
               </p>
-              <p style={{ color: "var(--color-ink-soft)" }}>
+              <p style={{ color: "var(--color-ink-soft)", margin: "0 0 20px" }}>
                 {gigs.length === 0
-                  ? "Check back soon — employers post instant gigs throughout the day."
+                  ? "Employers post throughout the day. Check back in a bit."
                   : "Try expanding your radius or changing the urgency filter."}
               </p>
+              {gigs.length === 0 && isEmployer && (
+                <button
+                  onClick={() => setShowModal(true)}
+                  style={{
+                    padding: "10px 22px", borderRadius: 999,
+                    background: "var(--color-ink)", color: "var(--color-surface)",
+                    border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700,
+                  }}
+                >
+                  Be the first — post an instant gig
+                </button>
+              )}
+              {gigs.length === 0 && !isEmployer && !isLoggedIn && (
+                <a
+                  href="/singpass"
+                  style={{
+                    display: "inline-block", padding: "10px 22px", borderRadius: 999,
+                    background: "var(--color-ink)", color: "var(--color-surface)",
+                    fontSize: 13, fontWeight: 700, textDecoration: "none",
+                  }}
+                >
+                  Sign in to get notified →
+                </a>
+              )}
             </div>
           ) : (
             <div style={gigGridStyle}>
               {visible.map((g) => {
                 const uc = URGENCY_CONFIG[g.instant_urgency];
+                const isExpanded = expandedIds.has(g.id);
                 return (
                   <article
                     key={g.id}
@@ -435,6 +479,70 @@ export function InstantPageClient({ isLoggedIn, isEmployer, initialGigs }: Props
                           </p>
                         </div>
                       )}
+
+                      {/* Details toggle */}
+                      <button
+                        type="button"
+                        onClick={() => toggleExpand(g.id)}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 6, width: "100%",
+                          padding: "8px 0", background: "none", border: "none",
+                          cursor: "pointer", color: "var(--color-ink-soft)", fontSize: 12, fontWeight: 600,
+                          borderTop: "1px solid var(--color-line)",
+                        }}
+                      >
+                        <svg
+                          width="14" height="14" viewBox="0 0 14 14" fill="none"
+                          style={{ transition: "transform 0.2s", transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0 }}
+                        >
+                          <path d="M2 5l5 4 5-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        Job details
+                      </button>
+
+                      {/* Expandable panel */}
+                      <div style={{
+                        overflow: "hidden",
+                        maxHeight: isExpanded ? 400 : 0,
+                        transition: "max-height 0.25s ease",
+                      }}>
+                        <div style={{ paddingTop: 10, paddingBottom: 4, display: "flex", flexDirection: "column", gap: 12 }}>
+                          {g.description && (
+                            <div>
+                              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--color-ink-mute)", margin: "0 0 5px" }}>
+                                What&apos;s needed
+                              </p>
+                              <p style={{ fontSize: 13, color: "var(--color-ink-soft)", margin: 0, lineHeight: 1.55 }}>
+                                {g.description}
+                              </p>
+                            </div>
+                          )}
+                          {(g.duration_label || g.hours_required || g.start_time) && (
+                            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                              {g.hours_required && (
+                                <div style={{ padding: "6px 12px", borderRadius: 10, background: "var(--color-muted)", display: "flex", flexDirection: "column", gap: 1 }}>
+                                  <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--color-ink-mute)" }}>Duration</span>
+                                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-ink)", fontFamily: "var(--font-mono)" }}>{g.hours_required}h</span>
+                                </div>
+                              )}
+                              {g.duration_label && !g.hours_required && (
+                                <div style={{ padding: "6px 12px", borderRadius: 10, background: "var(--color-muted)", display: "flex", flexDirection: "column", gap: 1 }}>
+                                  <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--color-ink-mute)" }}>Duration</span>
+                                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-ink)" }}>{g.duration_label}</span>
+                                </div>
+                              )}
+                              {g.start_time && (
+                                <div style={{ padding: "6px 12px", borderRadius: 10, background: "var(--color-muted)", display: "flex", flexDirection: "column", gap: 1 }}>
+                                  <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--color-ink-mute)" }}>Time</span>
+                                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-ink)", fontFamily: "var(--font-mono)" }}>
+                                    {formatTime(g.start_time)}{g.end_time ? ` – ${formatTime(g.end_time)}` : ""}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
                     <div style={{

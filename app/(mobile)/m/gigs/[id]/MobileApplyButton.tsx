@@ -10,6 +10,8 @@ interface Props {
   isLoggedIn: boolean;
   existingStatus: string | null;
   isInstant: boolean;
+  isOwnGig?: boolean;
+  isEmployerOnly?: boolean;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -20,9 +22,29 @@ const STATUS_LABEL: Record<string, string> = {
   rejected: "Not selected this time",
 };
 
-export function MobileApplyButton({ gigId, isLoggedIn, existingStatus, isInstant }: Props) {
+export function MobileApplyButton({ gigId, isLoggedIn, existingStatus, isInstant, isOwnGig, isEmployerOnly }: Props) {
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [msg, setMsg] = useState("");
+
+  if (isOwnGig) {
+    return (
+      <div style={{ textAlign: "center", padding: "12px 0" }}>
+        <p style={{ fontSize: 14, color: "var(--color-ink-mute)", margin: 0 }}>
+          This is your gig
+        </p>
+      </div>
+    );
+  }
+
+  if (isEmployerOnly) {
+    return (
+      <div style={{ textAlign: "center", padding: "12px 0" }}>
+        <p style={{ fontSize: 14, color: "var(--color-ink-mute)", margin: 0 }}>
+          Switch to a worker account to apply
+        </p>
+      </div>
+    );
+  }
 
   if (!isLoggedIn) {
     return (

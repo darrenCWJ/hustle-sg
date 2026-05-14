@@ -32,16 +32,23 @@ export default async function GigDetailPage({
   } = await supabase.auth.getUser();
 
   let existingApp: { id: string; status: string } | null = null;
+  let userRole: string | null = null;
   if (user) {
-    const { data } = await supabase
-      .from("applications")
-      .select("id, status")
-      .eq("gig_id", id)
-      .eq("applicant_id", user.id)
-      .maybeSingle();
-    existingApp = data;
+    const [appRes, profileRes] = await Promise.all([
+      supabase
+        .from("applications")
+        .select("id, status")
+        .eq("gig_id", id)
+        .eq("applicant_id", user.id)
+        .maybeSingle(),
+      supabase.from("profiles").select("role").eq("id", user.id).single(),
+    ]);
+    existingApp = appRes.data;
+    userRole = profileRes.data?.role ?? null;
   }
 
+  const isOwnGig = !!user && user.id === gig.employer_id;
+  const isEmployerOnly = userRole === "employer";
   const employerVerified = Boolean(gig.employer?.singpass_verified_at);
   const isClosed = gig.applications_close_at
     ? new Date(gig.applications_close_at) < new Date()
@@ -57,13 +64,19 @@ export default async function GigDetailPage({
       timeZone: "Asia/Singapore",
     });
   }
-  const similarGigsRes = await supabase
-    .from("gigs")
-    .select("id, title, budget_cents, budget_kind, category")
-    .eq("status", "open")
-    .eq("category", gig.category ?? "")
-    .neq("id", id)
-    .limit(2);
+  const [similarGigsRes, { count: applicantCount }] = await Promise.all([
+    supabase
+      .from("gigs")
+      .select("id, title, budget_cents, budget_kind, category")
+      .eq("status", "open")
+      .eq("category", gig.category ?? "")
+      .neq("id", id)
+      .limit(2),
+    supabase
+      .from("applications")
+      .select("*", { count: "exact", head: true })
+      .eq("gig_id", id),
+  ]);
   const similarGigs = similarGigsRes.data ?? [];
 
   return (
@@ -158,13 +171,59 @@ export default async function GigDetailPage({
               </div>
             </>
           )}
+          <>
+            <span style={{ width: 1, height: 32, background: "var(--color-line)" }} />
+            <div>
+              <span style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--color-ink-soft)", fontWeight: 600 }}>Applicants</span>
+              <p style={{ fontSize: 14, fontWeight: 600, margin: "2px 0 0" }}>
+                {applicantCount ?? 0}
+              </p>
+            </div>
+          </>
           {gig.applications_close_at && (
             <>
               <span style={{ width: 1, height: 32, background: "var(--color-line)" }} />
               <div>
-                <span style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--color-ink-soft)", fontWeight: 600 }}>Applications</span>
+                <span style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--color-ink-soft)", fontWeight: 600 }}>Deadline</span>
                 <p style={{ fontSize: 14, fontWeight: 600, margin: "2px 0 0", color: isClosed ? "#e55" : "inherit" }}>
-                  {isClosed ? "Closed" : `Closes ${formatDeadline(gig.applications_close_at)}`}
+                  {isClosed ? "Closed" : formatDeadline(gig.applications_close_at)}
+                </p>
+              </div>
+            </>
+          )}
+          {(gig.starts_at || gig.duration_label || gig.ends_at) && (
+            <>
+              <span style={{ width: 1, height: 32, background: "var(--color-line)" }} />
+              <div>
+                <span style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--color-ink-soft)", fontWeight: 600 }}>Starts</span>
+                <p style={{ fontSize: 14, fontWeight: 600, margin: "2px 0 0" }}>
+                  {gig.starts_at
+                    ? new Date(gig.starts_at).toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric" })
+                    : "ASAP"}
+                </p>
+              </div>
+            </>
+          )}
+          {gig.duration_label && (
+            <>
+              <span style={{ width: 1, height: 32, background: "var(--color-line)" }} />
+              <div>
+                <span style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--color-ink-soft)", fontWeight: 600 }}>Duration</span>
+                <p style={{ fontSize: 14, fontWeight: 600, margin: "2px 0 0" }}>
+                  {gig.duration_label}
+                  {(gig as any).hours_required ? ` · ${(gig as any).hours_required}h` : ""}
+                  {(gig as any).recurrence_cadence ? ` · ${(gig as any).recurrence_cadence}` : ""}
+                </p>
+              </div>
+            </>
+          )}
+          {gig.ends_at && !gig.duration_label && (
+            <>
+              <span style={{ width: 1, height: 32, background: "var(--color-line)" }} />
+              <div>
+                <span style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--color-ink-soft)", fontWeight: 600 }}>Ends</span>
+                <p style={{ fontSize: 14, fontWeight: 600, margin: "2px 0 0" }}>
+                  {new Date(gig.ends_at).toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric" })}
                 </p>
               </div>
             </>
@@ -191,6 +250,28 @@ export default async function GigDetailPage({
               {gig.description}
             </p>
           </section>
+
+          {/* Milestones */}
+          {Array.isArray((gig as any).milestones) && (gig as any).milestones.length > 0 && (
+            <section style={{ marginBottom: 36 }}>
+              <h2 style={{ fontFamily: "var(--font-display)", fontSize: 24, margin: "0 0 14px", letterSpacing: "-0.02em" }}>
+                Milestones
+              </h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: 0, borderLeft: "2px solid var(--color-line)", paddingLeft: 18 }}>
+                {((gig as any).milestones as { name: string; due_date: string }[]).map((ms, i) => (
+                  <div key={i} style={{ position: "relative", paddingBottom: 16 }}>
+                    <span style={{ position: "absolute", left: -25, top: 4, width: 10, height: 10, borderRadius: "50%", background: "var(--color-ink)", border: "2px solid var(--color-surface)" }} />
+                    <p style={{ margin: 0, fontWeight: 600, fontSize: 14 }}>{ms.name}</p>
+                    {ms.due_date && (
+                      <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--color-ink-mute)", fontFamily: "var(--font-mono)" }}>
+                        Due {new Date(ms.due_date).toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric" })}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Skills */}
           {gig.skills_required.length > 0 && (
@@ -423,6 +504,14 @@ export default async function GigDetailPage({
                     </Link>
                   )}
                 </div>
+              ) : isOwnGig ? (
+                <p style={{ fontSize: 13, color: "oklch(100% 0 0 / 0.5)", textAlign: "center", margin: 0 }}>
+                  This is your gig
+                </p>
+              ) : isEmployerOnly ? (
+                <p style={{ fontSize: 13, color: "oklch(100% 0 0 / 0.5)", textAlign: "center", margin: 0 }}>
+                  Switch to a worker account to apply
+                </p>
               ) : user ? (
                 <form action={applyToGig.bind(null, gig.id)} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <textarea

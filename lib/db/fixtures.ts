@@ -42,12 +42,21 @@ export interface SeedGig {
   budget_cents: number;
   budget_kind: "fixed" | "hourly";
   questions?: string[];
+  requires_employer_approval?: boolean;
+  is_instant?: boolean;
+  instant_urgency?: "now" | "today" | "this_week";
+  applications_close_at?: string;
+  starts_at?: string;
+  ends_at?: string;
+  duration_label?: string;
+  lat?: number;
+  lon?: number;
 }
 
 export interface SeedApplication {
   applicant_handle: string;
   gig_title: string;
-  status: "applied" | "interviewing" | "hired" | "rejected";
+  status: "applied" | "interviewing" | "hired" | "rejected" | "withdrawn" | "offered";
   cover_note?: string;
 }
 

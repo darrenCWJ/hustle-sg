@@ -45,24 +45,25 @@ export function ChecklistStepper({ initial, loggedIn }: Props) {
     setNameStatus(null);
     const res = await checkNameAvailability(name);
     setNameStatus(res.ok ? "available" : res.reason);
-    if (res.ok && loggedIn) {
-      startTransition(async () => {
-        await saveChecklistStep({
-          proposed_name: name,
-          stage: "name_reserved",
+    if (res.ok) {
+      setStage("name_reserved");
+      if (loggedIn) {
+        startTransition(async () => {
+          await saveChecklistStep({ proposed_name: name, stage: "name_reserved" });
         });
-        setStage("name_reserved");
-      });
+      }
     }
   };
 
   const register = async () => {
+    if (!entity) return;
     startTransition(async () => {
-      const res = await mockRegister();
+      const res = await mockRegister(entity.type, name);
       if (!res.ok) {
-        setError(res.error);
+        setError(res.error ?? "Something went wrong.");
         return;
       }
+      setError(null);
       setUen(res.uen);
       setStage("registered");
     });
@@ -157,7 +158,7 @@ export function ChecklistStepper({ initial, loggedIn }: Props) {
           </button>
         </div>
         {nameStatus === "available" && (
-          <p className="text-sm text-trust mt-3">✓ Name available. Reserved for 120 days.</p>
+          <p className="text-sm text-trust mt-3">✓ Name available. Upon ACRA approval, it is reserved for 60 days.</p>
         )}
         {nameStatus && nameStatus !== "available" && (
           <p className="text-sm text-accent mt-3">✗ {nameStatus}</p>
@@ -182,18 +183,31 @@ export function ChecklistStepper({ initial, loggedIn }: Props) {
           </div>
         ) : (
           <div>
-            <p className="text-sm text-ink-soft mb-3">
-              Registers a {entity?.label} for <em>{name}</em>. On BizFile+,
-              you&apos;d authenticate via Singpass and pay the filing fee.
+            <p className="text-sm text-ink-soft mb-4">
+              {entity && name
+                ? <>Registering <em>{name}</em> as a {entity.label}. On BizFile+, you&apos;d authenticate via Singpass and pay the filing fee.</>
+                : <>Complete the steps above, then submit your registration via ACRA BizFile+.</>}
             </p>
-            <button
-              type="button"
-              onClick={register}
-              disabled={isPending || !entity || stage !== "name_reserved"}
-              className="rounded-pill bg-accent text-ink px-5 py-2 font-semibold disabled:opacity-40"
-            >
-              {isPending ? "Submitting…" : "Submit via ACRA BizFile+ →"}
-            </button>
+            {!loggedIn && stage === "name_reserved" ? (
+              <a
+                href="/singpass"
+                className="rounded-pill bg-ink text-surface px-5 py-2 font-semibold text-sm inline-block"
+              >
+                Log in with Singpass to register →
+              </a>
+            ) : (
+              <button
+                type="button"
+                onClick={register}
+                disabled={isPending || !entity || stage !== "name_reserved"}
+                className="rounded-pill bg-accent text-ink px-5 py-2 font-semibold disabled:opacity-40"
+              >
+                {isPending ? "Submitting…" : "Submit via ACRA BizFile+ →"}
+              </button>
+            )}
+            {error && (
+              <p className="text-sm text-accent mt-3">{error}</p>
+            )}
           </div>
         )}
       </Stage>
@@ -248,7 +262,6 @@ export function ChecklistStepper({ initial, loggedIn }: Props) {
         </div>
       </Stage>
 
-      {error && <p className="text-sm text-accent">{error}</p>}
     </div>
   );
 }

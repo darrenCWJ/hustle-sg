@@ -67,31 +67,31 @@ export default function MarketingLayout({
               [
                 "Platform",
                 [
-                  "Browse assignments",
-                  "My feed",
-                  "Post an assignment",
-                  "Dashboard",
+                  ["Browse assignments", "/gigs"],
+                  ["Instant gigs", "/instant"],
+                  ["Post an assignment", "/gigs/new"],
+                  ["Dashboard", "/dashboard"],
                 ],
               ],
               [
                 "Verification",
                 [
-                  "Singpass identity",
-                  "WSQ credentials",
-                  "Video interviews",
-                  "Trust scores",
+                  ["Singpass identity", "/singpass"],
+                  ["WSQ credentials", "/skillsfuture"],
+                  ["Video interviews", "/gigs"],
+                  ["AI matching", "/gigs"],
                 ],
               ],
               [
                 "Entrepreneur",
                 [
-                  "Start a business",
-                  "Sole-prop vs Pte Ltd",
-                  "CPF for self-employed",
-                  "GST threshold",
+                  ["Start a business", "/start-a-business"],
+                  ["Sole-prop vs Pte Ltd", "/start-a-business"],
+                  ["CPF for self-employed", "/start-a-business"],
+                  ["GST threshold", "/start-a-business"],
                 ],
               ],
-            ] as [string, string[]][]
+            ] as [string, [string, string][]][]
           ).map(([head, links]) => (
             <div key={head}>
               <p
@@ -116,10 +116,10 @@ export default function MarketingLayout({
                   gap: 8,
                 }}
               >
-                {links.map((l) => (
-                  <li key={l} style={{ fontSize: 13, color: "var(--color-ink-soft)" }}>
-                    <a href="#" className="hover:text-ink transition-colors">
-                      {l}
+                {links.map(([label, href]) => (
+                  <li key={label} style={{ fontSize: 13, color: "var(--color-ink-soft)" }}>
+                    <a href={href} className="hover:text-ink transition-colors">
+                      {label}
                     </a>
                   </li>
                 ))}

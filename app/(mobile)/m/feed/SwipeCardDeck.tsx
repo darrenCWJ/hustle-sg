@@ -48,6 +48,7 @@ interface Props {
 const PTR_THRESHOLD = 72;
 
 export function SwipeCardDeck({ gigs: initial, isLoggedIn }: Props) {
+  const hadGigs = initial.length > 0;
   const [queue, setQueue] = useState(initial);
   const [dx, setDx] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -237,41 +238,64 @@ export function SwipeCardDeck({ gigs: initial, isLoggedIn }: Props) {
           alignItems: "center",
           justifyContent: "center",
           height: "100%",
-          gap: 16,
-          padding: 32,
+          gap: 14,
+          padding: "32px 28px",
           textAlign: "center",
         }}
       >
-        <div style={{ fontSize: 52 }}>✨</div>
+        <div style={{ fontSize: 48 }}>{hadGigs ? "🎉" : "🔍"}</div>
         <p
           style={{
             fontFamily: "var(--font-display)",
-            fontSize: 28,
+            fontSize: 26,
             color: "var(--color-ink)",
             margin: 0,
             letterSpacing: "-0.025em",
+            lineHeight: 1.05,
           }}
         >
-          All caught up!
+          {hadGigs ? "You've seen them all!" : "No instant gigs today"}
         </p>
-        <p style={{ color: "var(--color-ink-soft)", fontSize: 14, margin: 0, lineHeight: 1.55 }}>
-          No more instant gigs nearby today. New ones will appear here automatically.
+        <p style={{ color: "var(--color-ink-soft)", fontSize: 13.5, margin: 0, lineHeight: 1.55, maxWidth: 280 }}>
+          {hadGigs
+            ? "New instant gigs appear as employers post them. Check back later or browse regular assignments."
+            : "No instant gigs have been posted for today yet. Pull down to refresh or browse all open assignments."}
         </p>
-        <Link
-          href="/m/browse"
-          style={{
-            marginTop: 8,
-            padding: "12px 28px",
-            borderRadius: 999,
-            background: "var(--color-ink)",
-            color: "var(--color-surface)",
-            fontSize: 14,
-            fontWeight: 700,
-            textDecoration: "none",
-          }}
-        >
-          Browse all gigs →
-        </Link>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%", maxWidth: 300, marginTop: 8 }}>
+          <Link
+            href="/m/browse"
+            style={{
+              padding: "13px 28px",
+              borderRadius: 999,
+              background: "var(--color-ink)",
+              color: "var(--color-surface)",
+              fontSize: 14,
+              fontWeight: 700,
+              textDecoration: "none",
+              textAlign: "center",
+            }}
+          >
+            Browse all gigs →
+          </Link>
+          {!isLoggedIn && (
+            <Link
+              href="/m/singpass"
+              style={{
+                padding: "13px 28px",
+                borderRadius: 999,
+                border: "1px solid var(--color-line)",
+                background: "var(--color-surface-raised)",
+                color: "var(--color-ink)",
+                fontSize: 14,
+                fontWeight: 600,
+                textDecoration: "none",
+                textAlign: "center",
+              }}
+            >
+              Sign in to get matched →
+            </Link>
+          )}
+        </div>
       </div>
     );
   }

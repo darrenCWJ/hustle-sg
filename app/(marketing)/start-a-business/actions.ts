@@ -40,20 +40,35 @@ export async function saveChecklistStep({
 }
 
 export async function checkNameAvailability(name: string) {
-  const reserved = looksReserved(name);
+  const trimmed = name.trim();
+  if (trimmed.length < 3) return { ok: false as const, reason: "Name is too short." };
+
+  const reserved = looksReserved(trimmed);
   if (reserved) {
-    return { ok: false as const, reason: `Name contains restricted term: "${reserved}"` };
+    return { ok: false as const, reason: `Contains a restricted term: "${reserved}". ACRA prohibits this without a licence.` };
   }
-  if (name.trim().length < 3) return { ok: false as const, reason: "Too short" };
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("company_registrations")
+    .select("id")
+    .ilike("proposed_name", trimmed)
+    .in("stage", ["name_reserved", "registered"])
+    .maybeSingle();
+
+  if (data) {
+    return { ok: false as const, reason: "A company with this name has already been registered or reserved." };
+  }
+
   return { ok: true as const };
 }
 
-export async function mockRegister() {
+export async function mockRegister(entityType: "sole_prop" | "pte_ltd", proposedName: string) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { ok: false as const, error: "Log in first" };
+  if (!user) return { ok: false as const, error: "You need to log in to complete registration." };
 
   const uen = mockAcraUEN();
   const { error } = await supabase
@@ -61,6 +76,8 @@ export async function mockRegister() {
     .upsert(
       {
         user_id: user.id,
+        entity_type: entityType,
+        proposed_name: proposedName,
         stage: "registered",
         mock_acra_id: uen,
       },

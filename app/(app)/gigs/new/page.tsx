@@ -1,11 +1,44 @@
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 import { postGig } from "./actions";
+import { GigFormSettings } from "./GigFormSettings";
+import { GigTimingFields } from "./GigTimingFields";
+import { RehireSelector, type PreviousHire } from "./RehireSelector";
 
 async function postGigAction(formData: FormData) {
   "use server";
   await postGig(formData);
 }
 
-export default function NewGigPage() {
+export default async function NewGigPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/singpass?next=/gigs/new");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role === "freelancer") redirect("/employer?upgrade=1");
+
+  // Fetch all workers this employer has previously hired
+  const { data: hiredApps } = await supabase
+    .from("applications")
+    .select("applicant_id, gigs!inner(id, title, category, employer_id), applicant:profiles!applications_applicant_id_fkey(handle, display_name)")
+    .eq("status", "hired")
+    .eq("gigs.employer_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(60);
+
+  const previousHires: PreviousHire[] = (hiredApps ?? []).map((a: any) => ({
+    workerId: a.applicant_id,
+    displayName: a.applicant?.display_name ?? "Unknown",
+    handle: a.applicant?.handle ?? "",
+    category: a.gigs?.category ?? null,
+    gigTitle: a.gigs?.title ?? "Previous gig",
+  }));
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
       <p className="text-xs uppercase tracking-widest text-ink-soft">Post a gig</p>
@@ -26,11 +59,24 @@ export default function NewGigPage() {
           className="w-full rounded-xl border border-line px-4 py-3 bg-surface-raised"
         />
         <div className="grid md:grid-cols-2 gap-3">
-          <input
+          <select
             name="category"
-            placeholder="Category (design, tuition, f&b…)"
             className="rounded-xl border border-line px-4 py-3 bg-surface-raised"
-          />
+          >
+            <option value="">Category</option>
+            <option value="tech">Tech</option>
+            <option value="design">Design</option>
+            <option value="content">Content</option>
+            <option value="marketing">Marketing</option>
+            <option value="tuition">Tuition</option>
+            <option value="events">Events</option>
+            <option value="video">Video / Photography</option>
+            <option value="f&b">F&amp;B</option>
+            <option value="admin">Admin / Operations</option>
+            <option value="logistics">Logistics / Delivery</option>
+            <option value="beauty">Beauty / Wellness</option>
+            <option value="other">Other</option>
+          </select>
           <input
             name="location"
             placeholder="Location (e.g. Tanjong Pagar or Remote)"
@@ -43,9 +89,10 @@ export default function NewGigPage() {
           />
           <input
             type="number"
-            min={0}
-            name="budget_cents"
-            placeholder="Budget in SGD cents (e.g. 80000 = S$800)"
+            min={1}
+            step="0.01"
+            name="budget_sgd"
+            placeholder="Budget in S$ (e.g. 800)"
             className="rounded-xl border border-line px-4 py-3 bg-surface-raised"
           />
           <select
@@ -69,65 +116,14 @@ export default function NewGigPage() {
           />
         </div>
 
-        <div className="rounded-xl border border-line bg-surface-raised p-5 space-y-4">
-          <p className="text-xs uppercase tracking-widest text-ink-soft">Gig settings</p>
-
-          <label className="flex items-start gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              name="requires_employer_approval"
-              value="true"
-              defaultChecked
-              className="mt-0.5 accent-ink"
-            />
-            <span className="text-sm">
-              <strong>Require employer approval</strong>
-              <span className="block text-ink-soft text-xs mt-0.5">
-                You manually hire or reject each applicant after reviewing their profile and interview.
-              </span>
-            </span>
-          </label>
-
-          <label className="flex items-start gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              name="is_instant"
-              value="true"
-              className="mt-0.5 accent-ink"
-            />
-            <span className="text-sm">
-              <strong>Instant gig</strong>
-              <span className="block text-ink-soft text-xs mt-0.5">
-                Freelancers can accept immediately with no application process.
-              </span>
-            </span>
-          </label>
-
-          <div>
-            <label className="text-xs text-ink-soft">Instant urgency (if instant gig)</label>
-            <select
-              name="instant_urgency"
-              className="mt-1 w-full rounded-xl border border-line px-4 py-3 bg-surface-raised"
-            >
-              <option value="">— None —</option>
-              <option value="now">Now (within the hour)</option>
-              <option value="today">Today</option>
-              <option value="weekend">This weekend</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="text-xs text-ink-soft block mb-1">
-              Application deadline <span className="opacity-50">(optional — leave blank for no deadline)</span>
-            </label>
-            <input
-              type="datetime-local"
-              name="applications_close_at"
-              className="w-full rounded-xl border border-line px-4 py-3 bg-surface-raised"
-            />
-            <p className="text-xs text-ink-mute mt-1">Time is in Singapore time (SGT, UTC+8).</p>
-          </div>
+        <div className="rounded-xl border border-line bg-surface-raised p-5">
+          <p className="text-xs uppercase tracking-widest text-ink-soft mb-4">Timing</p>
+          <GigTimingFields />
         </div>
+
+        <GigFormSettings />
+
+        <RehireSelector previousHires={previousHires} />
 
         <button
           type="submit"

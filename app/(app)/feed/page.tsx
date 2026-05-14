@@ -4,6 +4,7 @@ import { matchGigsForUser } from "@/lib/ai/match";
 import { FeedClientPage } from "./FeedClientPage";
 import { loadSavedGigIds } from "@/app/actions/gigs";
 import { GeolocationCapture } from "@/components/location/GeolocationCapture";
+import { PushAutoSubscribe } from "@/components/notifications/PushAutoSubscribe";
 
 export default async function FeedPage() {
   const supabase = await createClient();
@@ -22,6 +23,7 @@ export default async function FeedPage() {
 
   return (
     <>
+      <PushAutoSubscribe />
       <GeolocationCapture hasLocation={hasLocation} />
       <FeedClientPage matches={matches} initialSavedIds={savedIds} />
     </>

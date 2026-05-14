@@ -14,6 +14,7 @@ const mobileGigSchema = z.object({
   budget_dollars: z.coerce.number().min(1).max(100000),
   budget_kind: z.enum(["fixed", "hourly"]),
   is_instant: z.string().optional(),
+  instant_urgency: z.enum(["now", "today", "weekend"]).optional(),
 });
 
 export async function postGigMobile(formData: FormData) {
@@ -31,6 +32,7 @@ export async function postGigMobile(formData: FormData) {
     budget_dollars: formData.get("budget_dollars"),
     budget_kind: formData.get("budget_kind"),
     is_instant: formData.get("is_instant") || undefined,
+    instant_urgency: (formData.get("instant_urgency") as string) || undefined,
   });
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -56,7 +58,7 @@ export async function postGigMobile(formData: FormData) {
       status: "open",
       requires_employer_approval: true,
       is_instant: parsed.data.is_instant === "true",
-      instant_urgency: parsed.data.is_instant === "true" ? "today" : null,
+      instant_urgency: parsed.data.is_instant === "true" ? (parsed.data.instant_urgency ?? "today") : null,
     })
     .select()
     .single();

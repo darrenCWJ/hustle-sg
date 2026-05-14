@@ -1,14 +1,18 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   addCertification,
   deleteCertification,
+  verifyCertification,
 } from "./actions";
 import type { Certification } from "@/lib/supabase/types";
 import { VerifiedBadge } from "@/components/profile/VerifiedBadge";
 
 export function CertificationsEditor({ certs }: { certs: Certification[] }) {
+  const router = useRouter();
   const [issuer, setIssuer] = useState("");
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState<"wsq" | "university" | "accreditation" | "other">("wsq");
@@ -39,12 +43,21 @@ export function CertificationsEditor({ certs }: { certs: Certification[] }) {
       setIssuedAt("");
       setRawText("");
       setFlash(res.verified ? "Issuer recognised — verified badge added." : "Added (pending manual review).");
+      router.refresh();
     });
   };
 
   return (
     <div id="certifications" className="scroll-mt-24">
-      <h2 className="font-display text-display-md mb-6">Credentials</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="font-display text-display-md">Credentials</h2>
+        <Link
+          href="/skillsfuture"
+          className="inline-flex items-center gap-1.5 rounded-pill border border-line px-3 py-1.5 text-xs font-semibold text-ink-soft hover:text-ink transition"
+        >
+          <span>🇸🇬</span> Import from SkillsFuture
+        </Link>
+      </div>
 
       <div className="mb-8 rounded-card bg-surface-raised border border-line p-6">
         <div className="grid md:grid-cols-2 gap-3">
@@ -110,15 +123,34 @@ export function CertificationsEditor({ certs }: { certs: Certification[] }) {
                 {c.kind.toUpperCase()} · {c.issuer}
               </p>
             </div>
-            {c.verified && <VerifiedBadge>Verified</VerifiedBadge>}
-            <form action={deleteCertification.bind(null, c.id)}>
+            {c.verified ? (
+              <VerifiedBadge>Verified</VerifiedBadge>
+            ) : (
               <button
-                type="submit"
-                className="text-xs text-ink-soft hover:text-accent"
+                type="button"
+                className="text-xs px-2.5 py-1 rounded-pill border border-line text-ink-soft hover:border-trust hover:text-trust transition"
+                onClick={() => {
+                  startTransition(async () => {
+                    await verifyCertification(c.id);
+                    router.refresh();
+                  });
+                }}
               >
-                Remove
+                Mark verified
               </button>
-            </form>
+            )}
+            <button
+              type="button"
+              className="text-xs text-ink-soft hover:text-accent"
+              onClick={() => {
+                startTransition(async () => {
+                  await deleteCertification(c.id);
+                  router.refresh();
+                });
+              }}
+            >
+              Remove
+            </button>
           </li>
         ))}
       </ul>

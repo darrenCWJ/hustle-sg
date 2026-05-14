@@ -11,8 +11,10 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return new Uint8Array([...raw].map((c) => c.charCodeAt(0)));
 }
 
+type State = "unsupported" | "denied" | "off" | "on" | "loading" | "error";
+
 export function NotificationsToggle() {
-  const [state, setState] = useState<"unsupported" | "denied" | "off" | "on" | "loading">("loading");
+  const [state, setState] = useState<State>("loading");
 
   useEffect(() => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window) || !VAPID_PUBLIC) {
@@ -26,7 +28,7 @@ export function NotificationsToggle() {
     navigator.serviceWorker.ready.then(async (reg) => {
       const sub = await reg.pushManager.getSubscription();
       setState(sub ? "on" : "off");
-    });
+    }).catch(() => setState("off"));
   }, []);
 
   async function enable() {
@@ -35,21 +37,31 @@ export function NotificationsToggle() {
     try {
       const reg = await navigator.serviceWorker.ready;
       const permission = await Notification.requestPermission();
-      if (permission !== "granted") { setState("denied"); return; }
+      if (permission === "denied") { setState("denied"); return; }
+      if (permission !== "granted") { setState("off"); return; }
 
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC) as unknown as ArrayBuffer,
       });
 
-      await fetch("/api/push/subscribe", {
+      const res = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(sub.toJSON()),
       });
+
+      if (!res.ok) {
+        await sub.unsubscribe();
+        setState("error");
+        setTimeout(() => setState("off"), 3000);
+        return;
+      }
+
       setState("on");
     } catch {
-      setState("off");
+      setState("error");
+      setTimeout(() => setState("off"), 3000);
     }
   }
 
@@ -72,12 +84,41 @@ export function NotificationsToggle() {
     }
   }
 
-  if (state === "unsupported" || state === "denied") return null;
+  if (state === "unsupported") return null;
+
+  const isOn      = state === "on";
+  const isDenied  = state === "denied";
+  const isError   = state === "error";
+  const isLoading = state === "loading";
+
+  let label: string;
+  if (isLoading) label = "…";
+  else if (isOn)     label = "Notifications on";
+  else if (isDenied) label = "Notifications blocked";
+  else if (isError)  label = "Failed — try again";
+  else               label = "Enable notifications";
+
+  let icon: string;
+  if (isOn)     icon = "🔔";
+  else if (isDenied || isError) icon = "🔕";
+  else          icon = "🔕";
+
+  let bg: string;
+  if (isOn)     bg = "var(--color-jade-soft)";
+  else if (isError) bg = "oklch(95% 0.04 30)";
+  else          bg = "var(--color-surface-raised)";
+
+  let fg: string;
+  if (isOn)     fg = "var(--color-jade-ink)";
+  else if (isError) fg = "oklch(45% 0.18 30)";
+  else if (isDenied) fg = "var(--color-ink-mute)";
+  else          fg = "var(--color-ink-soft)";
 
   return (
     <button
-      onClick={state === "on" ? disable : enable}
-      disabled={state === "loading"}
+      onClick={isOn ? disable : isDenied ? undefined : enable}
+      disabled={isLoading || isDenied}
+      title={isDenied ? "Open browser settings to allow notifications" : undefined}
       style={{
         display: "inline-flex",
         alignItems: "center",
@@ -85,17 +126,18 @@ export function NotificationsToggle() {
         padding: "8px 16px",
         borderRadius: 999,
         border: "1px solid var(--color-line)",
-        background: state === "on" ? "var(--color-jade-soft)" : "var(--color-surface-raised)",
-        color: state === "on" ? "var(--color-jade-ink)" : "var(--color-ink-soft)",
+        background: bg,
+        color: fg,
         fontSize: 13,
         fontWeight: 600,
-        cursor: state === "loading" ? "default" : "pointer",
+        cursor: isLoading || isDenied ? "default" : "pointer",
         transition: "background 0.2s, color 0.2s",
         whiteSpace: "nowrap",
+        opacity: isDenied ? 0.6 : 1,
       }}
     >
-      <span style={{ fontSize: 15 }}>{state === "on" ? "🔔" : "🔕"}</span>
-      {state === "loading" ? "…" : state === "on" ? "Notifications on" : "Enable notifications"}
+      <span style={{ fontSize: 15 }}>{icon}</span>
+      {label}
     </button>
   );
 }

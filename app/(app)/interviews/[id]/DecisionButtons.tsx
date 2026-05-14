@@ -13,7 +13,7 @@ export function DecisionButtons({ applicationId, currentStatus }: Props) {
   const [done, setDone] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function handle(decision: "hired" | "shortlisted" | "rejected") {
+  async function handle(decision: "hired" | "shortlisted" | "offered" | "rejected") {
     setPending(decision);
     setError(null);
     const res = await decideApplication(applicationId, decision);
@@ -29,6 +29,7 @@ export function DecisionButtons({ applicationId, currentStatus }: Props) {
     const labels: Record<string, string> = {
       hired: "Hired — applicant has been notified.",
       shortlisted: "Shortlisted — applicant has been notified.",
+      offered: "Offer sent — applicant has been notified.",
       rejected: "Declined — applicant has been notified.",
     };
     return (
@@ -38,24 +39,49 @@ export function DecisionButtons({ applicationId, currentStatus }: Props) {
     );
   }
 
+  const isShortlisted = currentStatus === "shortlisted";
+
   return (
     <div className="flex flex-wrap gap-3">
-      <button
-        disabled={!!pending}
-        onClick={() => handle("hired")}
-        className="rounded-pill px-5 py-2.5 text-sm font-semibold text-white"
-        style={{ background: "var(--color-jade)", opacity: pending === "hired" ? 0.6 : 1 }}
-      >
-        {pending === "hired" ? "Hiring…" : "Hire"}
-      </button>
-      <button
-        disabled={!!pending}
-        onClick={() => handle("shortlisted")}
-        className="rounded-pill px-5 py-2.5 text-sm font-semibold text-white"
-        style={{ background: "var(--color-trust)", opacity: pending === "shortlisted" ? 0.6 : 1 }}
-      >
-        {pending === "shortlisted" ? "Shortlisting…" : "Shortlist"}
-      </button>
+      {isShortlisted ? (
+        <>
+          <button
+            disabled={!!pending}
+            onClick={() => handle("offered")}
+            className="rounded-pill px-5 py-2.5 text-sm font-semibold text-white"
+            style={{ background: "var(--color-accent)", opacity: pending === "offered" ? 0.6 : 1 }}
+          >
+            {pending === "offered" ? "Sending offer…" : "Send offer"}
+          </button>
+          <button
+            disabled={!!pending}
+            onClick={() => handle("hired")}
+            className="rounded-pill px-5 py-2.5 text-sm font-semibold text-white"
+            style={{ background: "var(--color-jade)", opacity: pending === "hired" ? 0.6 : 1 }}
+          >
+            {pending === "hired" ? "Hiring…" : "Hire directly"}
+          </button>
+        </>
+      ) : (
+        <>
+          <button
+            disabled={!!pending}
+            onClick={() => handle("shortlisted")}
+            className="rounded-pill px-5 py-2.5 text-sm font-semibold text-white"
+            style={{ background: "var(--color-trust)", opacity: pending === "shortlisted" ? 0.6 : 1 }}
+          >
+            {pending === "shortlisted" ? "Shortlisting…" : "Shortlist"}
+          </button>
+          <button
+            disabled={!!pending}
+            onClick={() => handle("hired")}
+            className="rounded-pill px-5 py-2.5 text-sm font-semibold text-white"
+            style={{ background: "var(--color-jade)", opacity: pending === "hired" ? 0.6 : 1 }}
+          >
+            {pending === "hired" ? "Hiring…" : "Hire"}
+          </button>
+        </>
+      )}
       <button
         disabled={!!pending}
         onClick={() => handle("rejected")}

@@ -94,20 +94,19 @@ export async function addPortfolioItem(formData: FormData) {
   if (error) return { ok: false as const, error: error.message };
 
   regenerateUserEmbedding(user.id).catch(() => {});
-  revalidatePath("/profile/edit");
   return { ok: true as const };
 }
 
-export async function deletePortfolioItem(id: string): Promise<void> {
+export async function deletePortfolioItem(id: string): Promise<{ ok: true }> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return;
+  if (!user) return { ok: true };
 
   await supabase.from("portfolio_items").delete().eq("id", id).eq("user_id", user.id);
   regenerateUserEmbedding(user.id).catch(() => {});
-  revalidatePath("/profile/edit");
+  return { ok: true };
 }
 
 const certSchema = z.object({
@@ -150,7 +149,16 @@ export async function addCertification(formData: FormData) {
     }
   }
 
-  const verified = isVerifiedIssuer(parsed.data.issuer);
+  // Auto-verify if issuer is known OR user is SingPass-verified
+  const knownIssuer = isVerifiedIssuer(parsed.data.issuer);
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("singpass_verified_at")
+    .eq("id", user.id)
+    .single();
+  const singpassVerified = Boolean(profile?.singpass_verified_at);
+  const verified = knownIssuer || singpassVerified;
+  const verificationMethod = knownIssuer ? "manual" : singpassVerified ? "singpass" : null;
 
   const { error } = await supabase.from("certifications").insert({
     user_id: user.id,
@@ -160,24 +168,92 @@ export async function addCertification(formData: FormData) {
     issued_at: parsed.data.issued_at,
     doc_url: parsed.data.doc_url,
     verified,
+    verification_status: verified ? "verified" : "pending",
+    verification_method: verificationMethod,
+    verified_at: verified ? new Date().toISOString() : null,
     extracted_skills: extractedSkills,
   });
   if (error) return { ok: false as const, error: error.message };
 
   regenerateUserEmbedding(user.id).catch(() => {});
-  revalidatePath("/profile/edit");
   return { ok: true as const, verified };
 }
 
-export async function deleteCertification(id: string): Promise<void> {
+export async function deleteCertification(id: string): Promise<{ ok: true }> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return;
+  if (!user) return { ok: true };
   await supabase.from("certifications").delete().eq("id", id).eq("user_id", user.id);
   regenerateUserEmbedding(user.id).catch(() => {});
-  revalidatePath("/profile/edit");
+  return { ok: true };
+}
+
+const workHistorySchema = z.object({
+  company: z.string().min(1).max(120),
+  title: z.string().min(1).max(120),
+  description: z.string().max(600).optional().nullable(),
+  start_date: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Use YYYY-MM format"),
+  end_date: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional().nullable(),
+  is_current: z.boolean(),
+});
+
+export async function addWorkHistory(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false as const, error: "Not authenticated" };
+
+  const isCurrent = formData.get("is_current") === "true";
+  const parsed = workHistorySchema.safeParse({
+    company: formData.get("company"),
+    title: formData.get("title"),
+    description: formData.get("description") || null,
+    start_date: formData.get("start_date"),
+    end_date: isCurrent ? null : (formData.get("end_date") || null),
+    is_current: isCurrent,
+  });
+  if (!parsed.success)
+    return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid" };
+
+  const { error } = await supabase.from("work_history").insert({
+    user_id: user.id,
+    ...parsed.data,
+  });
+  if (error) return { ok: false as const, error: error.message };
+
+  regenerateUserEmbedding(user.id).catch(() => {});
+  return { ok: true as const };
+}
+
+export async function deleteWorkHistory(id: string): Promise<{ ok: true }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: true };
+  await supabase.from("work_history").delete().eq("id", id).eq("user_id", user.id);
+  regenerateUserEmbedding(user.id).catch(() => {});
+  return { ok: true };
+}
+
+export async function verifyCertification(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Not authenticated" };
+
+  const { error } = await supabase
+    .from("certifications")
+    .update({
+      verified: true,
+      verification_status: "verified",
+      verification_method: "manual",
+      verified_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) return { ok: false, error: error.message };
+  regenerateUserEmbedding(user.id).catch(() => {});
+  return { ok: true };
 }
 
 export async function saveLocation(lat: number, lon: number): Promise<void> {

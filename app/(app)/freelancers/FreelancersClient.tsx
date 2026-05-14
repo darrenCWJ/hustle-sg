@@ -29,6 +29,13 @@ function initials(name: string) {
     .toUpperCase();
 }
 
+const AVATAR_HUES = [250, 165, 340, 38, 260, 200, 78, 310, 190, 50];
+
+function avatarColors(name: string) {
+  const hue = AVATAR_HUES[(name.charCodeAt(0) + (name.charCodeAt(1) ?? 0)) % AVATAR_HUES.length];
+  return { bg: `oklch(78% 0.08 ${hue})`, fg: `oklch(22% 0.08 ${hue})` };
+}
+
 function ScoreBadge({ score }: { score: number }) {
   const hue =
     score >= 80 ? "165" : score >= 60 ? "38" : score >= 40 ? "38" : "25";
@@ -94,6 +101,7 @@ function FreelancerCard({
 }) {
   const [hovered, setHovered] = useState(false);
   const ini = initials(f.displayName);
+  const { bg: avatarBg, fg: avatarFg } = avatarColors(f.displayName);
 
   return (
     <article
@@ -145,8 +153,8 @@ function FreelancerCard({
             width: 48,
             height: 48,
             borderRadius: "50%",
-            background: "oklch(78% 0.08 250)",
-            color: "oklch(22% 0.08 250)",
+            background: avatarBg,
+            color: avatarFg,
             display: "grid",
             placeItems: "center",
             fontSize: 16,

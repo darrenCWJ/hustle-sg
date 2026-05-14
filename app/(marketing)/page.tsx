@@ -6,13 +6,7 @@ import { Testimonials } from "./Testimonials";
 import { Eyebrow } from "@/components/ui/primitives";
 import { Button } from "@/components/ui/interactive";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
-
-const STATS_SG = [
-  { label: "Verified freelancers", value: "12,847", delta: "+214 this week" },
-  { label: "Gigs live right now", value: "2,196", delta: "+38 today" },
-  { label: "Paid out to hustlers", value: "S$8.4M", delta: "in 2025" },
-  { label: "Avg. match quality", value: "84%", delta: "vs 62% keyword" },
-];
+import { createServiceClient } from "@/lib/supabase/server";
 
 const CATEGORIES = [
   { label: "Design", count: 214, hue: 38 },
@@ -23,7 +17,25 @@ const CATEGORIES = [
   { label: "Translation", count: 58, hue: 200 },
 ];
 
-export default function Landing() {
+export default async function Landing() {
+  const service = createServiceClient();
+  const [{ count: profileCount }, { count: gigCount }] = await Promise.all([
+    service.from("profiles").select("*", { count: "exact", head: true }).neq("role", "employer"),
+    service.from("gigs").select("*", { count: "exact", head: true }).eq("status", "open"),
+  ]);
+
+  function fmt(n: number): string {
+    if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+    return String(n);
+  }
+
+  const STATS_SG = [
+    { label: "Verified freelancers", value: fmt(Math.max(profileCount ?? 0, 1)), delta: "on the platform" },
+    { label: "Gigs live right now", value: fmt(Math.max(gigCount ?? 0, 0)), delta: "open right now" },
+    { label: "Paid out to hustlers", value: "S$8.4M", delta: "in 2025" },
+    { label: "Avg. match quality", value: "84%", delta: "vs 62% keyword" },
+  ];
+
   return (
     <main>
       {/* HERO */}

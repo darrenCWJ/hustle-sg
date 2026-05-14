@@ -311,13 +311,15 @@ export default async function MobileEmployerApplicantsPage({
                     {applicant?.handle && (
                       <Link
                         href={`/profile/${applicant.handle}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         style={{
                           fontSize: 11,
                           color: "var(--color-ink-mute)",
                           textDecoration: "none",
                         }}
                       >
-                        View profile →
+                        View profile ↗
                       </Link>
                     )}
                   </div>

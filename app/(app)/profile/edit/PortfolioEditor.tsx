@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { VideoUploader } from "@/components/video/VideoUploader";
 import {
   addPortfolioItem,
@@ -9,6 +10,7 @@ import {
 import type { PortfolioItem } from "@/lib/supabase/types";
 
 export function PortfolioEditor({ items }: { items: PortfolioItem[] }) {
+  const router = useRouter();
   const [kind, setKind] = useState<"video" | "website" | "writeup">("video");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -39,6 +41,7 @@ export function PortfolioEditor({ items }: { items: PortfolioItem[] }) {
       setTags("");
       setExternalUrl("");
       setMediaUrl(null);
+      router.refresh();
     });
   };
 
@@ -137,14 +140,18 @@ export function PortfolioEditor({ items }: { items: PortfolioItem[] }) {
                 <p className="text-sm text-ink-soft line-clamp-1">{it.description}</p>
               )}
             </div>
-            <form action={deletePortfolioItem.bind(null, it.id)}>
-              <button
-                type="submit"
-                className="text-xs text-ink-soft hover:text-accent"
-              >
-                Remove
-              </button>
-            </form>
+            <button
+              type="button"
+              className="text-xs text-ink-soft hover:text-accent"
+              onClick={() => {
+                startTransition(async () => {
+                  await deletePortfolioItem(it.id);
+                  router.refresh();
+                });
+              }}
+            >
+              Remove
+            </button>
           </li>
         ))}
       </ul>
