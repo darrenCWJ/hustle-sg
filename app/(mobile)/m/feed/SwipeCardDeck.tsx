@@ -17,6 +17,7 @@ export interface MobileGig {
   instant_urgency: "now" | "today" | "weekend";
   skills_required: string[];
   employerName: string;
+  score?: number;
 }
 
 const URGENCY = {
@@ -53,7 +54,7 @@ export function SwipeCardDeck({ gigs: initial, isLoggedIn }: Props) {
   const [dx, setDx] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [flyDir, setFlyDir] = useState<"left" | "right" | null>(null);
-  const [toast, setToast] = useState<"accepted" | "skipped" | null>(null);
+  const [toast, setToast] = useState<"accepted" | "skipped" | "sign-in" | null>(null);
   const [newGigBanner, setNewGigBanner] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [ptrDy, setPtrDy] = useState(0); // pull-to-refresh drag distance
@@ -62,6 +63,7 @@ export function SwipeCardDeck({ gigs: initial, isLoggedIn }: Props) {
   const [userLon, setUserLon] = useState<number | null>(null);
   const startX = useRef(0);
   const startY = useRef(0);
+  const dxRef = useRef(0);
   const pullStartY = useRef(0);
   const seenIds = useRef(new Set(initial.map((g) => g.id)));
 
@@ -126,17 +128,26 @@ export function SwipeCardDeck({ gigs: initial, isLoggedIn }: Props) {
     };
   }, []);
 
-  const showToast = (kind: "accepted" | "skipped") => {
+  const showToast = (kind: "accepted" | "skipped" | "sign-in") => {
     setToast(kind);
-    setTimeout(() => setToast(null), 1600);
+    setTimeout(() => setToast(null), 2200);
   };
 
   const dismiss = useCallback(
     (dir: "left" | "right") => {
       if (!top || flyDir) return;
+
+      if (dir === "right" && !isLoggedIn) {
+        setIsDragging(false);
+        showToast("sign-in");
+        setDx(0);
+        dxRef.current = 0;
+        return;
+      }
+
       setIsDragging(false);
       setFlyDir(dir);
-      if (dir === "right" && isLoggedIn) {
+      if (dir === "right") {
         acceptInstantGig(top.id).catch(() => {});
         showToast("accepted");
       } else {
@@ -144,6 +155,7 @@ export function SwipeCardDeck({ gigs: initial, isLoggedIn }: Props) {
       }
       setTimeout(() => {
         setQueue((prev) => prev.slice(1));
+        dxRef.current = 0;
         setDx(0);
         setFlyDir(null);
       }, 340);
@@ -156,20 +168,24 @@ export function SwipeCardDeck({ gigs: initial, isLoggedIn }: Props) {
     if (flyDir) return;
     startX.current = e.clientX;
     startY.current = e.clientY;
+    dxRef.current = 0;
     setIsDragging(true);
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
     if (!isDragging || flyDir) return;
-    setDx(e.clientX - startX.current);
+    const newDx = e.clientX - startX.current;
+    dxRef.current = newDx;
+    setDx(newDx);
   };
 
   const onPointerUp = () => {
     if (!isDragging) return;
     setIsDragging(false);
-    if (dx > THRESHOLD) dismiss("right");
-    else if (dx < -THRESHOLD) dismiss("left");
+    const finalDx = dxRef.current;
+    if (finalDx > THRESHOLD) dismiss("right");
+    else if (finalDx < -THRESHOLD) dismiss("left");
     else setDx(0);
   };
 
@@ -218,6 +234,7 @@ export function SwipeCardDeck({ gigs: initial, isLoggedIn }: Props) {
               instant_urgency: g.instant_urgency as "now" | "today" | "weekend",
               skills_required: (g.skills_required as string[]) ?? [],
               employerName: (g.employerName as string) ?? "Employer",
+              score: typeof g.score === "number" ? g.score : undefined,
             })),
             ...prev,
           ]);
@@ -393,17 +410,33 @@ export function SwipeCardDeck({ gigs: initial, isLoggedIn }: Props) {
             zIndex: 100,
             padding: "8px 20px",
             borderRadius: 999,
-            background: toast === "accepted" ? "#16a34a" : "var(--color-ink)",
+            background:
+              toast === "accepted"
+                ? "#16a34a"
+                : toast === "sign-in"
+                  ? "#2563eb"
+                  : "var(--color-ink)",
             color: "#fff",
             fontSize: 13,
             fontWeight: 700,
             letterSpacing: "0.04em",
-            pointerEvents: "none",
-            animation: "fadeInOut 1.6s ease forwards",
+            pointerEvents: toast === "sign-in" ? "auto" : "none",
+            animation: `fadeInOut ${toast === "sign-in" ? "2.2s" : "1.6s"} ease forwards`,
             whiteSpace: "nowrap",
           }}
         >
-          {toast === "accepted" ? "✓ Accepted!" : "Skipped"}
+          {toast === "accepted" ? (
+            "✓ Accepted!"
+          ) : toast === "sign-in" ? (
+            <Link
+              href="/m/singpass?next=/m/feed"
+              style={{ color: "#fff", textDecoration: "underline" }}
+            >
+              Sign in to accept gigs →
+            </Link>
+          ) : (
+            "Skipped"
+          )}
         </div>
       )}
 
@@ -529,20 +562,37 @@ export function SwipeCardDeck({ gigs: initial, isLoggedIn }: Props) {
                 marginBottom: 10,
               }}
             >
-              <span
-                style={{
-                  padding: "4px 12px",
-                  borderRadius: 999,
-                  background: uc.bg,
-                  color: uc.text,
-                  fontSize: 11,
-                  fontWeight: 800,
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                }}
-              >
-                {uc.label}
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span
+                  style={{
+                    padding: "4px 12px",
+                    borderRadius: 999,
+                    background: uc.bg,
+                    color: uc.text,
+                    fontSize: 11,
+                    fontWeight: 800,
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {uc.label}
+                </span>
+                {top.score !== undefined && (
+                  <span
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: 999,
+                      background: "rgba(22,163,74,0.12)",
+                      color: "#16a34a",
+                      fontSize: 11,
+                      fontWeight: 800,
+                      fontFamily: "var(--font-mono)",
+                    }}
+                  >
+                    {Math.round(top.score * 100)}% match
+                  </span>
+                )}
+              </div>
               <span
                 style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--color-ink-mute)" }}
               >

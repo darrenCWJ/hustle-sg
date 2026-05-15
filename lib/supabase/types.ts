@@ -157,3 +157,19 @@ export interface MatchGigRow {
   applications_close_at: string | null;
   distance_km: number | null;
 }
+
+export interface MatchInstantGigRow {
+  gig_id: string;
+  title: string;
+  description: string | null;
+  employer_id: string;
+  location: string | null;
+  lat: number | null;
+  lon: number | null;
+  budget_cents: number;
+  budget_kind: string;
+  instant_urgency: string;
+  skills_required: string[];
+  score: number;
+  distance_km: number | null;
+}

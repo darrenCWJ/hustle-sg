@@ -1,7 +1,11 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { SwipeCardDeck } from "./SwipeCardDeck";
 import type { MobileGig } from "./SwipeCardDeck";
+import { FeedModeChips } from "./FeedModeChips";
+import type { FeedMode } from "./FeedModeChips";
+import type { MatchInstantGigRow } from "@/lib/supabase/types";
 
 function sgtDayBounds() {
   const SGT = 8 * 3600000;
@@ -13,7 +17,28 @@ function sgtDayBounds() {
   return { start, end: new Date(start.getTime() + 24 * 3600000) };
 }
 
-export default async function MobileFeedPage() {
+async function resolveEmployerNames(
+  service: ReturnType<typeof createServiceClient>,
+  employerIds: string[],
+): Promise<Record<string, string>> {
+  if (employerIds.length === 0) return {};
+  const { data: profiles } = await service
+    .from("profiles")
+    .select("id, display_name")
+    .in("id", employerIds);
+  const nameMap: Record<string, string> = {};
+  for (const p of profiles ?? []) nameMap[p.id] = p.display_name ?? "Employer";
+  return nameMap;
+}
+
+export default async function MobileFeedPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mode?: string }>;
+}) {
+  const params = await searchParams;
+  const mode: FeedMode = params.mode === "nearby" ? "nearby" : "all";
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -22,39 +47,87 @@ export default async function MobileFeedPage() {
   const service = createServiceClient();
   const { start, end } = sgtDayBounds();
 
-  const { data: raw } = await service
-    .from("gigs")
-    .select(
-      "id, title, description, location, lat, lon, budget_cents, budget_kind, instant_urgency, skills_required, employer_id",
-    )
-    .eq("is_instant", true)
-    .eq("status", "open")
-    .or(`start_at.is.null,and(start_at.gte.${start.toISOString()},start_at.lt.${end.toISOString()})`)
-    .order("created_at", { ascending: false })
-    .limit(20);
+  let gigs: MobileGig[];
 
-  const employerIds = [...new Set((raw ?? []).map((g) => g.employer_id))];
-  const { data: profiles } = await service
-    .from("profiles")
-    .select("id, display_name")
-    .in("id", employerIds.length > 0 ? employerIds : ["00000000-0000-0000-0000-000000000000"]);
+  let hasEmbedding = false;
+  if (user) {
+    const { count } = await service
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("id", user.id)
+      .not("embedding", "is", null);
+    hasEmbedding = (count ?? 0) > 0;
+  }
 
-  const nameMap: Record<string, string> = {};
-  for (const p of profiles ?? []) nameMap[p.id] = p.display_name ?? "Employer";
+  if (user && hasEmbedding) {
+    const { data: matched } = await service.rpc("match_instant_gigs_for_user", {
+      p_user_id: user.id,
+      p_day_start: start.toISOString(),
+      p_day_end: end.toISOString(),
+      p_limit: mode === "nearby" ? 50 : 20,
+    });
 
-  const gigs: MobileGig[] = (raw ?? []).map((g) => ({
-    id: g.id,
-    title: g.title,
-    description: g.description ?? null,
-    location: g.location ?? "Singapore",
-    lat: g.lat ?? null,
-    lon: g.lon ?? null,
-    budget_cents: g.budget_cents,
-    budget_kind: g.budget_kind as "fixed" | "hourly",
-    instant_urgency: g.instant_urgency as "now" | "today" | "weekend",
-    skills_required: g.skills_required ?? [],
-    employerName: nameMap[g.employer_id] ?? "Employer",
-  }));
+    let rows = (matched ?? []) as MatchInstantGigRow[];
+
+    if (mode === "nearby") {
+      rows = rows
+        .filter((r) => r.instant_urgency === "now")
+        .sort((a, b) => (a.distance_km ?? Infinity) - (b.distance_km ?? Infinity))
+        .slice(0, 20);
+    }
+
+    const employerIds = [...new Set(rows.map((r) => r.employer_id))];
+    const nameMap = await resolveEmployerNames(service, employerIds);
+
+    gigs = rows.map((r) => ({
+      id: r.gig_id,
+      title: r.title,
+      description: r.description ?? null,
+      location: r.location ?? "Singapore",
+      lat: r.lat,
+      lon: r.lon,
+      budget_cents: r.budget_cents,
+      budget_kind: r.budget_kind as "fixed" | "hourly",
+      instant_urgency: r.instant_urgency as "now" | "today" | "weekend",
+      skills_required: r.skills_required ?? [],
+      employerName: nameMap[r.employer_id] ?? "Employer",
+      score: r.score,
+    }));
+  } else {
+    let query = service
+      .from("gigs")
+      .select(
+        "id, title, description, location, lat, lon, budget_cents, budget_kind, instant_urgency, skills_required, employer_id",
+      )
+      .eq("is_instant", true)
+      .eq("status", "open")
+      .or(`start_at.is.null,and(start_at.gte.${start.toISOString()},start_at.lt.${end.toISOString()})`);
+
+    if (mode === "nearby") {
+      query = query.eq("instant_urgency", "now");
+    }
+
+    const { data: raw } = await query
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    const employerIds = [...new Set((raw ?? []).map((g) => g.employer_id))];
+    const nameMap = await resolveEmployerNames(service, employerIds);
+
+    gigs = (raw ?? []).map((g) => ({
+      id: g.id,
+      title: g.title,
+      description: g.description ?? null,
+      location: g.location ?? "Singapore",
+      lat: g.lat ?? null,
+      lon: g.lon ?? null,
+      budget_cents: g.budget_cents,
+      budget_kind: g.budget_kind as "fixed" | "hourly",
+      instant_urgency: g.instant_urgency as "now" | "today" | "weekend",
+      skills_required: g.skills_required ?? [],
+      employerName: nameMap[g.employer_id] ?? "Employer",
+    }));
+  }
 
   const nowCount = gigs.filter((g) => g.instant_urgency === "now").length;
   const todayCount = gigs.filter((g) => g.instant_urgency === "today").length;
@@ -111,11 +184,16 @@ export default async function MobileFeedPage() {
             color: "var(--color-ink)",
           }}
         >
-          Instant Gigs
+          {mode === "nearby" ? "Nearby Now" : "Instant Gigs"}
         </h1>
         <p style={{ fontSize: 11, color: "var(--color-ink-mute)", margin: 0 }}>
-          Swipe right to accept · left to skip
+          {mode === "nearby"
+            ? "Urgent gigs closest to you"
+            : "Swipe right to accept · left to skip"}
         </p>
+        <Suspense>
+          <FeedModeChips />
+        </Suspense>
       </div>
 
       {/* Card deck */}

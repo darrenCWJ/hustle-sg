@@ -64,19 +64,20 @@ export async function fetchTodayInstantGigs(userId?: string): Promise<InstantGig
     nameMap[p.id] = p.display_name;
   }
 
-  // Get vector scores if user is logged in
   const scoreMap: Record<string, number> = {};
   if (userId) {
-    const { data: matches } = await service.rpc("match_gigs_for_user", {
+    const { data: matches } = await service.rpc("match_instant_gigs_for_user", {
       p_user_id: userId,
+      p_day_start: sgtMidnight.toISOString(),
+      p_day_end: sgtEndOfDay.toISOString(),
       p_limit: 50,
     });
-    for (const m of matches ?? []) {
+    for (const m of (matches ?? []) as Array<{ gig_id: string; score: number }>) {
       scoreMap[m.gig_id] = m.score;
     }
   }
 
-  return gigs.map((g) => ({
+  const rows = gigs.map((g) => ({
     id: g.id,
     title: g.title,
     description: g.description ?? "",
@@ -94,6 +95,12 @@ export async function fetchTodayInstantGigs(userId?: string): Promise<InstantGig
     employerName: nameMap[g.employer_id] ?? "Employer",
     score: scoreMap[g.id] ?? 0.5,
   }));
+
+  if (userId) {
+    rows.sort((a, b) => b.score - a.score);
+  }
+
+  return rows;
 }
 
 export async function createInstantGig(formData: FormData): Promise<{ ok: boolean; error?: string; gigId?: string }> {
