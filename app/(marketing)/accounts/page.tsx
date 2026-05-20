@@ -229,7 +229,7 @@ export default async function AccountsPage() {
           </p>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <Button variant="primary" href="/singpass">Go to Singpass login</Button>
-            <Button variant="ghost" href="/demo">Try demos first (no login)</Button>
+            <Button variant="ghost" href="/quick-demo">Quick Demo (no login)</Button>
           </div>
         </div>
       </section>
