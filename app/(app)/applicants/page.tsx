@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/utils";
 import { RehireForm } from "./RehireForm";
 import { CloseGigButton } from "./CloseGigButton";
+import { MarkCompletedButton } from "./MarkCompletedButton";
 
 const STATUS_CONFIG: Record<string, { bg: string; fg: string; label: string }> =
   {
@@ -26,6 +27,11 @@ const STATUS_CONFIG: Record<string, { bg: string; fg: string; label: string }> =
       bg: "var(--color-ink)",
       fg: "var(--color-surface)",
       label: "Hired",
+    },
+    completed: {
+      bg: "#7c3aed",
+      fg: "#fff",
+      label: "Completed",
     },
     rejected: {
       bg: "var(--color-muted)",
@@ -76,6 +82,13 @@ export default async function ApplicantsPage({
 
   const applications = apps ?? [];
   const openGigs = (myGigs.data ?? []).filter((g) => g.status === "open");
+
+  // Ratings the employer has already submitted
+  const appIds = applications.map((a) => a.id);
+  const { data: myRatings } = appIds.length > 0
+    ? await supabase.from("ratings").select("application_id").eq("from_id", user.id).in("application_id", appIds)
+    : { data: [] };
+  const ratedAppIds = new Set((myRatings ?? []).map((r: any) => r.application_id));
 
   // Build per-worker set of gig IDs they've already applied to (among this employer's gigs)
   const appliedByWorker = new Map<string, Set<string>>();
@@ -504,13 +517,29 @@ export default async function ApplicantsPage({
                         </div>
                       </div>
                       {a.status === "hired" && (
-                        <RehireForm
-                          workerId={applicant?.id}
-                          workerName={applicant?.display_name ?? "this worker"}
-                          openGigs={openGigs.filter(
-                            (g) => !appliedByWorker.get(applicant?.id)?.has(g.id),
-                          )}
-                        />
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                          <MarkCompletedButton applicationId={a.id} />
+                          <RehireForm
+                            workerId={applicant?.id}
+                            workerName={applicant?.display_name ?? "this worker"}
+                            openGigs={openGigs.filter(
+                              (g) => !appliedByWorker.get(applicant?.id)?.has(g.id),
+                            )}
+                          />
+                        </div>
+                      )}
+                      {a.status === "completed" && !ratedAppIds.has(a.id) && (
+                        <Link
+                          href={`/rate/${a.id}`}
+                          style={{ display: "block", textAlign: "center", padding: "9px 14px", borderRadius: 999, background: "#7c3aed", color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none" }}
+                        >
+                          ★ Rate this worker
+                        </Link>
+                      )}
+                      {a.status === "completed" && ratedAppIds.has(a.id) && (
+                        <p style={{ fontSize: 12, color: "#7c3aed", textAlign: "center", margin: 0, fontWeight: 600 }}>
+                          ✓ Reviewed
+                        </p>
                       )}
                     </article>
                   );

@@ -181,3 +181,35 @@ export async function postGig(formData: FormData) {
 
   redirect(`/gigs/${gig.id}`);
 }
+
+export async function suggestSkills(
+  title: string,
+  description: string,
+): Promise<string[]> {
+  if (!title.trim() && !description.trim()) return [];
+  const Anthropic = (await import("@anthropic-ai/sdk")).default;
+  const client = new Anthropic();
+  const msg = await client.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 256,
+    messages: [
+      {
+        role: "user",
+        content: `Suggest 6-8 specific, concise skills for a freelance gig with this title and description. Return ONLY a JSON array of short skill strings (2–4 words max each), nothing else.
+
+Title: ${title.slice(0, 200)}
+Description: ${description.slice(0, 800)}`,
+      },
+    ],
+  });
+  const text = ((msg.content[0] as { type: string; text: string }).text ?? "").trim();
+  const match = text.match(/\[[\s\S]*?\]/);
+  if (!match) return [];
+  try {
+    const parsed = JSON.parse(match[0]);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((s): s is string => typeof s === "string").slice(0, 10);
+  } catch {
+    return [];
+  }
+}

@@ -2,30 +2,34 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Zap, Search, FileText, Bell, User, Briefcase, Users, Plus } from "lucide-react";
+import { Zap, Search, Timer, Bell, User, Briefcase, Plus } from "lucide-react";
 import { useDemo } from "../DemoProvider";
 
 const WORKER_TABS = [
   { href: "/quick-demo/feed", icon: Zap, label: "Feed" },
   { href: "/quick-demo/gigs", icon: Search, label: "Browse" },
-  { href: "/quick-demo/applications", icon: FileText, label: "Applied" },
+  { href: "/quick-demo/instant", icon: Timer, label: "Instant" },
   { href: "/quick-demo/messages", icon: Bell, label: "Messages" },
   { href: "/quick-demo/profile", icon: User, label: "Profile" },
 ];
 
 const EMPLOYER_TABS = [
   { href: "/quick-demo/my-gigs", icon: Briefcase, label: "My Gigs" },
-  { href: "/quick-demo/dashboard", icon: Users, label: "Applicants" },
+  { href: "/quick-demo/instant", icon: Timer, label: "Instant" },
   { href: "/quick-demo/post", icon: Plus, label: "Post" },
   { href: "/quick-demo/messages", icon: Bell, label: "Messages" },
   { href: "/quick-demo/profile", icon: User, label: "Profile" },
 ];
 
 export function DemoTabBar() {
-  const { activeAccount } = useDemo();
+  const { activeAccount, applications } = useDemo();
   const pathname = usePathname();
 
   const tabs = activeAccount.role === "employer" ? EMPLOYER_TABS : WORKER_TABS;
+
+  const messagesBadge = activeAccount.role === "freelancer"
+    ? applications.filter((a) => a.freelancerId === activeAccount.id && a.status === "offered").length
+    : 0;
 
   return (
     <nav
@@ -51,7 +55,7 @@ export function DemoTabBar() {
               flexDirection: "column",
               alignItems: "center",
               gap: 3,
-              padding: "6px 12px",
+              padding: "6px 10px",
               color: active ? "var(--color-ink)" : "var(--color-ink-mute)",
               fontSize: 10,
               fontWeight: active ? 700 : 500,
@@ -59,7 +63,7 @@ export function DemoTabBar() {
               textDecoration: "none",
               transition: "color 0.12s",
               WebkitTapHighlightColor: "transparent",
-              minWidth: 52,
+              minWidth: 48,
               justifyContent: "center",
             }}
           >
@@ -78,6 +82,29 @@ export function DemoTabBar() {
                     background: "var(--color-accent)",
                   }}
                 />
+              )}
+              {href === "/quick-demo/messages" && messagesBadge > 0 && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: -4,
+                    right: -6,
+                    minWidth: 16,
+                    height: 16,
+                    borderRadius: 999,
+                    background: "#ef4444",
+                    color: "#fff",
+                    fontSize: 9,
+                    fontWeight: 800,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "0 3px",
+                    lineHeight: 1,
+                  }}
+                >
+                  {messagesBadge}
+                </span>
               )}
             </span>
             <span style={{ marginTop: 4 }}>{label}</span>

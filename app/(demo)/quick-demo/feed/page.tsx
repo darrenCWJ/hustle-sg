@@ -1,11 +1,24 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useDemo } from "../DemoProvider";
+import { useViewMode } from "../ViewModeContext";
 import { DemoSwipeCardDeck } from "./DemoSwipeCardDeck";
 
 export default function DemoFeedPage() {
   const { activeAccount, getGigsForAccount } = useDemo();
+  const { viewMode } = useViewMode();
+  const router = useRouter();
   const gigs = getGigsForAccount();
+
+  useEffect(() => {
+    if (viewMode === "desktop") {
+      router.replace("/quick-demo/dashboard");
+    }
+  }, [viewMode, router]);
+
+  if (viewMode === "desktop") return null;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -42,7 +55,7 @@ export default function DemoFeedPage() {
 
       {/* Swipe deck */}
       <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
-        <DemoSwipeCardDeck gigs={gigs} />
+        <DemoSwipeCardDeck key={activeAccount.id} gigs={gigs} />
       </div>
 
       <style>{`

@@ -6,10 +6,12 @@ import { useViewMode } from "../../ViewModeContext";
 import { GIGS } from "../../data";
 
 const STATUS_STYLES: Record<string, { bg: string; fg: string; label: string }> = {
-  applied:     { bg: "var(--color-muted)",      fg: "var(--color-ink-soft)",  label: "Applied"      },
-  shortlisted: { bg: "#dcfce7",                 fg: "#166534",                label: "Shortlisted"  },
-  accepted:    { bg: "var(--color-ink)",         fg: "var(--color-surface)",   label: "Accepted"     },
-  rejected:    { bg: "var(--color-muted)",       fg: "var(--color-ink-mute)",  label: "Not selected" },
+  applied:      { bg: "var(--color-muted)",      fg: "var(--color-ink-soft)",  label: "Applied"       },
+  interviewing: { bg: "#fef9c3",                 fg: "#854d0e",                label: "Interview sent" },
+  shortlisted:  { bg: "#dcfce7",                 fg: "#166534",                label: "Shortlisted"   },
+  accepted:     { bg: "var(--color-ink)",         fg: "var(--color-surface)",   label: "Accepted"      },
+  rejected:     { bg: "var(--color-muted)",       fg: "var(--color-ink-mute)",  label: "Not selected"  },
+  offered:      { bg: "var(--color-accent)",      fg: "oklch(22% 0.08 38)",     label: "Invited"       },
 };
 
 export default function DemoGigDetailPage() {
@@ -34,30 +36,66 @@ export default function DemoGigDetailPage() {
   );
   const backHref = viewMode === "desktop" ? "/quick-demo/gigs" : "/quick-demo/gigs";
 
+  const hasQuestions = (gig.questions?.length ?? 0) > 0;
+
+  const { updateApplicationStatus } = useDemo();
+
   const ApplyBar = () => {
     if (activeAccount.role !== "freelancer") return null;
-    if (existingApp) {
-      const st = STATUS_STYLES[existingApp.status];
+
+    if (existingApp?.status === "offered") {
       return (
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, padding: "6px 14px", borderRadius: 999, background: st.bg, color: st.fg, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-            {st.label}
-          </span>
+        <div style={{ display: "flex", gap: 10 }}>
           <button
-            onClick={() => router.push(`/quick-demo/messages?app=${existingApp.id}`)}
-            style={{ fontSize: 13, fontWeight: 600, padding: "8px 18px", borderRadius: 999, border: "1px solid var(--color-line)", background: "transparent", color: "var(--color-accent)", cursor: "pointer" }}
+            onClick={() => updateApplicationStatus(existingApp.id, "applied")}
+            style={{ flex: 1, fontSize: 15, fontWeight: 700, padding: "14px 0", borderRadius: 14, border: "none", background: "var(--color-accent)", color: "#fff", cursor: "pointer" }}
           >
-            Message Employer
+            {hasQuestions ? "Accept invite & record interview" : "Accept invite & apply"}
+          </button>
+          <button
+            onClick={() => { updateApplicationStatus(existingApp.id, "rejected"); router.push("/quick-demo/gigs"); }}
+            style={{ fontSize: 14, fontWeight: 600, padding: "14px 18px", borderRadius: 14, border: "1px solid var(--color-line)", background: "transparent", color: "var(--color-ink-mute)", cursor: "pointer", whiteSpace: "nowrap" }}
+          >
+            Decline
           </button>
         </div>
       );
     }
+
+    if (existingApp) {
+      const st = STATUS_STYLES[existingApp.status] ?? STATUS_STYLES.applied;
+      const needsInterview = hasQuestions && existingApp.status === "applied";
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 11, fontWeight: 700, padding: "6px 14px", borderRadius: 999, background: st.bg, color: st.fg, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              {st.label}
+            </span>
+            <button
+              onClick={() => router.push(`/quick-demo/messages?app=${existingApp.id}`)}
+              style={{ fontSize: 13, fontWeight: 600, padding: "8px 18px", borderRadius: 999, border: "1px solid var(--color-line)", background: "transparent", color: "var(--color-accent)", cursor: "pointer" }}
+            >
+              Message Employer
+            </button>
+          </div>
+          {needsInterview && (
+            <button
+              onClick={() => router.push(`/quick-demo/interview/${existingApp.id}`)}
+              style={{ width: "100%", fontSize: 14, fontWeight: 700, padding: "12px 0", borderRadius: 14, border: "none", background: "var(--color-ink)", color: "var(--color-surface)", cursor: "pointer" }}
+            >
+              Record your interview →
+            </button>
+          )}
+        </div>
+      );
+    }
+
     return (
       <button
         onClick={() => applyToGig(gig.id)}
         style={{ width: "100%", fontSize: 15, fontWeight: 700, padding: "14px 0", borderRadius: 14, border: "none", background: "var(--color-accent)", color: "#fff", cursor: "pointer" }}
       >
-        Apply Now
+        {hasQuestions ? "Apply & Record Interview" : "Apply Now"}
       </button>
     );
   };
@@ -86,9 +124,12 @@ export default function DemoGigDetailPage() {
 
         {/* Employer row */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 15, color: "var(--color-ink-soft)" }}>
+          <button
+            onClick={() => router.push("/quick-demo/employer/requestor")}
+            style={{ fontSize: 15, color: "var(--color-ink-soft)", background: "none", border: "none", cursor: "pointer", padding: 0, fontWeight: 500, textDecoration: "underline", textDecorationColor: "var(--color-line)" }}
+          >
             Darren Loh
-          </span>
+          </button>
           <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 999, background: "var(--color-jade-soft, #dcfce7)", color: "var(--color-jade-ink, #166534)", fontWeight: 700 }}>
             ✓ Singpass Verified
           </span>
@@ -102,6 +143,11 @@ export default function DemoGigDetailPage() {
           {(gig.headcount ?? 1) > 1 && (
             <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "var(--color-accent-soft)", color: "var(--color-accent-ink)" }}>
               {gig.headcount} slots
+            </span>
+          )}
+          {gig.duration && (
+            <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "var(--color-muted)", color: "var(--color-ink-soft)" }}>
+              {gig.duration}
             </span>
           )}
         </div>
@@ -127,6 +173,23 @@ export default function DemoGigDetailPage() {
                 <span key={s} style={{ fontSize: 12, padding: "5px 14px", borderRadius: 999, background: "var(--color-muted)", color: "var(--color-ink-soft)", fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" }}>
                   {s}
                 </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Interview questions */}
+        {hasQuestions && (
+          <div style={{ marginBottom: 28 }}>
+            <p style={{ fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--color-ink-mute)", margin: "0 0 10px", fontWeight: 600 }}>
+              Async interview · {gig.questions!.length} question{gig.questions!.length > 1 ? "s" : ""} · 90s video each
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {gig.questions!.map((q, i) => (
+                <div key={i} style={{ display: "flex", gap: 10, padding: "12px 16px", borderRadius: 10, background: "var(--color-surface-raised)", border: "1px solid var(--color-line)" }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700, color: "var(--color-ink-mute)", flexShrink: 0, paddingTop: 1 }}>Q{i + 1}</span>
+                  <span style={{ fontSize: 14, color: "var(--color-ink-soft)", lineHeight: 1.5 }}>{q}</span>
+                </div>
               ))}
             </div>
           </div>
@@ -169,7 +232,12 @@ export default function DemoGigDetailPage() {
 
           {/* Employer row */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 14, color: "var(--color-ink-soft)" }}>Darren Loh</span>
+            <button
+              onClick={() => router.push("/quick-demo/employer/requestor")}
+              style={{ fontSize: 14, color: "var(--color-ink-soft)", background: "none", border: "none", cursor: "pointer", padding: 0, fontWeight: 500, textDecoration: "underline", textDecorationColor: "var(--color-line)" }}
+            >
+              Darren Loh
+            </button>
             <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 999, background: "var(--color-jade-soft, #dcfce7)", color: "var(--color-jade-ink, #166534)", fontWeight: 700 }}>
               ✓ Singpass Verified
             </span>
@@ -183,6 +251,11 @@ export default function DemoGigDetailPage() {
             {(gig.headcount ?? 1) > 1 && (
               <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "var(--color-accent-soft)", color: "var(--color-accent-ink)" }}>
                 {gig.headcount} slots
+              </span>
+            )}
+            {gig.duration && (
+              <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "var(--color-muted)", color: "var(--color-ink-soft)" }}>
+                {gig.duration}
               </span>
             )}
           </div>
@@ -208,6 +281,23 @@ export default function DemoGigDetailPage() {
                   <span key={s} style={{ fontSize: 11, padding: "5px 12px", borderRadius: 999, background: "var(--color-muted)", color: "var(--color-ink-soft)", fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" }}>
                     {s}
                   </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Interview questions */}
+          {hasQuestions && (
+            <div style={{ marginBottom: 22 }}>
+              <p style={{ fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--color-ink-mute)", margin: "0 0 10px", fontWeight: 600 }}>
+                Async interview · {gig.questions!.length} question{gig.questions!.length > 1 ? "s" : ""} · 90s each
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {gig.questions!.map((q, i) => (
+                  <div key={i} style={{ display: "flex", gap: 10, padding: "12px 14px", borderRadius: 10, background: "var(--color-surface-raised)", border: "1px solid var(--color-line)" }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700, color: "var(--color-ink-mute)", flexShrink: 0, paddingTop: 1 }}>Q{i + 1}</span>
+                    <span style={{ fontSize: 13, color: "var(--color-ink-soft)", lineHeight: 1.5 }}>{q}</span>
+                  </div>
                 ))}
               </div>
             </div>

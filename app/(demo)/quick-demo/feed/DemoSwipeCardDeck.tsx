@@ -2,7 +2,20 @@
 
 import { useState, useRef } from "react";
 import { useDemo } from "../DemoProvider";
+import type { BookedSlot } from "../DemoProvider";
 import type { DemoGig } from "../data";
+
+function toMin(t: string): number {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function hasTimeConflict(gig: DemoGig, slots: BookedSlot[]): boolean {
+  if (!gig.startTime || !gig.endTime) return false;
+  const gs = toMin(gig.startTime);
+  const ge = toMin(gig.endTime);
+  return slots.some((s) => gs < toMin(s.endTime) && toMin(s.startTime) < ge);
+}
 
 const THRESHOLD = 85;
 
@@ -20,7 +33,7 @@ interface Props {
 }
 
 export function DemoSwipeCardDeck({ gigs: initial }: Props) {
-  const { applyToGig, applications, activeAccount } = useDemo();
+  const { applyToGig, applications, activeAccount, bookedSlots } = useDemo();
   const [queue, setQueue] = useState(initial);
   const [dx, setDx] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -81,6 +94,8 @@ export function DemoSwipeCardDeck({ gigs: initial }: Props) {
   const hasApplied = top
     ? applications.some((a) => a.gigId === top.id && a.freelancerId === activeAccount.id)
     : false;
+
+  const isConflict = top ? hasTimeConflict(top, bookedSlots) : false;
 
   const cardStyle: React.CSSProperties = {
     position: "absolute",
@@ -167,6 +182,13 @@ export function DemoSwipeCardDeck({ gigs: initial }: Props) {
           </div>
         )}
 
+        {/* Time conflict banner */}
+        {isConflict && (
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 3, background: "#dc2626", color: "#fff", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", textAlign: "center", padding: "6px 12px", borderRadius: "20px 20px 0 0" }}>
+            ⚠ Time conflict — slot already booked
+          </div>
+        )}
+
         {/* Card content */}
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 20px 0" }}>
           {/* Budget */}
@@ -195,9 +217,17 @@ export function DemoSwipeCardDeck({ gigs: initial }: Props) {
           </div>
 
           {/* Location */}
-          <p style={{ fontSize: 12, color: "var(--color-ink-mute)", margin: "0 0 14px" }}>
+          <p style={{ fontSize: 12, color: "var(--color-ink-mute)", margin: "0 0 4px" }}>
             {top.location} · {top.postedAgo}
           </p>
+
+          {/* Timing badge */}
+          {top.startTime && top.endTime && (
+            <p style={{ fontSize: 11, color: isConflict ? "#dc2626" : "var(--color-ink-soft)", margin: "0 0 12px", fontWeight: 600 }}>
+              🕐 {top.startTime}–{top.endTime}
+              {isConflict && " · conflicts with accepted gig"}
+            </p>
+          )}
 
           {/* Description */}
           <p style={{ fontSize: 14, color: "var(--color-ink-soft)", lineHeight: 1.55, margin: "0 0 14px" }}>
@@ -227,8 +257,8 @@ export function DemoSwipeCardDeck({ gigs: initial }: Props) {
           </button>
 
           <div style={{ textAlign: "center" }}>
-            <p style={{ fontSize: 10, color: "var(--color-ink-mute)", margin: 0, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-              {hasApplied ? "Already applied" : "Swipe to apply"}
+            <p style={{ fontSize: 10, color: isConflict ? "#dc2626" : "var(--color-ink-mute)", margin: 0, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+              {isConflict ? "Time conflict" : hasApplied ? "Already applied" : "Swipe to apply"}
             </p>
             <p style={{ fontSize: 9, color: "var(--color-ink-mute)", margin: "2px 0 0" }}>
               {queue.length} gig{queue.length !== 1 ? "s" : ""} left
@@ -237,17 +267,17 @@ export function DemoSwipeCardDeck({ gigs: initial }: Props) {
 
           <button
             onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => !hasApplied && dismiss("right")}
-            disabled={hasApplied}
+            onClick={() => !hasApplied && !isConflict && dismiss("right")}
+            disabled={hasApplied || isConflict}
             style={{
               width: 52,
               height: 52,
               borderRadius: "50%",
               border: "none",
-              background: hasApplied ? "var(--color-muted)" : "var(--color-jade, #16a34a)",
+              background: hasApplied || isConflict ? "var(--color-muted)" : "var(--color-jade, #16a34a)",
               color: "#fff",
               fontSize: 22,
-              cursor: hasApplied ? "default" : "pointer",
+              cursor: hasApplied || isConflict ? "default" : "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",

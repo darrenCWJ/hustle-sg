@@ -6,12 +6,10 @@ import { postGigMobile } from "./actions";
 const CATEGORIES = [
   { value: "tech", label: "Tech" },
   { value: "design", label: "Design" },
-  { value: "content", label: "Content" },
   { value: "marketing", label: "Marketing" },
   { value: "tuition", label: "Tuition" },
   { value: "events", label: "Events" },
   { value: "video", label: "Video / Photo" },
-  { value: "f&b", label: "F&B" },
   { value: "admin", label: "Admin" },
   { value: "logistics", label: "Logistics" },
   { value: "beauty", label: "Beauty / Wellness" },

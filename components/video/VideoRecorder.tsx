@@ -34,7 +34,6 @@ export function VideoRecorder({ maxSeconds, onRecorded }: Props) {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.muted = true;
-        await videoRef.current.play();
       }
     } catch (err: any) {
       setError(err?.message ?? "Camera access denied");
@@ -89,18 +88,22 @@ export function VideoRecorder({ maxSeconds, onRecorded }: Props) {
   const redo = async () => {
     setBlob(null);
     setElapsed(0);
-    setPhase("idle");
+    if (!streamRef.current) {
+      await ensureCamera();
+    }
     if (videoRef.current) {
       videoRef.current.controls = false;
       videoRef.current.muted = true;
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.removeAttribute("src");
     }
-    await ensureCamera();
+    setPhase("idle");
   };
 
   return (
     <div className="rounded-card overflow-hidden bg-ink text-surface">
       <div className="relative aspect-video bg-black">
-        <video ref={videoRef} playsInline className="h-full w-full object-cover" />
+        <video ref={videoRef} playsInline autoPlay muted className="h-full w-full object-cover" />
         {phase === "recording" && (
           <div className="absolute top-3 left-3 flex items-center gap-2 rounded-pill bg-accent px-3 py-1 text-ink text-xs font-bold uppercase tracking-widest">
             <span className="h-2 w-2 rounded-full bg-ink animate-pulse" />

@@ -14,6 +14,7 @@ interface Gig {
   category: string | null;
   created_at: string;
   applications_close_at?: string | null;
+  duration_label?: string | null;
   employer?: { display_name: string | null; singpass_verified_at: string | null } | null;
   match_score?: number;
 }
@@ -128,6 +129,11 @@ function GigRow({ gig }: { gig: Gig }) {
           <p style={{ fontSize: 10.5, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--color-ink-soft)", margin: 0 }}>
             {gig.budget_kind}
           </p>
+          {gig.duration_label && (
+            <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 999, background: "var(--color-muted)", color: "var(--color-ink-soft)" }}>
+              {gig.duration_label}
+            </span>
+          )}
           {isClosed && (
             <span style={{
               fontSize: 10,

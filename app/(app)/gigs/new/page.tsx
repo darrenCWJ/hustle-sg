@@ -5,6 +5,7 @@ import { GigFormSettings } from "./GigFormSettings";
 import { GigTimingFields } from "./GigTimingFields";
 import { HeadcountStepper } from "./HeadcountStepper";
 import { RehireSelector, type PreviousHire } from "./RehireSelector";
+import { SkillsSuggestor } from "./SkillsSuggestor";
 
 async function postGigAction(formData: FormData) {
   "use server";
@@ -67,12 +68,10 @@ export default async function NewGigPage() {
             <option value="">Category</option>
             <option value="tech">Tech</option>
             <option value="design">Design</option>
-            <option value="content">Content</option>
             <option value="marketing">Marketing</option>
             <option value="tuition">Tuition</option>
             <option value="events">Events</option>
             <option value="video">Video / Photography</option>
-            <option value="f&b">F&amp;B</option>
             <option value="admin">Admin / Operations</option>
             <option value="logistics">Logistics / Delivery</option>
             <option value="beauty">Beauty / Wellness</option>
@@ -83,11 +82,7 @@ export default async function NewGigPage() {
             placeholder="Location (e.g. Tanjong Pagar or Remote)"
             className="rounded-xl border border-line px-4 py-3 bg-surface-raised"
           />
-          <input
-            name="skills_required"
-            placeholder="Skills required (comma separated)"
-            className="md:col-span-2 rounded-xl border border-line px-4 py-3 bg-surface-raised"
-          />
+          <SkillsSuggestor />
           <div className="md:col-span-2">
             <HeadcountStepper />
           </div>

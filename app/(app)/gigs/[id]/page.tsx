@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatSgd, timeAgo } from "@/lib/utils";
 import { applyToGig } from "./actions";
+import { RecommendedCandidates } from "./RecommendedCandidates";
 
 export default async function GigDetailPage({
   params,
@@ -78,6 +79,19 @@ export default async function GigDetailPage({
       .eq("gig_id", id),
   ]);
   const similarGigs = similarGigsRes.data ?? [];
+
+  type MatchedCandidate = { user_id: string; handle: string | null; display_name: string; headline: string | null; score: number };
+  let recommendedCandidates: MatchedCandidate[] = [];
+  let existingApplicantIds: string[] = [];
+
+  if (isOwnGig) {
+    const [matchRes, appsRes] = await Promise.all([
+      supabase.rpc("match_users_for_gig", { p_gig_id: id, p_limit: 8 }),
+      supabase.from("applications").select("applicant_id").eq("gig_id", id),
+    ]);
+    recommendedCandidates = (matchRes.data ?? []) as MatchedCandidate[];
+    existingApplicantIds = ((appsRes.data ?? []) as { applicant_id: string }[]).map((a) => a.applicant_id);
+  }
 
   return (
     <main style={{ maxWidth: 1180, margin: "0 auto", padding: "40px 28px 80px" }}>
@@ -448,7 +462,11 @@ export default async function GigDetailPage({
               </span>
               <div>
                 <p style={{ fontFamily: "var(--font-display)", fontSize: 20, margin: 0, letterSpacing: "-0.02em" }}>
-                  {gig.employer?.display_name}
+                  {gig.employer?.handle ? (
+                    <Link href={`/profile/${gig.employer.handle}`} style={{ color: "inherit", textDecoration: "none" }}>
+                      {gig.employer.display_name}
+                    </Link>
+                  ) : gig.employer?.display_name}
                 </p>
                 <p style={{ fontSize: 12, color: "oklch(100% 0 0 / 0.65)", margin: "2px 0 0" }}>
                   {employerVerified ? "Singpass-verified" : "Unverified"}
@@ -600,6 +618,14 @@ export default async function GigDetailPage({
           </div>
         </aside>
       </div>
+
+      {isOwnGig && recommendedCandidates.length > 0 && (
+        <RecommendedCandidates
+          candidates={recommendedCandidates}
+          gigId={id}
+          existingApplicantIds={existingApplicantIds}
+        />
+      )}
     </main>
   );
 }

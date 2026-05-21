@@ -3,13 +3,19 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useDemo } from "../../DemoProvider";
-import { GIGS, PROFILES } from "../../data";
+import { PROFILES } from "../../data";
+import { getVideoUrl } from "../../lib/videoStore";
+
+import { useViewMode } from "../../ViewModeContext";
 
 const STATUS_CONFIG: Record<string, { bg: string; fg: string; label: string }> = {
-  applied:     { bg: "var(--color-accent-soft)",        fg: "var(--color-accent-ink)", label: "Applied"     },
-  shortlisted: { bg: "var(--color-jade-soft, #dcfce7)", fg: "#166534",                label: "Shortlisted" },
-  accepted:    { bg: "var(--color-ink)",                fg: "var(--color-surface)",    label: "Accepted"    },
-  rejected:    { bg: "var(--color-muted)",              fg: "var(--color-ink-mute)",   label: "Not selected"},
+  applied:      { bg: "var(--color-accent-soft)",        fg: "var(--color-accent-ink)", label: "Applied"       },
+  interviewing: { bg: "#fef9c3",                         fg: "#854d0e",                 label: "Interview sent" },
+  shortlisted:  { bg: "var(--color-jade-soft, #dcfce7)", fg: "#166534",                 label: "Shortlisted"   },
+  accepted:     { bg: "var(--color-ink)",                fg: "var(--color-surface)",    label: "Accepted"      },
+  rejected:     { bg: "var(--color-muted)",              fg: "var(--color-ink-mute)",   label: "Not selected"  },
+  completed:    { bg: "#7c3aed",                         fg: "#fff",                    label: "Completed"     },
+  offered:      { bg: "var(--color-accent)",             fg: "oklch(22% 0.08 38)",      label: "Offered"       },
 };
 
 export default function DemoReviewPage() {
@@ -23,7 +29,12 @@ export default function DemoReviewPage() {
     updateApplicationStatus,
     sendMessage,
     getMessagesForApplication,
+    getInterviewResponses,
+    getInterviewVideoUrl,
+    getAllGigs,
+    hasRated,
   } = useDemo();
+  const { viewMode } = useViewMode();
 
   const [input, setInput] = useState("");
 
@@ -37,9 +48,11 @@ export default function DemoReviewPage() {
     );
   }
 
-  const gig = GIGS.find((g) => g.id === app.gigId);
+  const gig = getAllGigs().find((g) => g.id === app.gigId);
   const freelancer = PROFILES.find((p) => p.id === app.freelancerId);
   const msgs = getMessagesForApplication(appId);
+  const interviewAnswered = getInterviewResponses(appId);
+  const questions = gig?.questions ?? [];
   const conf = STATUS_CONFIG[app.status] ?? STATUS_CONFIG.applied;
 
   const AVATAR_HUES = [250, 165, 340, 38, 260, 200, 78, 310];
@@ -132,6 +145,51 @@ export default function DemoReviewPage() {
         )}
       </div>
 
+      {/* Interview section */}
+      {questions.length > 0 && (
+        <div style={{ padding: 20, borderRadius: 18, background: "var(--color-surface-raised)", border: "1px solid var(--color-line)", marginBottom: 28 }}>
+          <p style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--color-ink-mute)", margin: "0 0 14px", fontWeight: 600 }}>
+            Async interview · {interviewAnswered.length}/{questions.length} answered
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {questions.map((q, i) => {
+              const done = interviewAnswered.includes(i);
+              return (
+                <div key={i} style={{ borderRadius: 12, background: "var(--color-surface)", border: `1px solid ${done ? "#bbf7d0" : "var(--color-line)"}`, overflow: "hidden" }}>
+                  <div style={{ display: "flex", gap: 12, padding: "14px 16px" }}>
+                    <div style={{ flexShrink: 0, width: 28, height: 28, borderRadius: "50%", background: done ? "#dcfce7" : "var(--color-muted)", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700, color: done ? "#166534" : "var(--color-ink-mute)" }}>
+                      {done ? "✓" : i + 1}
+                    </div>
+                    <p style={{ fontSize: 13, color: "var(--color-ink-soft)", margin: 0, lineHeight: 1.4, alignSelf: "center" }}>{q}</p>
+                  </div>
+                  {done ? (() => {
+                    const videoUrl = getInterviewVideoUrl(appId, i) ?? getVideoUrl(appId, i);
+                    return (
+                      <div style={{ margin: "0 16px 14px", borderRadius: 10, overflow: "hidden", background: "#0a0a0a" }}>
+                        {videoUrl ? (
+                          <video src={videoUrl} controls style={{ display: "block", width: "100%", maxHeight: 360, background: "#0a0a0a" }} />
+                        ) : (
+                          <div style={{ aspectRatio: "16/9", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
+                            <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(255,255,255,0.1)", display: "grid", placeItems: "center" }}>
+                              <div style={{ width: 0, height: 0, borderStyle: "solid", borderWidth: "10px 0 10px 18px", borderColor: "transparent transparent transparent rgba(255,255,255,0.7)", marginLeft: 4 }} />
+                            </div>
+                            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                              Video response · 90s
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })() : (
+                    <p style={{ fontSize: 11, color: "var(--color-ink-mute)", margin: "0 16px 14px" }}>Awaiting answer</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Decision section */}
       {!["accepted", "rejected"].includes(app.status) && (
         <div style={{ padding: 20, borderRadius: 18, background: "var(--color-surface-raised)", border: "1px solid var(--color-line)", marginBottom: 28 }}>
@@ -139,7 +197,7 @@ export default function DemoReviewPage() {
             Your decision
           </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            {app.status === "applied" && (
+            {(app.status === "applied" || app.status === "interviewing") && (
               <>
                 <button
                   onClick={() => updateApplicationStatus(appId, "shortlisted")}
@@ -156,20 +214,56 @@ export default function DemoReviewPage() {
               </>
             )}
             {app.status === "shortlisted" && (
-              <button
-                onClick={() => updateApplicationStatus(appId, "accepted")}
-                style={{ padding: "10px 22px", borderRadius: 999, background: "var(--color-ink)", color: "var(--color-surface)", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer" }}
-              >
-                Accept — Hire this person
-              </button>
+              <>
+                <button
+                  onClick={() => updateApplicationStatus(appId, "accepted")}
+                  style={{ padding: "10px 22px", borderRadius: 999, background: "var(--color-ink)", color: "var(--color-surface)", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer" }}
+                >
+                  Accept — Hire this person
+                </button>
+                <button
+                  onClick={() => updateApplicationStatus(appId, "rejected")}
+                  style={{ padding: "10px 22px", borderRadius: 999, border: "1px solid var(--color-line)", background: "transparent", fontSize: 14, fontWeight: 600, cursor: "pointer", color: "var(--color-ink-mute)" }}
+                >
+                  Reject
+                </button>
+              </>
             )}
           </div>
         </div>
       )}
 
-      {(app.status === "accepted" || app.status === "rejected") && (
-        <div style={{ padding: 18, borderRadius: 18, background: app.status === "accepted" ? "#dcfce7" : "var(--color-muted)", color: app.status === "accepted" ? "#166534" : "var(--color-ink-mute)", fontSize: 14, fontWeight: 700, textAlign: "center", marginBottom: 28 }}>
-          {app.status === "accepted" ? "You accepted this applicant." : "You declined this applicant."}
+      {app.status === "accepted" && (
+        <div style={{ padding: 20, borderRadius: 18, background: "#dcfce7", marginBottom: 28, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#166534" }}>You accepted this applicant.</span>
+          <button
+            onClick={() => updateApplicationStatus(appId, "completed")}
+            style={{ padding: "10px 22px", borderRadius: 999, background: "#7c3aed", color: "#fff", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer" }}
+          >
+            Mark as completed
+          </button>
+        </div>
+      )}
+
+      {app.status === "completed" && (
+        <div style={{ padding: 20, borderRadius: 18, background: "#f3e8ff", marginBottom: 28 }}>
+          <p style={{ fontSize: 14, fontWeight: 700, color: "#7c3aed", margin: "0 0 12px" }}>Gig completed!</p>
+          {!hasRated(appId, activeAccount.id) ? (
+            <button
+              onClick={() => router.push(`/quick-demo/rate/${appId}`)}
+              style={{ padding: "10px 22px", borderRadius: 999, background: "#7c3aed", color: "#fff", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer" }}
+            >
+              ★ Rate this freelancer
+            </button>
+          ) : (
+            <p style={{ fontSize: 13, color: "#7c3aed", margin: 0 }}>You have already left a review.</p>
+          )}
+        </div>
+      )}
+
+      {app.status === "rejected" && (
+        <div style={{ padding: 18, borderRadius: 18, background: "var(--color-muted)", color: "var(--color-ink-mute)", fontSize: 14, fontWeight: 700, textAlign: "center", marginBottom: 28 }}>
+          You declined this applicant.
         </div>
       )}
 

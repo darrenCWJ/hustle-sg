@@ -21,14 +21,31 @@ export interface DemoGig {
   budget: string;
   location: string;
   postedAgo: string;
+  duration?: string;  // e.g. "1 day", "3 months", "10 weeks", "Ongoing"
   headcount?: number;
+  startTime?: string; // "HH:MM"
+  endTime?: string;   // "HH:MM"
+  days?: number[];    // 0=Sun … 6=Sat
+  questions?: string[]; // async interview questions, up to 3
 }
 
 export interface DemoApplication {
   id: string;
   gigId: string;
   freelancerId: string;
-  status: "applied" | "shortlisted" | "accepted" | "rejected";
+  status: "applied" | "interviewing" | "shortlisted" | "accepted" | "rejected" | "completed" | "offered";
+  createdAt: string;
+}
+
+export interface DemoRating {
+  id: string;
+  applicationId: string;
+  gigId: string;
+  fromId: string;
+  toId: string;
+  stars: number;
+  review: string;
+  gigTitle: string;
   createdAt: string;
 }
 
@@ -167,6 +184,12 @@ export const GIGS: DemoGig[] = [
     budget: "$120/hr",
     location: "Raffles Place (hybrid)",
     postedAgo: "1d ago",
+    duration: "3 months",
+    questions: [
+      "Walk us through a complex full-stack feature you built end to end.",
+      "How do you approach debugging a performance issue in a React app?",
+      "Tell us about a time you had to communicate a technical decision to a non-technical stakeholder.",
+    ],
   },
   {
     id: "tech-2",
@@ -178,6 +201,7 @@ export const GIGS: DemoGig[] = [
     budget: "$110/hr",
     location: "Remote",
     postedAgo: "2d ago",
+    duration: "Project-based",
   },
   {
     id: "tech-3",
@@ -189,6 +213,7 @@ export const GIGS: DemoGig[] = [
     budget: "$8,000 fixed",
     location: "Remote",
     postedAgo: "3d ago",
+    duration: "4 weeks",
   },
   {
     id: "design-1",
@@ -200,6 +225,11 @@ export const GIGS: DemoGig[] = [
     budget: "$90/hr",
     location: "Tanjong Pagar",
     postedAgo: "1d ago",
+    duration: "Project-based",
+    questions: [
+      "Show us a project where you improved a complex, data-heavy interface.",
+      "How do you approach building a design system from scratch?",
+    ],
   },
   {
     id: "design-2",
@@ -211,6 +241,7 @@ export const GIGS: DemoGig[] = [
     budget: "$5,500 fixed",
     location: "Remote",
     postedAgo: "4d ago",
+    duration: "Project-based",
   },
   {
     id: "design-3",
@@ -222,6 +253,7 @@ export const GIGS: DemoGig[] = [
     budget: "$3,000 fixed",
     location: "Remote",
     postedAgo: "2d ago",
+    duration: "Project-based",
   },
 
   // ─── Events / Marketing / Content (6) ─────────────────────────────
@@ -236,6 +268,11 @@ export const GIGS: DemoGig[] = [
     location: "Marina Bay Sands",
     postedAgo: "1d ago",
     headcount: 3,
+    duration: "1 day",
+    questions: [
+      "Describe the most complex event you've coordinated and what made it challenging.",
+      "How do you handle a last-minute vendor issue on the day of an event?",
+    ],
   },
   {
     id: "events-2",
@@ -247,6 +284,7 @@ export const GIGS: DemoGig[] = [
     budget: "$2,500 fixed",
     location: "Suntec Convention Centre",
     postedAgo: "3d ago",
+    duration: "2 days",
   },
   {
     id: "marketing-1",
@@ -259,6 +297,7 @@ export const GIGS: DemoGig[] = [
     location: "Remote",
     postedAgo: "2d ago",
     headcount: 2,
+    duration: "3 months",
   },
   {
     id: "marketing-2",
@@ -270,6 +309,7 @@ export const GIGS: DemoGig[] = [
     budget: "$80/hr",
     location: "Remote",
     postedAgo: "1d ago",
+    duration: "Ongoing",
   },
   {
     id: "content-1",
@@ -281,6 +321,7 @@ export const GIGS: DemoGig[] = [
     budget: "$4,000 fixed",
     location: "Remote",
     postedAgo: "5d ago",
+    duration: "Project-based",
   },
   {
     id: "content-2",
@@ -292,6 +333,7 @@ export const GIGS: DemoGig[] = [
     budget: "$500/episode",
     location: "Remote",
     postedAgo: "2d ago",
+    duration: "Project-based",
   },
 
   // ─── Teaching / Tuition (6) ────────────────────────────────────────
@@ -305,6 +347,10 @@ export const GIGS: DemoGig[] = [
     budget: "$80/hr",
     location: "Bishan",
     postedAgo: "1d ago",
+    duration: "Ongoing",
+    startTime: "19:00",
+    endTime: "20:30",
+    days: [1, 2, 3, 4, 5],
   },
   {
     id: "tuition-2",
@@ -316,6 +362,7 @@ export const GIGS: DemoGig[] = [
     budget: "$70/hr",
     location: "Tampines",
     postedAgo: "2d ago",
+    duration: "Ongoing",
   },
   {
     id: "tuition-3",
@@ -327,6 +374,10 @@ export const GIGS: DemoGig[] = [
     budget: "$60/hr",
     location: "Bukit Timah",
     postedAgo: "3d ago",
+    duration: "8 weeks",
+    startTime: "09:00",
+    endTime: "10:30",
+    days: [6],
   },
   {
     id: "tuition-4",
@@ -338,6 +389,7 @@ export const GIGS: DemoGig[] = [
     budget: "$85/hr",
     location: "Clementi",
     postedAgo: "1d ago",
+    duration: "Ongoing",
   },
   {
     id: "tuition-5",
@@ -349,6 +401,7 @@ export const GIGS: DemoGig[] = [
     budget: "$100/hr",
     location: "Online / Orchard",
     postedAgo: "4d ago",
+    duration: "Project-based",
   },
   {
     id: "tuition-6",
@@ -361,5 +414,9 @@ export const GIGS: DemoGig[] = [
     location: "Toa Payoh",
     postedAgo: "2d ago",
     headcount: 2,
+    duration: "10 weeks",
+    startTime: "14:00",
+    endTime: "16:00",
+    days: [6],
   },
 ];

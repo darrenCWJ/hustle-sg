@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useDemo } from "../DemoProvider";
-import { GIGS, PROFILES } from "../data";
+import { PROFILES } from "../data";
 
 export default function DemoMessagesPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { activeAccount, applications, getMessagesForApplication, sendMessage } = useDemo();
+  const { activeAccount, applications, getMessagesForApplication, sendMessage, getAllGigs, updateApplicationStatus } = useDemo();
+  const allGigs = getAllGigs();
   const [input, setInput] = useState("");
 
   const appId = searchParams.get("app");
@@ -55,7 +56,7 @@ export default function DemoMessagesPage() {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {relevantApps.map((app) => {
-                const gig = GIGS.find((g) => g.id === app.gigId);
+                const gig = allGigs.find((g) => g.id ===app.gigId);
                 const freelancer = PROFILES.find((p) => p.id === app.freelancerId);
                 const msgs = getMessagesForApplication(app.id);
                 const lastMsg = msgs[msgs.length - 1];
@@ -111,7 +112,7 @@ export default function DemoMessagesPage() {
                         {lastMsg ? lastMsg.body : `Re: ${gig?.title}`}
                       </div>
                     </div>
-                    {msgs.length > 0 && (
+                    {(msgs.length > 0 || app.status === "offered") && (
                       <span
                         style={{
                           fontSize: 10,
@@ -119,7 +120,7 @@ export default function DemoMessagesPage() {
                           width: 18,
                           height: 18,
                           borderRadius: "50%",
-                          background: "var(--color-accent)",
+                          background: app.status === "offered" ? "#ef4444" : "var(--color-accent)",
                           color: "#fff",
                           display: "flex",
                           alignItems: "center",
@@ -127,7 +128,7 @@ export default function DemoMessagesPage() {
                           flexShrink: 0,
                         }}
                       >
-                        {msgs.length}
+                        {msgs.length || 1}
                       </span>
                     )}
                   </button>
@@ -149,7 +150,7 @@ export default function DemoMessagesPage() {
     );
   }
 
-  const gig = GIGS.find((g) => g.id === app.gigId);
+  const gig = allGigs.find((g) => g.id ===app.gigId);
   const freelancer = PROFILES.find((p) => p.id === app.freelancerId);
   const msgs = getMessagesForApplication(appId);
   const otherParty = activeAccount.role === "employer" ? freelancer : PROFILES[0];
@@ -211,6 +212,42 @@ export default function DemoMessagesPage() {
           </div>
         </div>
       </div>
+
+      {/* Offer card — visible to freelancer when status is offered */}
+      {app.status === "offered" && activeAccount.role === "freelancer" && gig && (
+        <div style={{ margin: "10px 12px 0", padding: "14px 16px", borderRadius: 14, background: "var(--color-accent-soft)", border: "1px solid var(--color-accent)", flexShrink: 0 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--color-accent-ink)", margin: "0 0 6px" }}>
+            Direct invite
+          </p>
+          <p style={{ fontSize: 14, fontWeight: 700, color: "var(--color-ink)", margin: "0 0 2px" }}>{gig.title}</p>
+          <p style={{ fontSize: 12, color: "var(--color-ink-soft)", margin: "0 0 12px" }}>
+            {gig.budget}{gig.location ? ` · ${gig.location}` : ""}
+          </p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button
+              onClick={() => router.push(`/quick-demo/gig/${gig.id}`)}
+              style={{ fontSize: 12, fontWeight: 600, padding: "7px 14px", borderRadius: 999, border: "1px solid var(--color-accent)", background: "transparent", color: "var(--color-accent-ink)", cursor: "pointer" }}
+            >
+              View listing →
+            </button>
+            <button
+              onClick={() => {
+                updateApplicationStatus(app.id, "applied");
+                router.push(`/quick-demo/gig/${gig.id}`);
+              }}
+              style={{ fontSize: 12, fontWeight: 700, padding: "7px 14px", borderRadius: 999, border: "none", background: "var(--color-ink)", color: "var(--color-surface)", cursor: "pointer" }}
+            >
+              Accept & apply
+            </button>
+            <button
+              onClick={() => updateApplicationStatus(app.id, "rejected")}
+              style={{ fontSize: 12, fontWeight: 600, padding: "7px 14px", borderRadius: 999, border: "1px solid var(--color-line)", background: "transparent", color: "var(--color-ink-mute)", cursor: "pointer" }}
+            >
+              Decline
+            </button>
+          </div>
+        </div>
+      )}
 
       <div
         style={{

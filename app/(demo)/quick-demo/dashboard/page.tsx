@@ -6,10 +6,12 @@ import { useViewMode } from "../ViewModeContext";
 import { GIGS, PROFILES } from "../data";
 
 const STATUS_STYLES: Record<string, { bg: string; fg: string; label: string }> = {
-  applied:     { bg: "var(--color-accent-soft)",   fg: "var(--color-accent-ink)", label: "New"         },
-  shortlisted: { bg: "var(--color-jade-soft, #dcfce7)", fg: "#166534",            label: "Shortlisted" },
-  accepted:    { bg: "var(--color-ink)",            fg: "var(--color-surface)",    label: "Accepted"    },
-  rejected:    { bg: "var(--color-muted)",          fg: "var(--color-ink-mute)",   label: "Rejected"    },
+  applied:     { bg: "var(--color-accent-soft)",        fg: "var(--color-accent-ink)", label: "New"         },
+  shortlisted: { bg: "var(--color-jade-soft, #dcfce7)", fg: "#166534",                label: "Shortlisted" },
+  accepted:    { bg: "var(--color-ink)",                fg: "var(--color-surface)",    label: "Accepted"    },
+  rejected:    { bg: "var(--color-muted)",              fg: "var(--color-ink-mute)",   label: "Rejected"    },
+  completed:   { bg: "#7c3aed",                         fg: "#fff",                    label: "Completed"   },
+  offered:     { bg: "var(--color-accent)",             fg: "oklch(22% 0.08 38)",      label: "Offered"     },
 };
 
 const AVATAR_HUES = [250, 165, 340, 38, 260, 200, 78, 310];
@@ -18,9 +20,10 @@ function avatarHue(name: string) {
   return AVATAR_HUES[(name.charCodeAt(0) + (name.charCodeAt(1) || 0)) % AVATAR_HUES.length];
 }
 
-const STEPS = ["Applied", "Shortlist", "Accepted"];
+const STEPS = ["Applied", "Shortlist", "Accepted", "Completed"];
 
 function getStep(status: string) {
+  if (status === "completed") return 4;
   if (status === "accepted") return 3;
   if (status === "shortlisted") return 2;
   return 1;
@@ -30,7 +33,7 @@ function getStep(status: string) {
 
 function EmployerDesktop() {
   const router = useRouter();
-  const { getApplicationsForRequestor, updateApplicationStatus, getMessagesForApplication } = useDemo();
+  const { activeAccount, getApplicationsForRequestor, updateApplicationStatus, getMessagesForApplication, hasRated } = useDemo();
   const allApps = getApplicationsForRequestor();
 
   const totalApps = allApps.length;
@@ -129,12 +132,20 @@ function EmployerDesktop() {
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--color-ink-soft)" }}>
                     {g.applicants.length} applicant{g.applicants.length !== 1 ? "s" : ""} · {g.budget}
                   </span>
-                  <button
-                    onClick={() => router.push(`/quick-demo/applicants?gig=${g.id}`)}
-                    style={{ fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 999, border: "1px solid var(--color-line)", background: "transparent", cursor: "pointer", whiteSpace: "nowrap" }}
-                  >
-                    Applicants →
-                  </button>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button
+                      onClick={() => router.push(`/quick-demo/applicants?gig=${g.id}&tab=candidates`)}
+                      style={{ fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 999, border: "none", background: "var(--color-accent)", color: "oklch(22% 0.08 38)", cursor: "pointer", whiteSpace: "nowrap" }}
+                    >
+                      Find candidates
+                    </button>
+                    <button
+                      onClick={() => router.push(`/quick-demo/applicants?gig=${g.id}`)}
+                      style={{ fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 999, border: "1px solid var(--color-line)", background: "transparent", cursor: "pointer", whiteSpace: "nowrap" }}
+                    >
+                      Applicants →
+                    </button>
+                  </div>
                 </div>
               </li>
             ))}
@@ -181,12 +192,21 @@ function EmployerDesktop() {
                     <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 999, background: asc.bg, color: asc.fg, whiteSpace: "nowrap" }}>
                       {asc.label}
                     </span>
-                    <button
-                      onClick={() => router.push(`/quick-demo/review/${a.id}`)}
-                      style={{ fontSize: 12, fontWeight: 600, padding: "5px 10px", borderRadius: 999, border: "1px solid var(--color-line)", background: "transparent", cursor: "pointer", whiteSpace: "nowrap" }}
-                    >
-                      Review →
-                    </button>
+                    {a.status === "completed" && !hasRated(a.id, activeAccount.id) ? (
+                      <button
+                        onClick={() => router.push(`/quick-demo/rate/${a.id}`)}
+                        style={{ fontSize: 11, fontWeight: 700, padding: "5px 10px", borderRadius: 999, background: "#7c3aed", color: "#fff", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                      >
+                        ★ Rate
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => router.push(`/quick-demo/review/${a.id}`)}
+                        style={{ fontSize: 12, fontWeight: 600, padding: "5px 10px", borderRadius: 999, border: "1px solid var(--color-line)", background: "transparent", cursor: "pointer", whiteSpace: "nowrap" }}
+                      >
+                        Review →
+                      </button>
+                    )}
                   </li>
                 );
               })}
@@ -202,7 +222,7 @@ function EmployerDesktop() {
 
 function WorkerDesktop() {
   const router = useRouter();
-  const { activeAccount, getApplicationsForAccount } = useDemo();
+  const { activeAccount, getApplicationsForAccount, hasRated } = useDemo();
   const apps = getApplicationsForAccount();
 
   const active = apps.filter((a) => ["applied", "shortlisted"].includes(a.status)).length;
@@ -269,6 +289,8 @@ function WorkerDesktop() {
                 const conf = STATUS_STYLES[a.status] ?? STATUS_STYLES.applied;
                 const step = getStep(a.status);
                 const isDone = a.status === "rejected";
+                const isCompleted = a.status === "completed";
+                const alreadyRated = isCompleted && hasRated(a.id, activeAccount.id);
                 return (
                   <li key={a.id} style={{ padding: 16, borderRadius: 14, border: "1px solid var(--color-line)", background: "var(--color-surface-raised)", opacity: isDone ? 0.55 : 1 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 10, marginBottom: isDone ? 0 : 12 }}>
@@ -280,9 +302,19 @@ function WorkerDesktop() {
                           {gig?.category} · {gig?.postedAgo}
                         </p>
                       </div>
-                      <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 999, background: conf.bg, color: conf.fg, whiteSpace: "nowrap" }}>
-                        {conf.label}
-                      </span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {isCompleted && !alreadyRated && (
+                          <button
+                            onClick={() => router.push(`/quick-demo/rate/${a.id}`)}
+                            style={{ fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 999, background: "#7c3aed", color: "#fff", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                          >
+                            ★ Rate employer
+                          </button>
+                        )}
+                        <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 999, background: conf.bg, color: conf.fg, whiteSpace: "nowrap" }}>
+                          {conf.label}
+                        </span>
+                      </div>
                     </div>
                     {!isDone && (
                       <div style={{ display: "grid", gridTemplateColumns: `repeat(${STEPS.length}, 1fr)`, gap: 4 }}>
@@ -338,7 +370,7 @@ function WorkerDesktop() {
 
 function EmployerMobile() {
   const router = useRouter();
-  const { getApplicationsForRequestor, updateApplicationStatus, getMessagesForApplication } = useDemo();
+  const { activeAccount, getApplicationsForRequestor, updateApplicationStatus, getMessagesForApplication, hasRated } = useDemo();
   const allApps = getApplicationsForRequestor();
 
   const pending = allApps.filter((a) => a.status === "applied").length;
@@ -348,7 +380,7 @@ function EmployerMobile() {
   const gigsWithApps = GIGS.map((gig) => ({
     ...gig,
     applicants: allApps.filter((a) => a.gigId === gig.id),
-  })).filter((g) => g.applicants.length > 0);
+  }));
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -377,17 +409,23 @@ function EmployerMobile() {
           ))}
         </div>
 
-        {gigsWithApps.length === 0 ? (
-          <div style={{ padding: 40, textAlign: "center", color: "var(--color-ink-mute)", fontSize: 13 }}>
-            No applications yet. Switch to a freelancer account and apply to gigs!
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {gigsWithApps.map((gig) => (
-              <div key={gig.id}>
-                <h3 style={{ fontFamily: "var(--font-display)", fontSize: 13, margin: "0 0 8px", color: "var(--color-ink)", letterSpacing: "-0.01em" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {gigsWithApps.map((gig) => (
+            <div key={gig.id}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                <h3 style={{ fontFamily: "var(--font-display)", fontSize: 13, margin: 0, color: "var(--color-ink)", letterSpacing: "-0.01em", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {gig.title}
                 </h3>
+                <button
+                  onClick={() => router.push(`/quick-demo/applicants?gig=${gig.id}&tab=candidates`)}
+                  style={{ fontSize: 10, fontWeight: 700, padding: "4px 10px", borderRadius: 999, border: "none", background: "var(--color-accent)", color: "oklch(22% 0.08 38)", cursor: "pointer", whiteSpace: "nowrap", marginLeft: 8, flexShrink: 0 }}
+                >
+                  Find candidates
+                </button>
+              </div>
+              {gig.applicants.length === 0 ? (
+                <p style={{ fontSize: 11, color: "var(--color-ink-mute)", margin: 0, padding: "8px 0" }}>No applicants yet.</p>
+              ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   {gig.applicants.map((app) => {
                     const freelancer = PROFILES.find((p) => p.id === app.freelancerId);
@@ -419,6 +457,12 @@ function EmployerMobile() {
                           {app.status === "shortlisted" && (
                             <button onClick={() => updateApplicationStatus(app.id, "accepted")} style={{ fontSize: 10, fontWeight: 700, padding: "5px 10px", borderRadius: 6, border: "none", background: "var(--color-ink)", color: "var(--color-surface)", cursor: "pointer" }}>Accept</button>
                           )}
+                          {app.status === "accepted" && (
+                            <button onClick={() => updateApplicationStatus(app.id, "completed")} style={{ fontSize: 10, fontWeight: 700, padding: "5px 10px", borderRadius: 6, border: "none", background: "#7c3aed", color: "#fff", cursor: "pointer" }}>Mark done</button>
+                          )}
+                          {app.status === "completed" && !hasRated(app.id, activeAccount.id) && (
+                            <button onClick={() => router.push(`/quick-demo/rate/${app.id}`)} style={{ fontSize: 10, fontWeight: 700, padding: "5px 10px", borderRadius: 6, border: "none", background: "#7c3aed", color: "#fff", cursor: "pointer" }}>★ Rate</button>
+                          )}
                           <button onClick={() => router.push(`/quick-demo/messages?app=${app.id}`)} style={{ fontSize: 10, fontWeight: 600, padding: "5px 10px", borderRadius: 6, border: "1px solid var(--color-line)", background: "transparent", color: "var(--color-accent)", cursor: "pointer" }}>
                             Message{msgs.length > 0 ? ` (${msgs.length})` : ""}
                           </button>
@@ -427,10 +471,130 @@ function EmployerMobile() {
                     );
                   })}
                 </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Mobile layout (worker) ────────────────────────────────────────────────────
+
+function WorkerMobile() {
+  const router = useRouter();
+  const { activeAccount, getApplicationsForAccount, hasRated } = useDemo();
+  const apps = getApplicationsForAccount();
+
+  const active = apps.filter((a) => ["applied", "shortlisted"].includes(a.status)).length;
+  const accepted = apps.filter((a) => a.status === "accepted").length;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <div style={{ padding: "10px 16px 8px", borderBottom: "1px solid var(--color-line)", flexShrink: 0 }}>
+        <h1 style={{ fontFamily: "var(--font-display)", fontSize: 20, margin: 0, letterSpacing: "-0.025em", color: "var(--color-ink)" }}>
+          My Dashboard
+        </h1>
+        <p style={{ fontSize: 11, color: "var(--color-ink-mute)", margin: "3px 0 0" }}>
+          {apps.length} application{apps.length !== 1 ? "s" : ""} · {accepted} accepted
+        </p>
+      </div>
+
+      <div style={{ flex: 1, overflowY: "auto", padding: "8px 12px 12px" }}>
+        {/* KPI tiles */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
+          {[
+            { label: "Sent", value: apps.length, color: "var(--color-ink)" },
+            { label: "Active", value: active, color: "var(--color-accent)" },
+            { label: "Accepted", value: accepted, color: "#16a34a" },
+          ].map((kpi) => (
+            <div key={kpi.label} style={{ padding: "10px 12px", borderRadius: 10, background: "var(--color-surface-raised)", border: "1px solid var(--color-line)", textAlign: "center" }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 700, color: kpi.color }}>{kpi.value}</div>
+              <div style={{ fontSize: 10, color: "var(--color-ink-mute)", marginTop: 2 }}>{kpi.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {apps.length === 0 ? (
+          <div style={{ padding: "32px 20px", borderRadius: 16, border: "1px dashed var(--color-line)", textAlign: "center" }}>
+            <p style={{ fontSize: 14, color: "var(--color-ink-soft)", margin: "0 0 14px" }}>No applications yet.</p>
+            <button onClick={() => router.push("/quick-demo/gigs")} style={{ padding: "9px 18px", borderRadius: 999, background: "var(--color-ink)", color: "var(--color-surface)", fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer" }}>
+              Browse open gigs →
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {apps.map((a) => {
+              const gig = GIGS.find((g) => g.id === a.gigId);
+              const conf = STATUS_STYLES[a.status] ?? STATUS_STYLES.applied;
+              const step = getStep(a.status);
+              const isDone = a.status === "rejected";
+              const isCompleted = a.status === "completed";
+              const alreadyRated = isCompleted && hasRated(a.id, activeAccount.id);
+              return (
+                <div key={a.id} style={{ padding: "12px 14px", borderRadius: 12, border: "1px solid var(--color-line)", background: "var(--color-surface-raised)", opacity: isDone ? 0.55 : 1 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 8, marginBottom: isDone ? 0 : 10 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 600, fontSize: 13, margin: "0 0 2px", color: "var(--color-ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {gig?.title ?? "Unknown gig"}
+                      </p>
+                      <p style={{ margin: 0, fontSize: 11, color: "var(--color-ink-mute)" }}>{gig?.category} · {gig?.postedAgo}</p>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      {isCompleted && !alreadyRated && (
+                        <button
+                          onClick={() => router.push(`/quick-demo/rate/${a.id}`)}
+                          style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: "#7c3aed", color: "#fff", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                        >
+                          ★ Rate
+                        </button>
+                      )}
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: conf.bg, color: conf.fg, whiteSpace: "nowrap", textTransform: "uppercase" }}>
+                        {conf.label}
+                      </span>
+                    </div>
+                  </div>
+                  {!isDone && (
+                    <div style={{ display: "grid", gridTemplateColumns: `repeat(${STEPS.length}, 1fr)`, gap: 3 }}>
+                      {STEPS.map((s, i) => (
+                        <div key={s}>
+                          <div style={{ height: 3, borderRadius: 999, background: i < step - 1 ? "var(--color-ink)" : i === step - 1 ? "var(--color-accent)" : "var(--color-muted)" }} />
+                          <p style={{ margin: "3px 0 0", fontSize: 8.5, letterSpacing: "0.06em", textTransform: "uppercase", color: i < step ? "var(--color-ink)" : "var(--color-ink-mute)", fontWeight: 600 }}>{s}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Playbook */}
+        <div style={{ marginTop: 14, padding: 18, borderRadius: 16, background: "var(--color-ink)", color: "var(--color-surface)" }}>
+          <p style={{ fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--color-accent)", fontWeight: 600, margin: "0 0 6px" }}>What&apos;s next</p>
+          <h3 style={{ fontFamily: "var(--font-display)", fontSize: 18, margin: "0 0 12px", letterSpacing: "-0.025em" }}>
+            Your <span style={{ color: "var(--color-accent)" }}>demo</span> playbook.
+          </h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            {[
+              { t: "Browse open assignments", cta: "Browse gigs", href: "/quick-demo/gigs", highlight: true },
+              { t: "Check your profile", cta: "My profile", href: "/quick-demo/profile", highlight: false },
+              { t: "Messages from employers", cta: "Messages", href: "/quick-demo/messages", highlight: false },
+            ].map((s, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "10px 0", borderTop: "1px solid oklch(100% 0 0 / 0.1)" }}>
+                <span style={{ fontSize: 12, color: "oklch(100% 0 0 / 0.8)", lineHeight: 1.4 }}>{s.t}</span>
+                <button
+                  onClick={() => router.push(s.href)}
+                  style={{ fontSize: 11, fontWeight: 600, padding: "5px 12px", borderRadius: 999, background: s.highlight ? "var(--color-accent)" : "oklch(100% 0 0 / 0.12)", color: s.highlight ? "oklch(22% 0.08 38)" : "var(--color-surface)", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                >
+                  {s.cta}
+                </button>
               </div>
             ))}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
@@ -448,6 +612,5 @@ export default function DemoDashboardPage() {
 
   if (activeAccount.role === "employer") return <EmployerMobile />;
 
-  // Worker mobile — redirect to feed
-  return <WorkerDesktop />;
+  return <WorkerMobile />;
 }

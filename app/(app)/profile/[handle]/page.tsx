@@ -19,7 +19,7 @@ export default async function ProfilePage({
     .maybeSingle();
   if (!profile) notFound();
 
-  const [{ data: certs }, { data: items }, { data: hiredApps }, { data: workHistory }] = await Promise.all([
+  const [{ data: certs }, { data: items }, { data: hiredApps }, { data: workHistory }, { data: ratingsRaw }] = await Promise.all([
     supabase
       .from("certifications")
       .select("*")
@@ -42,17 +42,61 @@ export default async function ProfilePage({
       .select("*")
       .eq("user_id", profile.id)
       .order("start_date", { ascending: false }),
+    supabase
+      .from("ratings")
+      .select("id, stars, review, created_at, from:profiles!ratings_from_id_fkey(display_name)")
+      .eq("to_id", profile.id)
+      .order("created_at", { ascending: false })
+      .limit(10),
   ]);
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
   const isOwner = user?.id === profile.id;
+  const isEmployer = profile.role === "employer" || profile.role === "both";
+  const isFreelancer = profile.role === "freelancer" || profile.role === "both";
+
+  let employerGigs: any[] = [];
+  let totalWorkersHired = 0;
+
+  if (isEmployer) {
+    const gigsRes = await service
+      .from("gigs")
+      .select("id, title, status, created_at, category, budget_cents, budget_kind, location, duration_label")
+      .eq("employer_id", profile.id)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    employerGigs = gigsRes.data ?? [];
+
+    if (employerGigs.length > 0) {
+      const { count } = await service
+        .from("applications")
+        .select("*", { count: "exact", head: true })
+        .in("gig_id", employerGigs.map((g: any) => g.id))
+        .in("status", ["hired", "completed"]);
+      totalWorkersHired = count ?? 0;
+    }
+  }
+
+  const totalGigsPosted = employerGigs.length;
+  const fulfilledGigs = employerGigs.filter((g: any) => g.status === "filled").length;
+  const cancelledGigs = employerGigs.filter((g: any) => g.status === "closed").length;
+  const activeGigs = employerGigs.filter((g: any) => g.status === "open").length;
+  const fulfillmentRate = totalGigsPosted > 0 ? Math.round((fulfilledGigs / totalGigsPosted) * 100) : 0;
+  const memberSince = profile.created_at
+    ? new Date(profile.created_at).toLocaleDateString("en-SG", { month: "short", year: "numeric" })
+    : "—";
 
   const verified = Boolean(profile.singpass_verified_at);
   const verifiedCerts = (certs ?? []).filter((c: any) => c.verified);
   const totalCerts = (certs ?? []).length;
   const hiredCount = (hiredApps ?? []).length;
+
+  const ratings = ratingsRaw ?? [];
+  const avgStars = ratings.length > 0
+    ? Math.round((ratings.reduce((s: number, r: any) => s + r.stars, 0) / ratings.length) * 10) / 10
+    : null;
 
   const trust = computeTrustScore({
     singpassVerified: verified,
@@ -131,12 +175,20 @@ export default async function ProfilePage({
 
           {/* Stats row */}
           <div style={{ display: "flex", gap: 28, marginTop: 28, flexWrap: "wrap" }}>
-            {[
+            {(isEmployer ? [
+              ["Raised", `${totalGigsPosted}`, "total gigs"],
+              ["Fulfilled", `${fulfilledGigs}`, "completed"],
+              ["Cancelled", `${cancelledGigs}`, "withdrawn"],
+              ["Active", `${activeGigs}`, "open now"],
+              ["Workers", `${totalWorkersHired}`, "hired"],
+              ...(avgStars !== null ? [["Rating", `★ ${avgStars}`, `${ratings.length} review${ratings.length !== 1 ? "s" : ""}`]] : []),
+            ] : [
               ["Credentials", `${totalCerts}`, "uploaded"],
               ["Verified", `${verifiedCerts.length}`, `of ${totalCerts}`],
               ["Portfolio", `${(items ?? []).length}`, "items"],
               ["Completed", `${hiredCount}`, "gigs"],
-            ].map(([k, v, s]) => (
+              ...(avgStars !== null ? [["Rating", `★ ${avgStars}`, `${ratings.length} review${ratings.length !== 1 ? "s" : ""}`]] : []),
+            ]).map(([k, v, s]) => (
               <div key={k}>
                 <p style={{ fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--color-ink-soft)", margin: 0 }}>{k}</p>
                 <p style={{ fontFamily: "var(--font-display)", fontSize: 28, margin: "4px 0 0", letterSpacing: "-0.03em", lineHeight: 1 }}>{v}</p>
@@ -151,61 +203,162 @@ export default async function ProfilePage({
           <p style={{ fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--color-accent)", fontWeight: 600, margin: "0 0 10px" }}>
             Trust panel
           </p>
-          <h3 style={{ fontFamily: "var(--font-display)", fontSize: 26, margin: "0 0 18px", letterSpacing: "-0.025em" }}>
-            Verified on gig work
-          </h3>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {[
-              { label: "Singpass identity", ok: verified, badge: verified ? "L2 identity" : "Not verified" },
-              { label: "MyInfo prefill", ok: verified, badge: verified ? "synced" : "pending" },
-              { label: "WSQ / degree certs", ok: verifiedCerts.length > 0, badge: `${verifiedCerts.length} of ${totalCerts}` },
-              { label: "Completed gigs", ok: hiredCount > 0, badge: hiredCount > 0 ? `${hiredCount} done` : "None yet" },
-            ].map(({ label, ok, badge }) => (
-              <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13 }}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ width: 16, height: 16, borderRadius: "50%", background: ok ? "var(--color-jade)" : "oklch(100% 0 0 / 0.2)", display: "grid", placeItems: "center", fontSize: 9, color: "white", fontWeight: 700 }}>
-                    {ok ? "✓" : "–"}
-                  </span>
-                  {label}
-                </span>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "oklch(100% 0 0 / 0.6)" }}>{badge}</span>
+          {isEmployer ? (
+            <>
+              <h3 style={{ fontFamily: "var(--font-display)", fontSize: 26, margin: "0 0 18px", letterSpacing: "-0.025em" }}>
+                Verified requestor
+              </h3>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {[
+                  { label: "Singpass identity", ok: verified, badge: verified ? "L2 verified" : "Not verified" },
+                  { label: "Payment escrow", ok: true, badge: "SGD protected" },
+                  { label: "Fulfillment rate", ok: fulfillmentRate >= 50, badge: totalGigsPosted > 0 ? `${fulfillmentRate}%` : "No gigs yet" },
+                  { label: "Workers hired", ok: totalWorkersHired > 0, badge: totalWorkersHired > 0 ? `${totalWorkersHired} total` : "None yet" },
+                  { label: "Member since", ok: true, badge: memberSince },
+                ].map(({ label, ok, badge }) => (
+                  <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13 }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ width: 16, height: 16, borderRadius: "50%", background: ok ? "var(--color-jade)" : "oklch(100% 0 0 / 0.2)", display: "grid", placeItems: "center", fontSize: 9, color: "white", fontWeight: 700 }}>
+                        {ok ? "✓" : "–"}
+                      </span>
+                      {label}
+                    </span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "oklch(100% 0 0 / 0.6)" }}>{badge}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          {/* Trust score */}
-          <div style={{ marginTop: 22, padding: 14, borderRadius: 12, background: "oklch(100% 0 0 / 0.06)" }}>
-            <p style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--color-accent)", margin: 0 }}>Trust score</p>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4 }}>
-              <span style={{ fontFamily: "var(--font-display)", fontSize: 44, letterSpacing: "-0.035em", lineHeight: 1 }}>
-                {trust.score}
-              </span>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "oklch(100% 0 0 / 0.6)" }}>
-                / 100 · {trust.percentile}
-              </span>
-            </div>
-            <div style={{ marginTop: 10, height: 5, borderRadius: 999, background: "oklch(100% 0 0 / 0.12)", overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${trust.score}%`, background: "var(--color-accent)", borderRadius: 999, transition: "width 0.8s var(--ease-out-expo)" }} />
-            </div>
-            <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 4 }}>
-              {trust.breakdown.filter(b => b.points > 0).map(b => (
-                <div key={b.label} style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "oklch(100% 0 0 / 0.5)" }}>
-                  <span>{b.label}</span>
-                  <span style={{ fontFamily: "var(--font-mono)" }}>+{b.points}</span>
+              {totalGigsPosted > 0 && (
+                <div style={{ marginTop: 22, padding: 14, borderRadius: 12, background: "oklch(100% 0 0 / 0.06)" }}>
+                  <p style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--color-accent)", margin: 0 }}>Fulfillment rate</p>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4 }}>
+                    <span style={{ fontFamily: "var(--font-display)", fontSize: 44, letterSpacing: "-0.035em", lineHeight: 1 }}>
+                      {fulfillmentRate}
+                    </span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "oklch(100% 0 0 / 0.6)" }}>
+                      % · {fulfilledGigs}/{totalGigsPosted} gigs filled
+                    </span>
+                  </div>
+                  <div style={{ marginTop: 10, height: 5, borderRadius: 999, background: "oklch(100% 0 0 / 0.12)", overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${fulfillmentRate}%`, background: "var(--color-accent)", borderRadius: 999, transition: "width 0.8s var(--ease-out-expo)" }} />
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
+              )}
 
-          <p style={{ fontSize: 11.5, color: "oklch(100% 0 0 / 0.55)", margin: "14px 0 0", lineHeight: 1.5 }}>
-            Employers see this panel before contacting. High trust moves applications to the top of the stack.
-          </p>
+              <p style={{ fontSize: 11.5, color: "oklch(100% 0 0 / 0.55)", margin: "14px 0 0", lineHeight: 1.5 }}>
+                Freelancers see this panel before applying. Verified requestors attract higher-quality talent.
+              </p>
+            </>
+          ) : (
+            <>
+              <h3 style={{ fontFamily: "var(--font-display)", fontSize: 26, margin: "0 0 18px", letterSpacing: "-0.025em" }}>
+                Verified on gig work
+              </h3>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {[
+                  { label: "Singpass identity", ok: verified, badge: verified ? "L2 identity" : "Not verified" },
+                  { label: "MyInfo prefill", ok: verified, badge: verified ? "synced" : "pending" },
+                  { label: "WSQ / degree certs", ok: verifiedCerts.length > 0, badge: `${verifiedCerts.length} of ${totalCerts}` },
+                  { label: "Completed gigs", ok: hiredCount > 0, badge: hiredCount > 0 ? `${hiredCount} done` : "None yet" },
+                ].map(({ label, ok, badge }) => (
+                  <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13 }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ width: 16, height: 16, borderRadius: "50%", background: ok ? "var(--color-jade)" : "oklch(100% 0 0 / 0.2)", display: "grid", placeItems: "center", fontSize: 9, color: "white", fontWeight: 700 }}>
+                        {ok ? "✓" : "–"}
+                      </span>
+                      {label}
+                    </span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "oklch(100% 0 0 / 0.6)" }}>{badge}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Trust score */}
+              <div style={{ marginTop: 22, padding: 14, borderRadius: 12, background: "oklch(100% 0 0 / 0.06)" }}>
+                <p style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--color-accent)", margin: 0 }}>Trust score</p>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4 }}>
+                  <span style={{ fontFamily: "var(--font-display)", fontSize: 44, letterSpacing: "-0.035em", lineHeight: 1 }}>
+                    {trust.score}
+                  </span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "oklch(100% 0 0 / 0.6)" }}>
+                    / 100 · {trust.percentile}
+                  </span>
+                </div>
+                <div style={{ marginTop: 10, height: 5, borderRadius: 999, background: "oklch(100% 0 0 / 0.12)", overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${trust.score}%`, background: "var(--color-accent)", borderRadius: 999, transition: "width 0.8s var(--ease-out-expo)" }} />
+                </div>
+                <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 4 }}>
+                  {trust.breakdown.filter(b => b.points > 0).map(b => (
+                    <div key={b.label} style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "oklch(100% 0 0 / 0.5)" }}>
+                      <span>{b.label}</span>
+                      <span style={{ fontFamily: "var(--font-mono)" }}>+{b.points}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <p style={{ fontSize: 11.5, color: "oklch(100% 0 0 / 0.55)", margin: "14px 0 0", lineHeight: 1.5 }}>
+                Employers see this panel before contacting. High trust moves applications to the top of the stack.
+              </p>
+            </>
+          )}
         </aside>
       </section>
 
+      {/* ── Assignments posted (employer) ── */}
+      {isEmployer && (
+        <section style={{ marginBottom: 70 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end", marginBottom: 20 }}>
+            <h2 style={{ fontFamily: "var(--font-display)", fontSize: 38, margin: 0, letterSpacing: "-0.03em" }}>Assignments posted</h2>
+            <span style={{ fontSize: 12, color: "var(--color-ink-soft)" }}>{totalGigsPosted} total</span>
+          </div>
+          {employerGigs.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {employerGigs.slice(0, 8).map((g: any) => {
+                const STATUS_CHIP: Record<string, { bg: string; fg: string; label: string }> = {
+                  open:   { bg: "var(--color-accent-soft)", fg: "var(--color-accent-ink)", label: "Active" },
+                  filled: { bg: "#dcfce7",                  fg: "#166534",                 label: "Fulfilled" },
+                  closed: { bg: "var(--color-muted)",        fg: "var(--color-ink-mute)",   label: "Cancelled" },
+                };
+                const chip = STATUS_CHIP[g.status] ?? STATUS_CHIP.open;
+                const dateStr = new Date(g.created_at).toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric" });
+                return (
+                  <div key={g.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", borderRadius: 14, border: "1px solid var(--color-line)", background: "var(--color-surface-raised)", gap: 12 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontFamily: "var(--font-display)", fontSize: 16, margin: "0 0 3px", letterSpacing: "-0.02em", lineHeight: 1.2 }}>{g.title}</p>
+                      <p style={{ fontSize: 11, color: "var(--color-ink-mute)", margin: 0, fontFamily: "var(--font-mono)" }}>
+                        {g.category} · {dateStr}{g.duration_label ? ` · ${g.duration_label}` : ""}
+                      </p>
+                    </div>
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: chip.bg, color: chip.fg, letterSpacing: "0.06em", textTransform: "uppercase", flexShrink: 0 }}>
+                      {chip.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{ padding: "32px 24px", borderRadius: 18, border: "1px dashed var(--color-line)", textAlign: "center" }}>
+              <p style={{ fontSize: 14, color: "var(--color-ink-soft)", margin: 0 }}>
+                {isOwner
+                  ? "No gigs posted yet. Post your first assignment to find talent."
+                  : `${profile.display_name?.split(" ")[0] ?? "They"} hasn't posted gigs on HustleSG yet.`}
+              </p>
+              {isOwner && (
+                <Link href="/gigs/new" style={{ display: "inline-block", marginTop: 12, padding: "8px 16px", borderRadius: 999, background: "var(--color-ink)", color: "var(--color-surface)", fontSize: 13, fontWeight: 600 }}>
+                  Post a gig →
+                </Link>
+              )}
+            </div>
+          )}
+        </section>
+      )}
+
       {/* ── Portfolio ── */}
-      {items && items.length > 0 && (
+      {isFreelancer && items && items.length > 0 && (
         <section style={{ marginBottom: 70 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end", marginBottom: 20 }}>
             <h2 style={{ fontFamily: "var(--font-display)", fontSize: 38, margin: 0, letterSpacing: "-0.03em" }}>Portfolio</h2>
@@ -221,7 +374,7 @@ export default async function ProfilePage({
       )}
 
       {/* ── What they work on (from cert skills) ── */}
-      {topSkills.length > 0 && (
+      {isFreelancer && topSkills.length > 0 && (
         <section style={{ marginBottom: 70 }}>
           <h2 style={{ fontFamily: "var(--font-display)", fontSize: 38, margin: "0 0 20px", letterSpacing: "-0.03em" }}>
             What {profile.display_name?.split(" ")[0] ?? "they"} works on
@@ -248,6 +401,7 @@ export default async function ProfilePage({
       )}
 
       {/* ── Gig work history ── */}
+      {isFreelancer && (
       <section style={{ marginBottom: 70 }}>
         <h2 style={{ fontFamily: "var(--font-display)", fontSize: 38, margin: "0 0 24px", letterSpacing: "-0.03em" }}>
           Gig history
@@ -291,6 +445,7 @@ export default async function ProfilePage({
           </div>
         )}
       </section>
+      )}
 
       {/* ── Work History ── */}
       {workHistory && workHistory.length > 0 && (
@@ -321,7 +476,47 @@ export default async function ProfilePage({
         </section>
       )}
 
+      {/* ── Reviews ── */}
+      <section style={{ marginBottom: 70 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end", marginBottom: 20 }}>
+          <h2 style={{ fontFamily: "var(--font-display)", fontSize: 38, margin: 0, letterSpacing: "-0.03em" }}>Reviews</h2>
+          {ratings.length > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ color: "#f59e0b", fontSize: 22 }}>★</span>
+              <span style={{ fontFamily: "var(--font-display)", fontSize: 28, letterSpacing: "-0.03em" }}>{avgStars}</span>
+              <span style={{ fontSize: 12, color: "var(--color-ink-soft)" }}>from {ratings.length} review{ratings.length !== 1 ? "s" : ""}</span>
+            </div>
+          )}
+        </div>
+        {ratings.length > 0 ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 14 }}>
+            {ratings.map((r: any) => (
+              <article key={r.id} style={{ padding: "20px 22px", borderRadius: 18, background: "var(--color-surface-raised)", border: "1px solid var(--color-line)" }}>
+                <div style={{ color: "#f59e0b", fontSize: 18, marginBottom: 10 }}>
+                  {"★".repeat(r.stars)}{"☆".repeat(5 - r.stars)}
+                </div>
+                <p style={{ fontSize: 14, color: "var(--color-ink-soft)", margin: "0 0 12px", lineHeight: 1.6 }}>&ldquo;{r.review}&rdquo;</p>
+                <p style={{ fontSize: 11, color: "var(--color-ink-mute)", margin: 0, fontFamily: "var(--font-mono)" }}>
+                  {(r.from as any)?.display_name ?? "Anonymous"} · {new Date(r.created_at).toLocaleDateString("en-SG", { month: "short", year: "numeric" })}
+                </p>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div style={{ padding: "32px 24px", borderRadius: 18, border: "1px dashed var(--color-line)", textAlign: "center" }}>
+            <p style={{ fontSize: 14, color: "var(--color-ink-soft)", margin: 0 }}>
+              {isOwner
+                ? isEmployer
+                  ? "No reviews yet. Workers can leave a review after a gig is completed."
+                  : "No reviews yet. Complete a gig to receive your first review."
+                : `${profile.display_name?.split(" ")[0] ?? "They"} hasn't received any reviews yet.`}
+            </p>
+          </div>
+        )}
+      </section>
+
       {/* ── Credentials ── */}
+      {isFreelancer && (
       <section style={{ marginBottom: 70 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end", marginBottom: 20 }}>
           <h2 style={{ fontFamily: "var(--font-display)", fontSize: 38, margin: 0, letterSpacing: "-0.03em" }}>Credentials</h2>
@@ -345,6 +540,7 @@ export default async function ProfilePage({
           </p>
         )}
       </section>
+      )}
     </main>
   );
 }

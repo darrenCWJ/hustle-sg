@@ -131,12 +131,10 @@ export function CreateInstantModal({ onClose, onCreated }: Props) {
               <div>
                 <label style={labelStyle}>Category</label>
                 <select name="category" style={inputStyle}>
-                  <option value="f&b">F&B</option>
                   <option value="events">Events</option>
                   <option value="tech">Tech</option>
                   <option value="design">Design</option>
                   <option value="tuition">Tuition</option>
-                  <option value="content">Content</option>
                   <option value="other">Other</option>
                 </select>
               </div>

@@ -32,6 +32,12 @@ const STATUS_CONFIG: Record<
     label: "Hired",
     step: 4,
   },
+  completed: {
+    bg: "#7c3aed",
+    fg: "#fff",
+    label: "Completed",
+    step: 5,
+  },
   rejected: {
     bg: "var(--color-muted)",
     fg: "var(--color-ink-mute)",
@@ -46,7 +52,7 @@ const STATUS_CONFIG: Record<
   },
 };
 
-const STEPS = ["Applied", "Interviewing", "Shortlisted", "Hired"] as const;
+const STEPS = ["Applied", "Interviewing", "Shortlisted", "Hired", "Completed"] as const;
 
 export default async function ApplicationsPage() {
   const supabase = await createClient();
@@ -66,6 +72,12 @@ export default async function ApplicationsPage() {
     .order("created_at", { ascending: false });
 
   const applications = apps ?? [];
+
+  const completedIds = applications.filter((a) => a.status === "completed").map((a) => a.id);
+  const { data: myRatings } = completedIds.length > 0
+    ? await supabase.from("ratings").select("application_id").eq("from_id", user.id).in("application_id", completedIds)
+    : { data: [] };
+  const ratedIds = new Set((myRatings ?? []).map((r: any) => r.application_id));
 
   const counts = {
     total: applications.length,
@@ -447,6 +459,19 @@ export default async function ApplicationsPage() {
                           Accept ✓
                         </button>
                       </form>
+                    </div>
+                  ) : a.status === "completed" ? (
+                    <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                      {ratedIds.has(a.id) ? (
+                        <span style={{ fontSize: 12, color: "#7c3aed", fontWeight: 600, padding: "6px 0" }}>✓ Reviewed</span>
+                      ) : (
+                        <Link
+                          href={`/rate/${a.id}`}
+                          style={{ padding: "6px 14px", borderRadius: 999, background: "#7c3aed", color: "#fff", fontSize: 12, fontWeight: 700, textDecoration: "none" }}
+                        >
+                          ★ Rate employer
+                        </Link>
+                      )}
                     </div>
                   ) : (
                     <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
