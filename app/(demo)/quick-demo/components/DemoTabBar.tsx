@@ -12,6 +12,7 @@ const FREELANCER_TABS = [
 
 const EMPLOYER_TABS = [
   { href: "/quick-demo/dashboard", label: "Dashboard" },
+  { href: "/quick-demo/talent", label: "Talent" },
   { href: "/quick-demo/messages", label: "Messages" },
 ];
 

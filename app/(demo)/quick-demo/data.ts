@@ -6,6 +6,10 @@ export interface DemoProfile {
   headline: string;
   avatar: string;
   categories: string[];
+  skills?: string[];
+  rating?: number;
+  hourlyRate?: string;
+  completedGigs?: number;
 }
 
 export interface DemoGig {
@@ -52,6 +56,10 @@ export const PROFILES: DemoProfile[] = [
     headline: "Full-stack dev & UI/UX designer",
     avatar: "RK",
     categories: ["tech", "design"],
+    skills: ["React", "TypeScript", "Node.js", "Figma", "UI/UX"],
+    rating: 4.9,
+    hourlyRate: "$120/hr",
+    completedGigs: 34,
   },
   {
     id: "events",
@@ -61,6 +69,10 @@ export const PROFILES: DemoProfile[] = [
     headline: "Event coordinator & content strategist",
     avatar: "NW",
     categories: ["events", "marketing", "content"],
+    skills: ["Event Planning", "Social Media", "Content Strategy", "Copywriting"],
+    rating: 4.8,
+    hourlyRate: "$80/hr",
+    completedGigs: 22,
   },
   {
     id: "teaching",
@@ -70,6 +82,75 @@ export const PROFILES: DemoProfile[] = [
     headline: "A-level tutor · Maths, Physics, Chemistry",
     avatar: "KD",
     categories: ["tuition"],
+    skills: ["Mathematics", "Physics", "Chemistry", "A-level", "IB"],
+    rating: 5.0,
+    hourlyRate: "$85/hr",
+    completedGigs: 48,
+  },
+  {
+    id: "tech-2-profile",
+    name: "Marcus Tan",
+    role: "freelancer",
+    specialization: "IT & Software Design",
+    headline: "Mobile dev · React Native & Flutter",
+    avatar: "MT",
+    categories: ["tech"],
+    skills: ["React Native", "Flutter", "iOS", "Android", "Firebase"],
+    rating: 4.7,
+    hourlyRate: "$110/hr",
+    completedGigs: 19,
+  },
+  {
+    id: "design-2-profile",
+    name: "Priya Sharma",
+    role: "freelancer",
+    specialization: "IT & Software Design",
+    headline: "Brand designer & visual storyteller",
+    avatar: "PS",
+    categories: ["design"],
+    skills: ["Branding", "Illustrator", "After Effects", "Motion Graphics"],
+    rating: 4.9,
+    hourlyRate: "$95/hr",
+    completedGigs: 27,
+  },
+  {
+    id: "events-2-profile",
+    name: "Jonathan Lee",
+    role: "freelancer",
+    specialization: "Events & Marketing",
+    headline: "Digital marketer & paid ads specialist",
+    avatar: "JL",
+    categories: ["marketing", "content"],
+    skills: ["Google Ads", "Meta Ads", "SEO", "Analytics", "SEM"],
+    rating: 4.6,
+    hourlyRate: "$90/hr",
+    completedGigs: 15,
+  },
+  {
+    id: "teaching-2-profile",
+    name: "David Ng",
+    role: "freelancer",
+    specialization: "Teaching",
+    headline: "O/A-level English & GP tutor",
+    avatar: "DN",
+    categories: ["tuition"],
+    skills: ["English", "General Paper", "Creative Writing", "Comprehension"],
+    rating: 4.8,
+    hourlyRate: "$75/hr",
+    completedGigs: 56,
+  },
+  {
+    id: "events-3-profile",
+    name: "Sarah Lim",
+    role: "freelancer",
+    specialization: "Events & Marketing",
+    headline: "Video editor & content creator",
+    avatar: "SL",
+    categories: ["content", "marketing"],
+    skills: ["Premiere Pro", "YouTube", "TikTok", "Video Editing", "Colour Grading"],
+    rating: 4.7,
+    hourlyRate: "$70/hr",
+    completedGigs: 31,
   },
 ];
 
