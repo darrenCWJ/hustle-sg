@@ -88,9 +88,25 @@ export default function DemoGigDetailPage() {
         <p style={{ fontSize: 12, color: "var(--color-ink-soft)", margin: "0 0 4px" }}>
           Posted by <strong>Darren Loh</strong> · {gig.postedAgo}
         </p>
-        <p style={{ fontSize: 12, color: "var(--color-ink-soft)", margin: "0 0 16px" }}>
-          {gig.location}
-        </p>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 0 16px" }}>
+          <span style={{ fontSize: 12, color: "var(--color-ink-soft)" }}>
+            {gig.location}
+          </span>
+          {(gig.headcount ?? 1) > 1 && (
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                padding: "2px 8px",
+                borderRadius: 999,
+                background: "var(--color-accent-soft, #ede9fe)",
+                color: "var(--color-accent-ink, #5b21b6)",
+              }}
+            >
+              {gig.headcount} needed
+            </span>
+          )}
+        </div>
 
         <div
           style={{

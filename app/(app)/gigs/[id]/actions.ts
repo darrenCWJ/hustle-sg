@@ -128,6 +128,34 @@ export async function updateApplicationStatus(
 
   if (error) return { ok: false as const, error: error.message };
 
+  // Auto-close gig when all slots filled
+  if (status === "hired") {
+    const { data: appWithGig } = await supabase
+      .from("applications")
+      .select("gig_id, gigs!inner(id, headcount, status)")
+      .eq("id", applicationId)
+      .single();
+    const gigId = (appWithGig?.gigs as any)?.id;
+    const headcount = (appWithGig?.gigs as any)?.headcount ?? 1;
+    const gigStatus = (appWithGig?.gigs as any)?.status;
+    if (gigId && gigStatus === "open") {
+      const { count: hiredCount } = await supabase
+        .from("applications")
+        .select("id", { count: "exact", head: true })
+        .eq("gig_id", gigId)
+        .eq("status", "hired");
+      if (hiredCount !== null && hiredCount >= headcount) {
+        const service = createServiceClient();
+        await service.from("gigs").update({ status: "filled" }).eq("id", gigId);
+        await service
+          .from("applications")
+          .update({ status: "rejected" })
+          .eq("gig_id", gigId)
+          .in("status", ["applied", "interviewing", "offered"]);
+      }
+    }
+  }
+
   // Notify the applicant of the status change.
   const statusMessages: Record<string, { title: string; body: string }> = {
     interviewing: {

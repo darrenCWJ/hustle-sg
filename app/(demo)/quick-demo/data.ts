@@ -21,6 +21,7 @@ export interface DemoGig {
   budget: string;
   location: string;
   postedAgo: string;
+  headcount?: number;
 }
 
 export interface DemoApplication {
@@ -234,6 +235,7 @@ export const GIGS: DemoGig[] = [
     budget: "$6,000 fixed",
     location: "Marina Bay Sands",
     postedAgo: "1d ago",
+    headcount: 3,
   },
   {
     id: "events-2",
@@ -256,6 +258,7 @@ export const GIGS: DemoGig[] = [
     budget: "$60/hr",
     location: "Remote",
     postedAgo: "2d ago",
+    headcount: 2,
   },
   {
     id: "marketing-2",
@@ -357,5 +360,6 @@ export const GIGS: DemoGig[] = [
     budget: "$75/hr",
     location: "Toa Payoh",
     postedAgo: "2d ago",
+    headcount: 2,
   },
 ];

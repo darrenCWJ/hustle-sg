@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { postGig } from "./actions";
 import { GigFormSettings } from "./GigFormSettings";
 import { GigTimingFields } from "./GigTimingFields";
+import { HeadcountStepper } from "./HeadcountStepper";
 import { RehireSelector, type PreviousHire } from "./RehireSelector";
 
 async function postGigAction(formData: FormData) {
@@ -87,6 +88,9 @@ export default async function NewGigPage() {
             placeholder="Skills required (comma separated)"
             className="md:col-span-2 rounded-xl border border-line px-4 py-3 bg-surface-raised"
           />
+          <div className="md:col-span-2">
+            <HeadcountStepper />
+          </div>
           <input
             type="number"
             min={1}

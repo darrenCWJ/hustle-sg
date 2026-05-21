@@ -28,6 +28,7 @@ const gigSchema = z.object({
   start_time: z.string().optional(),
   end_time: z.string().optional(),
   days_of_week: z.string().optional(),
+  headcount: z.coerce.number().int().min(1).max(50).optional(),
 });
 
 export async function postGig(formData: FormData) {
@@ -62,6 +63,7 @@ export async function postGig(formData: FormData) {
     start_time: (formData.get("start_time") as string) || undefined,
     end_time: (formData.get("end_time") as string) || undefined,
     days_of_week: (formData.get("days_of_week") as string) || undefined,
+    headcount: (formData.get("headcount") as string) || undefined,
   });
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid" };
@@ -108,6 +110,7 @@ export async function postGig(formData: FormData) {
       instant_urgency: parsed.data.is_instant === "true" && parsed.data.instant_urgency
         ? parsed.data.instant_urgency
         : null,
+      headcount: parsed.data.headcount ?? 1,
       applications_close_at: closeAt?.toISOString() ?? null,
       starts_at: parsed.data.starts_at || null,
       ends_at: parsed.data.ends_at || null,

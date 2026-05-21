@@ -180,6 +180,15 @@ export default async function GigDetailPage({
               </p>
             </div>
           </>
+          <>
+            <span style={{ width: 1, height: 32, background: "var(--color-line)" }} />
+            <div>
+              <span style={{ fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--color-ink-soft)", fontWeight: 600 }}>Slots</span>
+              <p style={{ fontSize: 14, fontWeight: 600, margin: "2px 0 0" }}>
+                {gig.headcount ?? 1}
+              </p>
+            </div>
+          </>
           {gig.applications_close_at && (
             <>
               <span style={{ width: 1, height: 32, background: "var(--color-line)" }} />

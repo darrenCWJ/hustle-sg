@@ -88,6 +88,7 @@ export interface Gig {
   requires_employer_approval: boolean;
   is_instant: boolean;
   instant_urgency: string | null;
+  headcount: number;
   lat: number | null;
   lon: number | null;
   start_at: string | null;

@@ -95,6 +95,22 @@ export default function DemoFeedPage() {
                     {g.category}
                   </span>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {(g.headcount ?? 1) > 1 && (
+                      <span
+                        style={{
+                          fontSize: 9,
+                          fontWeight: 700,
+                          padding: "2px 6px",
+                          borderRadius: 999,
+                          background: "var(--color-accent-soft, #ede9fe)",
+                          color: "var(--color-accent-ink, #5b21b6)",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                        }}
+                      >
+                        {g.headcount} needed
+                      </span>
+                    )}
                     {hasApplied && (
                       <span
                         style={{

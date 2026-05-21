@@ -165,15 +165,33 @@ export default async function MobileGigDetailPage({
           </div>
 
           {/* Location + category */}
-          <p
+          <div
             style={{
-              fontSize: 13,
-              color: "var(--color-ink-mute)",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
               margin: "0 0 22px",
+              flexWrap: "wrap",
             }}
           >
-            {gig.category && `${gig.category} · `}{gig.location ?? "Singapore"}
-          </p>
+            <span style={{ fontSize: 13, color: "var(--color-ink-mute)" }}>
+              {gig.category && `${gig.category} · `}{gig.location ?? "Singapore"}
+            </span>
+            {(gig.headcount ?? 1) > 1 && (
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: "2px 8px",
+                  borderRadius: 999,
+                  background: "var(--color-accent-soft)",
+                  color: "var(--color-accent-ink)",
+                }}
+              >
+                {gig.headcount} slots
+              </span>
+            )}
+          </div>
 
           {/* Description */}
           {gig.description && (

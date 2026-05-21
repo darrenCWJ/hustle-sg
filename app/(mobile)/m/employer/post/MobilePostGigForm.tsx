@@ -33,6 +33,7 @@ const INPUT_STYLE: React.CSSProperties = {
 export function MobilePostGigForm() {
   const [category, setCategory] = useState("");
   const [budgetKind, setBudgetKind] = useState<"fixed" | "hourly">("fixed");
+  const [headcount, setHeadcount] = useState(1);
   const [isInstant, setIsInstant] = useState(false);
   const [urgency, setUrgency] = useState<"now" | "today" | "weekend">("today");
   const [loading, setLoading] = useState(false);
@@ -222,6 +223,70 @@ export function MobilePostGigForm() {
               placeholder="e.g. Orchard, Singapore"
               style={INPUT_STYLE}
             />
+          </div>
+
+          {/* Freelancers needed */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: "var(--color-ink-soft)" }}>
+              Freelancers needed
+            </label>
+            <input type="hidden" name="headcount" value={headcount} />
+            <div style={{ display: "flex", alignItems: "center", gap: 0, borderRadius: 10, border: "1px solid var(--color-line)", overflow: "hidden", width: "fit-content" }}>
+              <button
+                type="button"
+                disabled={headcount <= 1}
+                onClick={() => setHeadcount((c) => Math.max(1, c - 1))}
+                style={{
+                  width: 38,
+                  height: 38,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 18,
+                  fontWeight: 700,
+                  background: "var(--color-surface-raised)",
+                  border: "none",
+                  cursor: headcount <= 1 ? "not-allowed" : "pointer",
+                  opacity: headcount <= 1 ? 0.3 : 1,
+                  color: "var(--color-ink)",
+                }}
+              >
+                −
+              </button>
+              <span
+                style={{
+                  width: 40,
+                  textAlign: "center",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: "var(--color-ink)",
+                }}
+              >
+                {headcount}
+              </span>
+              <button
+                type="button"
+                disabled={headcount >= 20}
+                onClick={() => setHeadcount((c) => Math.min(20, c + 1))}
+                style={{
+                  width: 38,
+                  height: 38,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 18,
+                  fontWeight: 700,
+                  background: "var(--color-surface-raised)",
+                  border: "none",
+                  cursor: headcount >= 20 ? "not-allowed" : "pointer",
+                  opacity: headcount >= 20 ? 0.3 : 1,
+                  color: "var(--color-ink)",
+                }}
+              >
+                +
+              </button>
+            </div>
           </div>
 
           {/* Instant toggle */}
