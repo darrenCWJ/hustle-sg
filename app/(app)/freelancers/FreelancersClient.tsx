@@ -15,6 +15,25 @@ interface Freelancer {
   matchScore: number | null;
 }
 
+const ROLE_FILTERS = [
+  { label: "All", value: null, color: null, keywords: [] },
+  { label: "Tech", value: "tech", color: "#3b82f6", keywords: ["react", "typescript", "javascript", "node", "python", "java", "flutter", "swift", "devops", "docker", "aws", "backend", "frontend", "full-stack", "fullstack", "software", "web dev", "mobile", "api", "database", "sql", "cloud", "nextjs", "angular", "vue"] },
+  { label: "Design", value: "design", color: "#a855f7", keywords: ["figma", "ui/ux", "ux", "ui", "design", "illustrator", "photoshop", "branding", "graphic", "visual", "motion graphics", "animation", "3d", "sketch"] },
+  { label: "Events", value: "events", color: "#f59e0b", keywords: ["event", "coordinator", "emcee", "venue", "hospitality", "f&b", "catering", "conference", "wedding"] },
+  { label: "Marketing", value: "marketing", color: "#ec4899", keywords: ["marketing", "seo", "sem", "social media", "google ads", "meta ads", "content", "copywriting", "analytics", "growth", "tiktok", "instagram"] },
+  { label: "Tuition", value: "tuition", color: "#10b981", keywords: ["tutor", "teaching", "maths", "math", "physics", "chemistry", "english", "science", "a-level", "o-level", "ib", "primary", "secondary"] },
+];
+
+function matchesRole(freelancer: Freelancer, roleValue: string): boolean {
+  const role = ROLE_FILTERS.find((r) => r.value === roleValue);
+  if (!role) return true;
+  const lowerSkills = freelancer.skills.map((s) => s.toLowerCase());
+  const lowerHeadline = freelancer.headline?.toLowerCase() ?? "";
+  return role.keywords.some(
+    (kw) => lowerSkills.some((s) => s.includes(kw)) || lowerHeadline.includes(kw),
+  );
+}
+
 interface Gig {
   id: string;
   title: string;
@@ -276,6 +295,7 @@ export function FreelancersClient({
   const [isPending, startTransition] = useTransition();
   const [q, setQ] = useState(initialQ);
   const [verifiedOnly, setVerifiedOnly] = useState(initialVerified);
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const isMatchMode = Boolean(activeGigId);
 
   function navigate(gigId: string | null) {
@@ -290,6 +310,9 @@ export function FreelancersClient({
 
   const filtered = useMemo(() => {
     let list = freelancers;
+    if (selectedRole) {
+      list = list.filter((f) => matchesRole(f, selectedRole));
+    }
     if (q) {
       const lq = q.toLowerCase();
       list = list.filter(
@@ -302,14 +325,13 @@ export function FreelancersClient({
     if (verifiedOnly) {
       list = list.filter((f) => f.singpassVerified);
     }
-    // If match mode, sort by score; otherwise keep order
     if (isMatchMode) {
       list = [...list].sort(
         (a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0),
       );
     }
     return list;
-  }, [freelancers, q, verifiedOnly, isMatchMode]);
+  }, [freelancers, q, verifiedOnly, isMatchMode, selectedRole]);
 
   const activeGig = myGigs.find((g) => g.id === activeGigId);
 
@@ -472,6 +494,42 @@ export function FreelancersClient({
             Matching…
           </span>
         )}
+      </div>
+
+      {/* Role filter */}
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          marginBottom: 20,
+          flexWrap: "wrap",
+        }}
+      >
+        {ROLE_FILTERS.map((role) => {
+          const active = selectedRole === role.value;
+          const color = role.color ?? "var(--color-ink)";
+          return (
+            <button
+              key={role.label}
+              onClick={() => setSelectedRole(active ? null : role.value)}
+              style={{
+                fontSize: 12,
+                fontWeight: active ? 700 : 500,
+                padding: "7px 14px",
+                borderRadius: 999,
+                border: "1px solid",
+                borderColor: active ? color : "var(--color-line)",
+                background: active ? color : "transparent",
+                color: active ? "#fff" : "var(--color-ink-soft)",
+                cursor: "pointer",
+                transition: "all 0.15s",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {role.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Match mode banner */}
