@@ -2,25 +2,30 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Zap, Search, FileText, Bell, User, Briefcase, Users, Plus } from "lucide-react";
 import { useDemo } from "../DemoProvider";
 
-const FREELANCER_TABS = [
-  { href: "/quick-demo/feed", label: "Feed" },
-  { href: "/quick-demo/applications", label: "Applied" },
-  { href: "/quick-demo/messages", label: "Messages" },
+const WORKER_TABS = [
+  { href: "/quick-demo/feed", icon: Zap, label: "Feed" },
+  { href: "/quick-demo/gigs", icon: Search, label: "Browse" },
+  { href: "/quick-demo/applications", icon: FileText, label: "Applied" },
+  { href: "/quick-demo/messages", icon: Bell, label: "Messages" },
+  { href: "/quick-demo/profile", icon: User, label: "Profile" },
 ];
 
 const EMPLOYER_TABS = [
-  { href: "/quick-demo/dashboard", label: "Dashboard" },
-  { href: "/quick-demo/talent", label: "Talent" },
-  { href: "/quick-demo/messages", label: "Messages" },
+  { href: "/quick-demo/my-gigs", icon: Briefcase, label: "My Gigs" },
+  { href: "/quick-demo/dashboard", icon: Users, label: "Applicants" },
+  { href: "/quick-demo/post", icon: Plus, label: "Post" },
+  { href: "/quick-demo/messages", icon: Bell, label: "Messages" },
+  { href: "/quick-demo/profile", icon: User, label: "Profile" },
 ];
 
 export function DemoTabBar() {
   const { activeAccount } = useDemo();
   const pathname = usePathname();
 
-  const tabs = activeAccount.role === "employer" ? EMPLOYER_TABS : FREELANCER_TABS;
+  const tabs = activeAccount.role === "employer" ? EMPLOYER_TABS : WORKER_TABS;
 
   return (
     <nav
@@ -31,12 +36,12 @@ export function DemoTabBar() {
         background: "var(--color-surface-raised)",
         borderTop: "1px solid var(--color-line)",
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
-        height: "calc(52px + env(safe-area-inset-bottom, 0px))",
+        height: "calc(58px + env(safe-area-inset-bottom, 0px))",
         flexShrink: 0,
       }}
     >
-      {tabs.map(({ href, label }) => {
-        const active = pathname === href || pathname.startsWith(href + "/");
+      {tabs.map(({ href, icon: Icon, label }) => {
+        const active = pathname === href || (href !== "/quick-demo" && pathname.startsWith(href));
         return (
           <Link
             key={href}
@@ -45,29 +50,37 @@ export function DemoTabBar() {
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: 2,
-              padding: "8px 16px",
+              gap: 3,
+              padding: "6px 12px",
               color: active ? "var(--color-ink)" : "var(--color-ink-mute)",
-              fontSize: 12,
+              fontSize: 10,
               fontWeight: active ? 700 : 500,
               letterSpacing: "0.02em",
               textDecoration: "none",
-              position: "relative",
+              transition: "color 0.12s",
+              WebkitTapHighlightColor: "transparent",
+              minWidth: 52,
+              justifyContent: "center",
             }}
           >
-            {label}
-            {active && (
-              <span
-                style={{
-                  position: "absolute",
-                  bottom: 6,
-                  width: 4,
-                  height: 4,
-                  borderRadius: "50%",
-                  background: "var(--color-accent)",
-                }}
-              />
-            )}
+            <span style={{ position: "relative" }}>
+              <Icon size={21} strokeWidth={active ? 2.4 : 1.7} />
+              {active && (
+                <span
+                  style={{
+                    position: "absolute",
+                    bottom: -5,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: 4,
+                    height: 4,
+                    borderRadius: "50%",
+                    background: "var(--color-accent)",
+                  }}
+                />
+              )}
+            </span>
+            <span style={{ marginTop: 4 }}>{label}</span>
           </Link>
         );
       })}

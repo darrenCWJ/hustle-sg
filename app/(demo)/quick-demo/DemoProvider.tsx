@@ -6,8 +6,11 @@ import {
   useState,
   useCallback,
   useEffect,
+  useRef,
   type ReactNode,
 } from "react";
+import { useSearchParams } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import {
   PROFILES,
   GIGS,
@@ -17,17 +20,33 @@ import {
   type DemoMessage,
 } from "./data";
 
-interface DemoState {
-  activeAccountId: string;
+// ── State shapes ───────────────────────────────────────────────────────────────
+
+interface SharedState {
   applications: DemoApplication[];
   messages: DemoMessage[];
+  customGigs: DemoGig[];
 }
 
-interface DemoContextValue extends DemoState {
+interface LocalState {
+  sessionId: string;
+  activeAccountId: string;
+}
+
+interface DemoContextValue {
+  // Local
+  activeAccountId: string;
   activeAccount: DemoProfile;
+  sessionId: string | null;
+  // Shared
+  applications: DemoApplication[];
+  messages: DemoMessage[];
+  // Actions
   switchAccount: (id: string) => void;
   resetDemo: () => void;
+  createSession: (code?: string) => Promise<void>;
   applyToGig: (gigId: string) => void;
+  postGig: (gig: Omit<DemoGig, "id">) => void;
   updateApplicationStatus: (appId: string, status: DemoApplication["status"]) => void;
   sendMessage: (applicationId: string, body: string) => void;
   getGigsForAccount: () => DemoGig[];
@@ -36,116 +55,226 @@ interface DemoContextValue extends DemoState {
   getMessagesForApplication: (applicationId: string) => DemoMessage[];
 }
 
-const STORAGE_KEY = "hustle-demo-state";
+// ── Storage keys ───────────────────────────────────────────────────────────────
 
-function loadState(): DemoState {
-  if (typeof window === "undefined") return defaultState();
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return defaultState();
+const SESSION_KEY = "demo-session-id";
+const ACCOUNT_KEY = "demo-active-account";
+
+function genCode(): string {
+  return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
-function defaultState(): DemoState {
-  return { activeAccountId: "", applications: [], messages: [] };
+function loadLocal(): LocalState {
+  if (typeof window === "undefined") return { sessionId: "", activeAccountId: "" };
+  return {
+    sessionId: localStorage.getItem(SESSION_KEY) ?? "",
+    activeAccountId: localStorage.getItem(ACCOUNT_KEY) ?? "",
+  };
 }
 
-function saveState(state: DemoState) {
+function saveLocal(local: LocalState) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  localStorage.setItem(SESSION_KEY, local.sessionId);
+  localStorage.setItem(ACCOUNT_KEY, local.activeAccountId);
 }
+
+function defaultShared(): SharedState {
+  return { applications: [], messages: [], customGigs: [] };
+}
+
+// ── Context ────────────────────────────────────────────────────────────────────
 
 const DemoContext = createContext<DemoContextValue | null>(null);
 
 export function DemoProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<DemoState>(defaultState);
+  const searchParams = useSearchParams();
+  const supabase = createClient();
+
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [activeAccountId, setActiveAccountId] = useState<string>("");
+  const [shared, setShared] = useState<SharedState>(defaultShared);
   const [hydrated, setHydrated] = useState(false);
 
+  const pendingWrite = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Hydration ──────────────────────────────────────────────────────────────
+
   useEffect(() => {
-    setState(loadState());
-    setHydrated(true);
+    const urlCode = searchParams.get("s");
+    const local = loadLocal();
+
+    const code = urlCode || local.sessionId || null;
+    setActiveAccountId(local.activeAccountId);
+
+    if (code) {
+      setSessionId(code);
+      saveLocal({ sessionId: code, activeAccountId: local.activeAccountId });
+      // Load from Supabase
+      supabase
+        .from("demo_sessions")
+        .select("state")
+        .eq("id", code)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data?.state) {
+            setShared(data.state as SharedState);
+          }
+          setHydrated(true);
+        });
+    } else {
+      setHydrated(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (hydrated) saveState(state);
-  }, [state, hydrated]);
+  // ── Realtime subscription ──────────────────────────────────────────────────
 
-  const activeAccount =
-    PROFILES.find((p) => p.id === state.activeAccountId) ?? PROFILES[0];
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const channel = supabase
+      .channel(`demo-session-${sessionId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "demo_sessions",
+          filter: `id=eq.${sessionId}`,
+        },
+        (payload) => {
+          const incoming = (payload.new as { state: SharedState }).state;
+          if (incoming) setShared(incoming);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Persist shared state ───────────────────────────────────────────────────
+
+  function schedulePersist(nextShared: SharedState) {
+    if (!sessionId) return;
+    if (pendingWrite.current) clearTimeout(pendingWrite.current);
+    pendingWrite.current = setTimeout(() => {
+      supabase
+        .from("demo_sessions")
+        .upsert({ id: sessionId, state: nextShared, updated_at: new Date().toISOString() })
+        .then(() => {});
+    }, 200);
+  }
+
+  function mutateShared(updater: (prev: SharedState) => SharedState) {
+    setShared((prev) => {
+      const next = updater(prev);
+      schedulePersist(next);
+      return next;
+    });
+  }
+
+  // ── Actions ────────────────────────────────────────────────────────────────
+
+  const createSession = useCallback(async (code?: string) => {
+    const id = code ?? genCode();
+    await supabase
+      .from("demo_sessions")
+      .upsert({ id, state: defaultShared(), updated_at: new Date().toISOString() });
+    setSessionId(id);
+    setShared(defaultShared());
+    saveLocal({ sessionId: id, activeAccountId });
+  }, [activeAccountId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const switchAccount = useCallback((id: string) => {
-    setState((prev) => ({ ...prev, activeAccountId: id }));
+    setActiveAccountId(id);
+    setSessionId((sid) => {
+      saveLocal({ sessionId: sid ?? "", activeAccountId: id });
+      return sid;
+    });
   }, []);
 
   const resetDemo = useCallback(() => {
-    const fresh: DemoState = { activeAccountId: state.activeAccountId, applications: [], messages: [] };
-    setState(fresh);
-  }, [state.activeAccountId]);
+    mutateShared(() => defaultShared());
+  }, [sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const applyToGig = useCallback((gigId: string) => {
-    setState((prev) => {
+    mutateShared((prev) => {
       const already = prev.applications.some(
-        (a) => a.gigId === gigId && a.freelancerId === prev.activeAccountId,
+        (a) => a.gigId === gigId && a.freelancerId === activeAccountId,
       );
       if (already) return prev;
       const app: DemoApplication = {
         id: `app-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         gigId,
-        freelancerId: prev.activeAccountId,
+        freelancerId: activeAccountId,
         status: "applied",
         createdAt: new Date().toISOString(),
       };
       return { ...prev, applications: [...prev.applications, app] };
     });
-  }, []);
+  }, [activeAccountId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const postGig = useCallback((gig: Omit<DemoGig, "id">) => {
+    const newGig: DemoGig = {
+      ...gig,
+      id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    };
+    mutateShared((prev) => ({ ...prev, customGigs: [...prev.customGigs, newGig] }));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateApplicationStatus = useCallback(
     (appId: string, status: DemoApplication["status"]) => {
-      setState((prev) => ({
+      mutateShared((prev) => ({
         ...prev,
         applications: prev.applications.map((a) =>
           a.id === appId ? { ...a, status } : a,
         ),
       }));
     },
-    [],
+    [], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   const sendMessage = useCallback((applicationId: string, body: string) => {
-    setState((prev) => {
+    mutateShared((prev) => {
       const msg: DemoMessage = {
         id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         applicationId,
-        senderId: prev.activeAccountId,
+        senderId: activeAccountId,
         body,
         createdAt: new Date().toISOString(),
       };
       return { ...prev, messages: [...prev.messages, msg] };
     });
-  }, []);
+  }, [activeAccountId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const activeAccount =
+    PROFILES.find((p) => p.id === activeAccountId) ?? PROFILES[0];
+
+  const allGigs = [...GIGS, ...shared.customGigs];
 
   const getGigsForAccount = useCallback(() => {
-    return GIGS.filter((g) => activeAccount.categories.includes(g.category));
-  }, [activeAccount]);
+    return allGigs.filter((g) => activeAccount.categories.includes(g.category));
+  }, [allGigs, activeAccount]);
 
   const getApplicationsForAccount = useCallback(() => {
-    return state.applications.filter((a) => a.freelancerId === state.activeAccountId);
-  }, [state.applications, state.activeAccountId]);
+    return shared.applications.filter((a) => a.freelancerId === activeAccountId);
+  }, [shared.applications, activeAccountId]);
 
   const getApplicationsForRequestor = useCallback(() => {
-    return state.applications.map((a) => ({
+    return shared.applications.map((a) => ({
       ...a,
-      gig: GIGS.find((g) => g.id === a.gigId)!,
+      gig: allGigs.find((g) => g.id === a.gigId)!,
       freelancer: PROFILES.find((p) => p.id === a.freelancerId)!,
     }));
-  }, [state.applications]);
+  }, [shared.applications, allGigs]);
 
   const getMessagesForApplication = useCallback(
     (applicationId: string) => {
-      return state.messages.filter((m) => m.applicationId === applicationId);
+      return shared.messages.filter((m) => m.applicationId === applicationId);
     },
-    [state.messages],
+    [shared.messages],
   );
 
   if (!hydrated) return null;
@@ -153,11 +282,16 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   return (
     <DemoContext.Provider
       value={{
-        ...state,
+        activeAccountId,
         activeAccount,
+        sessionId,
+        applications: shared.applications,
+        messages: shared.messages,
         switchAccount,
         resetDemo,
+        createSession,
         applyToGig,
+        postGig,
         updateApplicationStatus,
         sendMessage,
         getGigsForAccount,
