@@ -23,18 +23,18 @@ function instantConflicts(startTime: string, endTime: string, slots: BookedSlot[
 const INSTANT_GIGS = [
   {
     id: "inst-1",
-    title: "Barista — weekday morning cover",
+    title: "Retail associate — weekday morning cover",
     urgency: "now" as const,
     budget: "S$18/hr",
     budgetKind: "hourly",
     location: "Tanjong Pagar",
     distanceKm: 1.2,
-    skills: ["Coffee", "F&B", "Customer Service"],
-    description: "Need cover for opening shift today. 7am–11am, 4 hours. Coffee experience required.",
+    skills: ["Retail", "POS System", "Customer Service"],
+    description: "Need cover for opening shift today. 7am–11am, 4 hours. Retail sales experience required.",
     hoursRequired: 4,
     startTime: "07:00",
     endTime: "11:00",
-    employer: "Kith Café",
+    employer: "Kith Retail",
     score: 0.55,
   },
   {
