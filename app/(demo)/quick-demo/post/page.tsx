@@ -22,6 +22,84 @@ function scoreMatch(profile: DemoProfile, skills: string[]): number {
   return matches / gigLower.length;
 }
 
+const DEMO_TEMPLATES = [
+  {
+    emoji: "⚛️",
+    label: "React Dev",
+    form: {
+      title: "React Developer — B2B SaaS dashboard",
+      description: "We need a React developer to build a reporting dashboard for our B2B SaaS product. The work includes data visualisation components, a filterable table, and integration with our REST API. Deliverable is a polished, responsive UI ready for handoff.",
+      category: "tech",
+      location: "Remote",
+      skills: "React, TypeScript, REST API, Tailwind CSS",
+      budget: "1200",
+      budgetKind: "fixed" as const,
+      headcount: 1,
+      questions: "Walk me through the last React project you shipped.\nHow do you handle complex state across multiple components?",
+    },
+  },
+  {
+    emoji: "🎨",
+    label: "UI Designer",
+    form: {
+      title: "UI/UX Designer — mobile app redesign",
+      description: "Looking for a UI/UX designer to redesign our iOS app (12 screens). You'll own the visual language, component library in Figma, and handoff annotations. We want a modern, clean aesthetic suitable for a fintech audience.",
+      category: "design",
+      location: "Remote",
+      skills: "Figma, UI Design, Prototyping, Design System",
+      budget: "900",
+      budgetKind: "fixed" as const,
+      headcount: 1,
+      questions: "Share a case study of a mobile redesign you led.\nHow do you balance aesthetics with usability?",
+    },
+  },
+  {
+    emoji: "📣",
+    label: "Social Media",
+    form: {
+      title: "Social Media Manager — F&B brand",
+      description: "We need a social media manager for our café brand across Instagram and TikTok. Responsibilities include content planning, caption writing, posting schedule, and monthly analytics reporting. 3 posts per week.",
+      category: "marketing",
+      location: "Tanjong Pagar",
+      skills: "Instagram, TikTok, Content Writing, Canva, Analytics",
+      budget: "55",
+      budgetKind: "hourly" as const,
+      headcount: 1,
+      questions: "Show us a social campaign you ran and its results.\nHow do you come up with content ideas consistently?",
+    },
+  },
+  {
+    emoji: "📸",
+    label: "Photographer",
+    form: {
+      title: "Event Photographer — product launch",
+      description: "Product launch event at Marina Bay Sands, 3 hours. We need high-quality photos of the venue, speaker presentations, and networking moments. Final edited gallery (50+ shots) delivered within 48 hours.",
+      category: "events",
+      location: "Marina Bay Sands",
+      skills: "Photography, Photo Editing, Lightroom, Event Coverage",
+      budget: "350",
+      budgetKind: "fixed" as const,
+      headcount: 1,
+      questions: "Share your event photography portfolio.\nHow do you handle low-light indoor venue shoots?",
+    },
+  },
+  {
+    emoji: "📐",
+    label: "Maths Tutor",
+    form: {
+      title: "A-Level Maths Tutor (H2)",
+      description: "Seeking an experienced A-Level H2 Mathematics tutor for weekly 1.5-hour sessions with a JC2 student. Focus on calculus, statistics, and exam technique. Must be familiar with the latest SEAB syllabus.",
+      category: "tuition",
+      location: "Tampines",
+      skills: "H2 Mathematics, Calculus, Statistics, Exam Technique",
+      budget: "65",
+      budgetKind: "hourly" as const,
+      headcount: 1,
+      questions: "What's your track record with A-Level students?\nHow do you adapt your teaching to a struggling student?",
+    },
+  },
+];
+
 const CATEGORIES = [
   { value: "",          label: "Category" },
   { value: "tech",      label: "Tech" },
@@ -112,6 +190,18 @@ export default function DemoPostPage() {
   // Gig mode state
   const [gigMode, setGigMode] = useState<GigMode>("approval");
   const [deadline, setDeadline] = useState("");
+
+  async function applyTemplate(t: typeof DEMO_TEMPLATES[number]) {
+    setForm(t.form);
+    setSkillSuggestions([]);
+    setSuggestLoading(true);
+    try {
+      const result = await suggestSkills(t.form.title, t.form.description);
+      setSkillSuggestions(result);
+    } finally {
+      setSuggestLoading(false);
+    }
+  }
 
   function toggleDay(day: number) {
     setDaysOfWeek(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
@@ -358,9 +448,42 @@ export default function DemoPostPage() {
       <p style={{ fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-ink-soft)", margin: "0 0 8px" }}>
         Post a gig
       </p>
-      <h1 style={{ fontFamily: "var(--font-display)", fontSize: viewMode === "desktop" ? "clamp(2rem, 3vw, 2.8rem)" : 24, margin: "0 0 36px", letterSpacing: "-0.03em", lineHeight: 1 }}>
+      <h1 style={{ fontFamily: "var(--font-display)", fontSize: viewMode === "desktop" ? "clamp(2rem, 3vw, 2.8rem)" : 24, margin: "0 0 16px", letterSpacing: "-0.03em", lineHeight: 1 }}>
         Describe what you need done.
       </h1>
+
+      {/* Demo template strip */}
+      <div style={{ marginBottom: 28 }}>
+        <p style={{ fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-ink-mute)", margin: "0 0 8px" }}>
+          ✦ Quick-fill with a demo template
+        </p>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {DEMO_TEMPLATES.map((t) => (
+            <button
+              key={t.label}
+              type="button"
+              onClick={() => applyTemplate(t)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "7px 14px",
+                borderRadius: 999,
+                border: "1px solid var(--color-line)",
+                background: form.title === t.form.title ? "var(--color-ink)" : "var(--color-surface-raised)",
+                color: form.title === t.form.title ? "var(--color-surface)" : "var(--color-ink)",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "background 0.15s, color 0.15s",
+              }}
+            >
+              <span>{t.emoji}</span>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <form id="post-gig-form" onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {/* Title */}
