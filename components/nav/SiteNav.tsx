@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { NavLinks } from "./NavLinks";
@@ -55,34 +56,15 @@ export async function SiteNav() {
             gap: 28,
           }}
         >
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span
-              aria-hidden
-              style={{
-                display: "inline-grid",
-                placeItems: "center",
-                width: 28,
-                height: 28,
-                borderRadius: 8,
-                background: "var(--color-ink)",
-                color: "var(--color-accent)",
-                fontFamily: "var(--font-display)",
-                fontWeight: 600,
-                fontSize: 18,
-              }}
-            >
-              h
-            </span>
-            <span
-              style={{
-                fontFamily: "var(--font-display)",
-                fontSize: 20,
-                fontWeight: 500,
-                letterSpacing: "-0.02em",
-              }}
-            >
-              HustleSG
-            </span>
+          <Link href="/" style={{ display: "flex", alignItems: "center" }}>
+            <Image
+              src="/logo-full.png"
+              alt="HustleSG"
+              width={134}
+              height={32}
+              style={{ objectFit: "contain" }}
+              priority
+            />
           </Link>
 
           <NavLinks />

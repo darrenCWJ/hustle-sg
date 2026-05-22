@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { SiteNav } from "@/components/nav/SiteNav";
 
 export default function MarketingLayout({
@@ -28,16 +29,13 @@ export default function MarketingLayout({
           }}
         >
           <div>
-            <div
-              style={{
-                fontFamily: "var(--font-display)",
-                fontSize: 30,
-                letterSpacing: "-0.025em",
-                lineHeight: 1,
-              }}
-            >
-              HustleSG
-            </div>
+            <Image
+              src="/logo-full.png"
+              alt="HustleSG"
+              width={160}
+              height={38}
+              style={{ objectFit: "contain" }}
+            />
             <p
               style={{
                 color: "var(--color-ink-soft)",

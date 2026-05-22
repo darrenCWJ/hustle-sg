@@ -9,7 +9,7 @@
   --color-line: oklch(86% 0.012 85);
   --color-line-soft: oklch(92% 0.012 85);
 
-  --accent-h: 340;
+  --accent-h: 38;
   --color-accent: oklch(68% 0.18 var(--accent-h));
   --color-accent-soft: oklch(94% 0.045 var(--accent-h));
   --color-accent-ink: oklch(28% 0.1 var(--accent-h));

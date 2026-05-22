@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, Suspense } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { DemoProvider, useDemo } from "./DemoProvider";
@@ -492,38 +493,19 @@ function DemoSiteNav() {
             gap: 28,
           }}
         >
-          {/* Logo — exact copy */}
+          {/* Logo */}
           <Link
             href="/quick-demo"
-            style={{ display: "flex", alignItems: "center", gap: 10 }}
+            style={{ display: "flex", alignItems: "center" }}
           >
-            <span
-              aria-hidden
-              style={{
-                display: "inline-grid",
-                placeItems: "center",
-                width: 28,
-                height: 28,
-                borderRadius: 8,
-                background: "var(--color-ink)",
-                color: "var(--color-accent)",
-                fontFamily: "var(--font-display)",
-                fontWeight: 600,
-                fontSize: 18,
-              }}
-            >
-              h
-            </span>
-            <span
-              style={{
-                fontFamily: "var(--font-display)",
-                fontSize: 20,
-                fontWeight: 500,
-                letterSpacing: "-0.02em",
-              }}
-            >
-              HustleSG
-            </span>
+            <Image
+              src="/logo-full.png"
+              alt="HustleSG"
+              width={134}
+              height={32}
+              style={{ objectFit: "contain" }}
+              priority
+            />
           </Link>
 
           {/* Nav links — exact copy of NavLinks pill style */}
