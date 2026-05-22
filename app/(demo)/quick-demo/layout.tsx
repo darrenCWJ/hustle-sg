@@ -75,26 +75,52 @@ function DemoBar() {
         </button>
       </div>
 
-      {/* Session link chip */}
-      {sessionId && activeAccountId && (
+      {/* Session link chip — always visible once a session exists */}
+      {sessionId ? (
         <button
           onClick={copySessionLink}
           title="Click to copy shareable link for cross-device demo"
           style={{
-            fontSize: 9,
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
+            fontSize: 10,
             fontWeight: 700,
             fontFamily: "var(--font-mono)",
-            padding: "2px 7px",
-            borderRadius: 4,
-            border: "1px solid #334155",
+            padding: "3px 8px",
+            borderRadius: 5,
+            border: "1px solid #a78bfa",
             background: "transparent",
-            color: "#64748b",
+            color: "#a78bfa",
             cursor: "pointer",
             letterSpacing: "0.08em",
             flexShrink: 0,
+            whiteSpace: "nowrap",
           }}
         >
-          {sessionId} 📋
+          📱 {sessionId}
+        </button>
+      ) : (
+        <button
+          onClick={() => router.push("/quick-demo")}
+          title="Create a session to enable cross-device demo"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
+            fontSize: 10,
+            fontWeight: 700,
+            padding: "3px 8px",
+            borderRadius: 5,
+            border: "1px solid #334155",
+            background: "transparent",
+            color: "#475569",
+            cursor: "pointer",
+            flexShrink: 0,
+            whiteSpace: "nowrap",
+          }}
+        >
+          📱 Connect device
         </button>
       )}
 
