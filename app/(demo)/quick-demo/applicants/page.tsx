@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useDemo } from "../DemoProvider";
 import { useViewMode } from "../ViewModeContext";
@@ -35,7 +35,7 @@ function avatarHue(name: string) {
   return AVATAR_HUES[(name.charCodeAt(0) + (name.charCodeAt(1) || 0)) % AVATAR_HUES.length];
 }
 
-export default function DemoApplicantsPage() {
+function ApplicantsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { getApplicationsForRequestor, updateApplicationStatus, getMessagesForApplication, sendDirectOffer } = useDemo();
@@ -312,5 +312,13 @@ export default function DemoApplicantsPage() {
         </section>
       )}
     </main>
+  );
+}
+
+export default function DemoApplicantsPage() {
+  return (
+    <Suspense>
+      <ApplicantsContent />
+    </Suspense>
   );
 }

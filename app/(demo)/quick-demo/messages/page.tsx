@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useDemo } from "../DemoProvider";
 import { PROFILES } from "../data";
 
-export default function DemoMessagesPage() {
+function MessagesContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { activeAccount, applications, getMessagesForApplication, sendMessage, getAllGigs, updateApplicationStatus } = useDemo();
@@ -356,5 +356,13 @@ export default function DemoMessagesPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function DemoMessagesPage() {
+  return (
+    <Suspense>
+      <MessagesContent />
+    </Suspense>
   );
 }
