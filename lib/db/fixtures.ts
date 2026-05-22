@@ -1,6 +1,6 @@
 // Realistic SG seed data. All fictitious.
 // Designed with 5 semantic clusters for a clear vector-map demo:
-// Tech (ML/dev) · Design (UX/motion) · Education · Events/Media · F&B/Content
+// Tech (ML/dev) · Design (UX/motion) · Education · Events/Media · Logistics/Content
 
 export interface SeedProfile {
   nric: string;
@@ -381,39 +381,39 @@ export const FREELANCERS: SeedProfile[] = [
     ],
   },
 
-  // ── F&B / Content cluster ──────────────────────────────────────────────────
+  // ── Logistics / Content cluster ────────────────────────────────────────────
   {
     nric: "S8888888J",
-    handle: "chef_hafiz",
+    handle: "hafiz_ops",
     display_name: "Hafiz Bin Osman",
-    headline: "Halal caterer · up to 300 pax · Malay & fusion cuisine",
+    headline: "Logistics & ops contractor · 5 yrs · multi-site coordination",
     lat: 1.2940, lon: 103.7953, // Queenstown
-    bio: "Halal-certified home kitchen catering for corporate lunches, wedding receptions, and community events. Specialise in Malay cuisine and Southeast Asian fusion. 5 years of catering, 200+ events served. Based in Queenstown.",
+    bio: "Experienced operations contractor specialising in multi-site logistics, event coordination, and supply chain support. 5 years managing end-to-end delivery operations and on-site event logistics across Singapore. Based in Queenstown.",
     role: "freelancer",
     certs: [
       {
         kind: "wsq",
         issuer: "SkillsFuture SG",
-        title: "WSQ Food Safety Course Level 2",
+        title: "WSQ Supply Chain & Logistics Management",
         issued_at: "2022-03-10",
-        extracted_skills: ["food safety", "haccp", "catering operations", "food hygiene"],
+        extracted_skills: ["logistics coordination", "supply chain", "inventory management", "operations"],
         verified: true,
       },
       {
         kind: "accreditation",
-        issuer: "MUIS",
-        title: "Halal Certification (Kitchen & Operations)",
+        issuer: "Singapore Logistics Association",
+        title: "Certified Logistics Professional",
         issued_at: "2023-01-05",
-        extracted_skills: ["halal cooking", "halal logistics", "menu planning"],
+        extracted_skills: ["route optimisation", "warehouse ops", "last-mile delivery", "team coordination"],
         verified: true,
       },
     ],
     portfolio: [
       {
         kind: "writeup",
-        title: "300-pax nasi lemak set for Changi Airport event",
-        description: "How I planned and executed batch cooking for 300 pax in a single morning, delivering to Changi on time.",
-        tags: ["catering", "halal", "event", "operations"],
+        title: "Multi-venue event logistics for 300-pax conference",
+        description: "How I coordinated equipment, staffing, and delivery across 3 venues in a single day for a large-scale corporate conference at Changi.",
+        tags: ["logistics", "events", "operations", "coordination"],
       },
     ],
   },
@@ -421,17 +421,17 @@ export const FREELANCERS: SeedProfile[] = [
     nric: "S9090909K",
     handle: "eden_tiktok",
     display_name: "Eden Goh",
-    headline: "TikTok creator · 210k followers · F&B & lifestyle · SG",
+    headline: "TikTok creator · 210k followers · lifestyle & tech · SG",
     lat: 1.3244, lon: 103.7985, // Bukit Timah
-    bio: "210k followers on TikTok, 95% Singapore audience, average 500k views per hawker review. I cover hawker finds, restaurant openings, and F&B brand collabs. Paid partnerships only — rates and media kit available on request.",
+    bio: "210k followers on TikTok, 95% Singapore audience, averaging 500k views per video. I cover lifestyle, consumer tech, and local brand stories. Paid partnerships only — rates and media kit available on request.",
     role: "freelancer",
     certs: [],
     portfolio: [
       {
         kind: "website",
-        title: "@edeneats TikTok",
+        title: "@edensg TikTok",
         external_url: "https://tiktok.com/@example-eden",
-        tags: ["tiktok", "f&b", "influencer", "sg-food"],
+        tags: ["tiktok", "lifestyle", "influencer", "sg"],
       },
       {
         kind: "writeup",
@@ -527,7 +527,7 @@ export const EMPLOYERS: SeedProfile[] = [
     nric: "M5005005E",
     handle: "kopicraft",
     display_name: "Amir at KopiCraft Co",
-    headline: "F&B brand · 18 outlets · Kopitiam-first",
+    headline: "Retail & lifestyle brand · 18 outlets · SG-first",
     lat: 1.3099, lon: 103.8691, // Kallang
     bio: "Fast-growing kopitiam-style chain. Hire content creators, copywriters, and designers for brand campaigns and outlet launches.",
     role: "employer",
@@ -713,7 +713,7 @@ export const GIGS: SeedGig[] = [
     budget_kind: "fixed",
   },
 
-  // ── F&B / Content ─────────────────────────────────────────────────────────
+  // ── Logistics / Content ────────────────────────────────────────────────────
   {
     employer_handle: "kopicraft",
     title: "TikTok creator partnership — F&B campaign (3 videos)",
@@ -742,11 +742,11 @@ export const GIGS: SeedGig[] = [
   },
   {
     employer_handle: "sunrise_events",
-    title: "Halal caterer — corporate lunch 200 pax",
-    description: "Catering for a product launch event. 200 pax halal lunch set (3-course). 1-week lead time. Raffles Place venue, delivery + setup included.",
-    skills: ["catering", "halal", "corporate catering", "food preparation"],
+    title: "Event logistics coordinator — product launch",
+    description: "Coordinate on-site logistics for a 200-pax product launch at Raffles Place. Duties: vendor liaison, equipment intake, floor plan execution, and post-event teardown. 1-week lead time.",
+    skills: ["event logistics", "coordination", "vendor management", "on-site ops"],
     location: "Raffles Place",
-    category: "f&b",
+    category: "events",
     budget_cents: 240000,
     budget_kind: "fixed",
   },
@@ -863,12 +863,12 @@ export const APPLICATIONS: SeedApplication[] = [
     cover_note: "80 weddings, including 25 Malay weddings (nikah + dinner reception). Sony FX3 + DJI Mavic 3 Pro. 2-week highlight reel turnaround.",
   },
 
-  // Chef Hafiz → catering gig
+  // Hafiz → event logistics gig
   {
-    applicant_handle: "chef_hafiz",
-    gig_title: "Halal caterer — corporate lunch 200 pax",
+    applicant_handle: "hafiz_ops",
+    gig_title: "Event logistics coordinator — product launch",
     status: "applied",
-    cover_note: "MUIS-certified halal kitchen. Handled 3 similar 200-pax corporate lunches in the CBD this quarter. Can do full delivery + setup at Raffles Place.",
+    cover_note: "Coordinated logistics for 3 similar 200-pax corporate events in the CBD this quarter. Familiar with Raffles Place venues and vendor access procedures.",
   },
 
   // Eden → content gig
@@ -876,7 +876,7 @@ export const APPLICATIONS: SeedApplication[] = [
     applicant_handle: "eden_tiktok",
     gig_title: "TikTok creator partnership — F&B campaign (3 videos)",
     status: "interviewing",
-    cover_note: "210k SG followers, 95% local audience, average 500k views on hawker content. My last 3 F&B partnerships all sold out within 48 hours. Rate card attached.",
+    cover_note: "210k SG followers, 95% local audience, average 500k views per video. My last 3 brand partnerships drove sold-out launches within 48 hours. Rate card attached.",
   },
 
   // Zara → content gig
@@ -884,6 +884,6 @@ export const APPLICATIONS: SeedApplication[] = [
     applicant_handle: "zara_copy",
     gig_title: "Brand copywriter — website + email series",
     status: "applied",
-    cover_note: "Rewrote the website for a local F&B chain last quarter — conversion up 3x. I write in a warm, locally-inflected voice. Happy to share samples.",
+    cover_note: "Rewrote the website for a local retail brand last quarter — conversion up 3x. I write in a warm, locally-inflected voice. Happy to share samples.",
   },
 ];

@@ -52,7 +52,7 @@ export const SKILL_CATEGORIES = [
   "Tuition & Teaching",
   "Translation",
   "Events & Emcee",
-  "F&B Service",
+  "Customer Service",
   "Music & Audio",
   "Writing & Copywriting",
   "Social Media",
