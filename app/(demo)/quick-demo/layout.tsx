@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { DemoProvider, useDemo } from "./DemoProvider";
@@ -646,6 +646,7 @@ export default function DemoLayout({
 
   return (
     <ViewModeContext.Provider value={{ viewMode, setViewMode }}>
+      <Suspense>
       <DemoProvider>
         {/* DemoBar always sits at the very top, above everything */}
         <div
@@ -681,6 +682,7 @@ export default function DemoLayout({
           </div>
         </div>
       </DemoProvider>
+      </Suspense>
     </ViewModeContext.Provider>
   );
 }
