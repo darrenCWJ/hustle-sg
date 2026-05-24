@@ -447,14 +447,17 @@ function DemoUserMenu() {
           <div style={{ padding: "6px 0" }}>
             {isEmployer ? (
               <>
+                <DropdownItem href="/quick-demo/dashboard" icon="◎">
+                  Dashboard
+                </DropdownItem>
                 <DropdownItem href="/quick-demo/my-gigs" icon="⊞">
                   My gigs
                 </DropdownItem>
                 <DropdownItem href="/quick-demo/post" icon="+">
                   Post a gig
                 </DropdownItem>
-                <DropdownItem href="/quick-demo/dashboard" icon="◎">
-                  Dashboard
+                <DropdownItem href="/quick-demo/profile" icon="◉">
+                  My profile
                 </DropdownItem>
               </>
             ) : (

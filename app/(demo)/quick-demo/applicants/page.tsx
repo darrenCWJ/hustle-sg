@@ -43,7 +43,9 @@ function ApplicantsContent() {
 
   const gigFilter = searchParams.get("gig");
   const allApps = getApplicationsForRequestor();
-  const filtered = gigFilter ? allApps.filter((a) => a.gigId === gigFilter) : allApps;
+  const [statusFilter, setStatusFilter] = useState<string>("All");
+  const gigFiltered = gigFilter ? allApps.filter((a) => a.gigId === gigFilter) : allApps;
+  const filtered = statusFilter === "All" ? gigFiltered : gigFiltered.filter((a) => a.status === statusFilter.toLowerCase());
   const [offerStatuses, setOfferStatuses] = useState<Record<string, "idle" | "sending" | "sent">>({});
 
   const filteredGig = gigFilter ? [...GIGS, ...allApps.map((a) => a.gig)].find((g) => g?.id === gigFilter) : null;
@@ -84,6 +86,12 @@ function ApplicantsContent() {
 
   return (
     <main style={{ maxWidth: 1320, margin: "0 auto", padding: "50px 28px 80px" }}>
+      <button
+        onClick={() => router.push("/quick-demo/dashboard")}
+        style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 24, padding: "6px 14px 6px 10px", borderRadius: 999, border: "1px solid var(--color-line)", background: "transparent", fontSize: 13, fontWeight: 600, color: "var(--color-ink-soft)", cursor: "pointer" }}
+      >
+        ← Dashboard
+      </button>
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "end", marginBottom: 36, gap: 20, flexWrap: "wrap" }}>
         <div>
           <p style={{ fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-ink-soft)", margin: "0 0 8px" }}>
@@ -109,14 +117,21 @@ function ApplicantsContent() {
           { label: "Applied", count: counts.applied },
           { label: "Shortlisted", count: counts.shortlisted },
           { label: "Accepted", count: counts.accepted },
-        ].map((s) => (
-          <span key={s.label} style={{ padding: "7px 16px", borderRadius: 999, border: "1px solid var(--color-line)", fontSize: 13, fontWeight: 600, background: "var(--color-surface-raised)", color: "var(--color-ink)" }}>
-            {s.label}
-            <span style={{ marginLeft: 8, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--color-ink-soft)" }}>
-              {s.count}
-            </span>
-          </span>
-        ))}
+        ].map((s) => {
+          const isActive = statusFilter === s.label;
+          return (
+            <button
+              key={s.label}
+              onClick={() => setStatusFilter(s.label)}
+              style={{ padding: "7px 16px", borderRadius: 999, border: `1px solid ${isActive ? "var(--color-ink)" : "var(--color-line)"}`, fontSize: 13, fontWeight: 600, background: isActive ? "var(--color-ink)" : "var(--color-surface-raised)", color: isActive ? "var(--color-surface)" : "var(--color-ink)", cursor: "pointer" }}
+            >
+              {s.label}
+              <span style={{ marginLeft: 8, fontFamily: "var(--font-mono)", fontSize: 11, color: isActive ? "rgba(255,255,255,0.6)" : "var(--color-ink-soft)" }}>
+                {s.count}
+              </span>
+            </button>
+          );
+        })}
         {gigFilter && (
           <button
             onClick={() => router.push("/quick-demo/applicants")}

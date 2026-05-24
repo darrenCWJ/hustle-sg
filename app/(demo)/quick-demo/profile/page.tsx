@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useDemo } from "../DemoProvider";
+import { useDemo, DEFAULT_EMPLOYER_PROFILE, type EmployerProfile } from "../DemoProvider";
 import { useViewMode } from "../ViewModeContext";
 import { GIGS } from "../data";
 
@@ -126,13 +127,82 @@ function monthYear(offsetMonths: number) {
 
 // ── Profile page ───────────────────────────────────────────────────────────────
 
+const COMPANY_SIZES = ["1–10 employees", "11–50 employees", "51–200 employees", "201–500 employees", "500+ employees"];
+const INDUSTRIES = ["Logistics & Supply Chain", "Technology & Software", "Retail & E-commerce", "Finance & Banking", "Healthcare", "Education", "Marketing & Advertising", "Construction & Property", "F&B & Hospitality", "Media & Entertainment", "Professional Services", "Others"];
+
+function EditProfileForm({ current, onSave, onCancel }: { current: EmployerProfile; onSave: (p: EmployerProfile) => void; onCancel: () => void }) {
+  const [form, setForm] = useState<EmployerProfile>(current);
+  const set = (k: keyof EmployerProfile, v: string) => setForm((prev) => ({ ...prev, [k]: v }));
+  const inputStyle = { width: "100%", padding: "9px 12px", borderRadius: 10, border: "1px solid var(--color-line)", fontSize: 13, background: "var(--color-surface)", color: "var(--color-ink)", outline: "none", boxSizing: "border-box" as const };
+  const labelStyle = { fontSize: 11, fontWeight: 700, color: "var(--color-ink-soft)", letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block", marginBottom: 5 };
+  return (
+    <div style={{ borderRadius: 20, border: "2px solid var(--color-accent)", background: "var(--color-surface-raised)", padding: 28, marginBottom: 32 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+        <h3 style={{ fontFamily: "var(--font-display)", fontSize: 20, margin: 0, letterSpacing: "-0.02em" }}>Edit company profile</h3>
+        <button onClick={onCancel} style={{ fontSize: 13, color: "var(--color-ink-mute)", background: "none", border: "none", cursor: "pointer" }}>Cancel</button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div>
+          <label style={labelStyle}>Company name</label>
+          <input style={inputStyle} value={form.companyName} onChange={e => set("companyName", e.target.value)} />
+        </div>
+        <div>
+          <label style={labelStyle}>UEN / ACRA No.</label>
+          <input style={inputStyle} value={form.uen} onChange={e => set("uen", e.target.value)} placeholder="e.g. 202401234A" />
+        </div>
+        <div>
+          <label style={labelStyle}>Industry</label>
+          <select style={{ ...inputStyle, appearance: "none" as const }} value={form.industry} onChange={e => set("industry", e.target.value)}>
+            {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
+          </select>
+        </div>
+        <div>
+          <label style={labelStyle}>Company size</label>
+          <select style={{ ...inputStyle, appearance: "none" as const }} value={form.companySize} onChange={e => set("companySize", e.target.value)}>
+            {COMPANY_SIZES.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+        <div>
+          <label style={labelStyle}>Location</label>
+          <input style={inputStyle} value={form.location} onChange={e => set("location", e.target.value)} placeholder="e.g. Tanjong Pagar, Singapore" />
+        </div>
+        <div>
+          <label style={labelStyle}>Website (optional)</label>
+          <input style={inputStyle} value={form.website} onChange={e => set("website", e.target.value)} placeholder="https://yourcompany.com" />
+        </div>
+        <div style={{ gridColumn: "1 / -1" }}>
+          <label style={labelStyle}>About / Bio</label>
+          <textarea
+            style={{ ...inputStyle, minHeight: 90, resize: "vertical" }}
+            value={form.bio}
+            onChange={e => set("bio", e.target.value)}
+          />
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
+        <button onClick={onCancel} style={{ padding: "9px 20px", borderRadius: 999, border: "1px solid var(--color-line)", background: "transparent", fontSize: 13, fontWeight: 600, cursor: "pointer", color: "var(--color-ink-soft)" }}>
+          Discard
+        </button>
+        <button onClick={() => onSave(form)} style={{ padding: "9px 22px", borderRadius: 999, border: "none", background: "var(--color-ink)", color: "var(--color-surface)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+          Save changes
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function DemoProfilePage() {
   const router = useRouter();
-  const { activeAccount, getApplicationsForAccount, getApplicationsForRequestor, ratings } = useDemo();
+  const { activeAccount, getApplicationsForAccount, getApplicationsForRequestor, ratings, employerProfile, updateEmployerProfile } = useDemo();
   const { viewMode } = useViewMode();
+  const [editingProfile, setEditingProfile] = useState(false);
 
-  const mock = MOCK_DATA[activeAccount.id] ?? MOCK_DATA.requestor;
   const isEmployer = activeAccount.role === "employer";
+  const liveEmployer: EmployerProfile = { ...DEFAULT_EMPLOYER_PROFILE, ...(employerProfile ?? {}) };
+  const mockBase = MOCK_DATA[activeAccount.id] ?? MOCK_DATA.requestor;
+  const mock = isEmployer
+    ? { ...mockBase, bio: liveEmployer.bio, location: liveEmployer.location }
+    : mockBase;
   const workerApps = getApplicationsForAccount();
   const employerApps = getApplicationsForRequestor();
 
@@ -197,6 +267,15 @@ export default function DemoProfilePage() {
     return (
       <main style={{ maxWidth: 1320, margin: "0 auto", padding: "60px 28px 80px" }}>
 
+        {/* Edit profile form (employer only) */}
+        {isEmployer && editingProfile && (
+          <EditProfileForm
+            current={liveEmployer}
+            onSave={(p) => { updateEmployerProfile(p); setEditingProfile(false); }}
+            onCancel={() => setEditingProfile(false)}
+          />
+        )}
+
         {/* Hero row: 2 columns */}
         <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 40, marginBottom: 36, alignItems: "start" }}>
 
@@ -228,17 +307,52 @@ export default function DemoProfilePage() {
             )}
 
             {mock.bio && (
-              <p style={{ fontSize: 15, color: "var(--color-ink-soft)", lineHeight: 1.6, margin: "0 0 24px", maxWidth: 540 }}>
+              <p style={{ fontSize: 15, color: "var(--color-ink-soft)", lineHeight: 1.6, margin: "0 0 16px", maxWidth: 540 }}>
                 {mock.bio}
               </p>
             )}
 
-            <button
-              onClick={() => router.push("/quick-demo/post")}
-              style={{ padding: "11px 24px", borderRadius: 999, background: "var(--color-ink)", color: "var(--color-surface)", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer" }}
-            >
-              Post a gig →
-            </button>
+            {/* Employer company details */}
+            {isEmployer && (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
+                <span style={{ fontSize: 12, padding: "4px 11px", borderRadius: 999, background: "var(--color-muted)", color: "var(--color-ink-soft)", fontWeight: 600 }}>
+                  {liveEmployer.companyName}
+                </span>
+                <span style={{ fontSize: 12, padding: "4px 11px", borderRadius: 999, background: "var(--color-muted)", color: "var(--color-ink-soft)", fontWeight: 600 }}>
+                  {liveEmployer.industry}
+                </span>
+                <span style={{ fontSize: 12, padding: "4px 11px", borderRadius: 999, background: "var(--color-muted)", color: "var(--color-ink-soft)", fontWeight: 600 }}>
+                  {liveEmployer.companySize}
+                </span>
+                {liveEmployer.uen && (
+                  <span style={{ fontSize: 11, padding: "4px 11px", borderRadius: 999, background: "#dbeafe", color: "#1e40af", fontWeight: 700, fontFamily: "var(--font-mono)" }}>
+                    UEN: {liveEmployer.uen}
+                  </span>
+                )}
+                {liveEmployer.website && (
+                  <span style={{ fontSize: 12, padding: "4px 11px", borderRadius: 999, background: "var(--color-muted)", color: "var(--color-accent)", fontWeight: 600 }}>
+                    {liveEmployer.website}
+                  </span>
+                )}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button
+                onClick={() => router.push("/quick-demo/post")}
+                style={{ padding: "11px 24px", borderRadius: 999, background: "var(--color-ink)", color: "var(--color-surface)", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer" }}
+              >
+                Post a gig →
+              </button>
+              {isEmployer && (
+                <button
+                  onClick={() => setEditingProfile(true)}
+                  style={{ padding: "11px 22px", borderRadius: 999, background: "transparent", color: "var(--color-ink)", fontSize: 14, fontWeight: 600, border: "1px solid var(--color-line)", cursor: "pointer" }}
+                >
+                  Edit profile
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Right: Trust panel */}
@@ -517,7 +631,16 @@ export default function DemoProfilePage() {
         </div>
 
         {mock.bio && (
-          <p style={{ fontSize: 13, color: "var(--color-ink-soft)", lineHeight: 1.5, margin: "0 0 12px" }}>{mock.bio}</p>
+          <p style={{ fontSize: 13, color: "var(--color-ink-soft)", lineHeight: 1.5, margin: "0 0 10px" }}>{mock.bio}</p>
+        )}
+
+        {/* Mobile employer company chips */}
+        {isEmployer && (
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+            <span style={{ fontSize: 11, padding: "3px 9px", borderRadius: 999, background: "var(--color-muted)", color: "var(--color-ink-soft)", fontWeight: 600 }}>{liveEmployer.companyName}</span>
+            <span style={{ fontSize: 11, padding: "3px 9px", borderRadius: 999, background: "var(--color-muted)", color: "var(--color-ink-soft)", fontWeight: 600 }}>{liveEmployer.industry}</span>
+            {liveEmployer.uen && <span style={{ fontSize: 10, padding: "3px 9px", borderRadius: 999, background: "#dbeafe", color: "#1e40af", fontWeight: 700, fontFamily: "var(--font-mono)" }}>UEN: {liveEmployer.uen}</span>}
+          </div>
         )}
 
         {mock.location && (
@@ -537,6 +660,24 @@ export default function DemoProfilePage() {
             </div>
           ))}
         </div>
+
+        {/* Mobile edit profile button (employer only) */}
+        {isEmployer && (
+          editingProfile ? (
+            <EditProfileForm
+              current={liveEmployer}
+              onSave={(p) => { updateEmployerProfile(p); setEditingProfile(false); }}
+              onCancel={() => setEditingProfile(false)}
+            />
+          ) : (
+            <button
+              onClick={() => setEditingProfile(true)}
+              style={{ padding: "10px 18px", borderRadius: 999, border: "1px solid var(--color-line)", background: "transparent", fontSize: 13, fontWeight: 600, color: "var(--color-ink)", cursor: "pointer", textAlign: "center" as const }}
+            >
+              Edit company profile
+            </button>
+          )
+        )}
 
         {/* Trust panel (compact mobile) */}
         <div style={{ borderRadius: 16, background: "var(--color-ink)", color: "var(--color-surface)", padding: 16 }}>

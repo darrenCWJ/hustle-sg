@@ -23,6 +23,16 @@ import {
 
 // ── State shapes ───────────────────────────────────────────────────────────────
 
+export interface EmployerProfile {
+  companyName: string;
+  bio: string;
+  industry: string;
+  companySize: string;
+  uen: string;
+  location: string;
+  website: string;
+}
+
 export interface BookedSlot {
   gigId: string;
   startTime: string;
@@ -38,6 +48,7 @@ interface SharedState {
   ratings: DemoRating[];
   interviewResponses: Record<string, number[]>; // appId → answered question indices
   interviewVideos: Record<string, string>;      // `${appId}:${questionIdx}` → public storage URL
+  employerProfile: EmployerProfile | null;
 }
 
 interface LocalState {
@@ -78,6 +89,8 @@ interface DemoContextValue {
   getApplicationsForAccount: () => DemoApplication[];
   getApplicationsForRequestor: () => (DemoApplication & { gig: DemoGig; freelancer: DemoProfile })[];
   getMessagesForApplication: (applicationId: string) => DemoMessage[];
+  employerProfile: EmployerProfile | null;
+  updateEmployerProfile: (profile: Partial<EmployerProfile>) => void;
 }
 
 // ── Storage keys ───────────────────────────────────────────────────────────────
@@ -122,8 +135,18 @@ function saveCachedShared(sid: string, state: SharedState) {
 }
 
 function defaultShared(): SharedState {
-  return { applications: [], messages: [], customGigs: [], bookedSlots: [], ratings: [], interviewResponses: {}, interviewVideos: {} };
+  return { applications: [], messages: [], customGigs: [], bookedSlots: [], ratings: [], interviewResponses: {}, interviewVideos: {}, employerProfile: null };
 }
+
+export const DEFAULT_EMPLOYER_PROFILE: EmployerProfile = {
+  companyName: "Demo Corp SG Pte Ltd",
+  bio: "Operations Director at Demo Corp SG Pte Ltd, a regional logistics and supply chain company serving 200+ enterprise clients across SEA. We engage freelance talent for tech, marketing, events, and content to keep our lean team agile and move fast.",
+  industry: "Logistics & Supply Chain",
+  companySize: "51–200 employees",
+  uen: "202401234A",
+  location: "Tanjong Pagar, Singapore",
+  website: "",
+};
 
 // ── Context ────────────────────────────────────────────────────────────────────
 
@@ -520,6 +543,13 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     [shared.interviewVideos],
   );
 
+  const updateEmployerProfile = useCallback((profile: Partial<EmployerProfile>) => {
+    mutateShared((prev) => ({
+      ...prev,
+      employerProfile: { ...DEFAULT_EMPLOYER_PROFILE, ...(prev.employerProfile ?? {}), ...profile },
+    }));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const activeAccount =
     PROFILES.find((p) => p.id === activeAccountId) ?? PROFILES[0];
 
@@ -586,6 +616,8 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         getApplicationsForAccount,
         getApplicationsForRequestor,
         getMessagesForApplication,
+        employerProfile: shared.employerProfile,
+        updateEmployerProfile,
       }}
     >
       {children}

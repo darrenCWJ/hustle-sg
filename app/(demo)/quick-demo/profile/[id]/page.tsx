@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useDemo } from "../../DemoProvider";
+import { useDemo, DEFAULT_EMPLOYER_PROFILE } from "../../DemoProvider";
 import { useViewMode } from "../../ViewModeContext";
 import { PROFILES } from "../../data";
 
@@ -229,12 +229,16 @@ function issuerColor(name: string) {
 export default function FreelancerProfilePage() {
   const params = useParams();
   const router = useRouter();
-  const { ratings } = useDemo();
+  const { ratings, employerProfile } = useDemo();
   const { viewMode } = useViewMode();
 
   const profileId = params.id as string;
   const profile = PROFILES.find(p => p.id === profileId);
-  const mock = MOCK_DATA[profileId] ?? { trustScore: 70, bio: "", location: "Singapore", memberSince: "2024", responseTime: "< 4 hrs", creds: [], workHistory: [] };
+  const baseMock = MOCK_DATA[profileId] ?? { trustScore: 70, bio: "", location: "Singapore", memberSince: "2024", responseTime: "< 4 hrs", creds: [], workHistory: [] };
+  const liveEp = profileId === "requestor" ? { ...DEFAULT_EMPLOYER_PROFILE, ...(employerProfile ?? {}) } : null;
+  const mock = liveEp
+    ? { ...baseMock, bio: liveEp.bio, location: liveEp.location, companyName: liveEp.companyName, uen: liveEp.uen, industry: liveEp.industry, companySize: liveEp.companySize }
+    : baseMock;
 
   if (!profile) {
     return (
