@@ -191,7 +191,21 @@ export function DemoSwipeCardDeck({ gigs: initial }: Props) {
         )}
 
         {/* Card content */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "20px 20px 0" }}>
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          {/* Image */}
+          {top.imageUrl && (
+            <div style={{ width: "100%", height: 180, overflow: "hidden", borderRadius: "20px 20px 0 0", flexShrink: 0 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={top.imageUrl}
+                alt={top.title}
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                draggable={false}
+              />
+            </div>
+          )}
+
+          <div style={{ padding: "16px 20px 0" }}>
           {/* Budget */}
           <div style={{ marginBottom: 10 }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 28, fontWeight: 800, color: "var(--color-ink)" }}>
@@ -265,6 +279,7 @@ export function DemoSwipeCardDeck({ gigs: initial }: Props) {
               ))}
             </div>
           )}
+          </div>{/* end inner padding div */}
         </div>
 
         {/* Bottom action bar */}

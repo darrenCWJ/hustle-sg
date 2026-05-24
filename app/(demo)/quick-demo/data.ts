@@ -29,6 +29,7 @@ export interface DemoGig {
   questions?: string[]; // async interview questions, up to 3
   distanceKm?: number;  // for community/local gigs
   urgent?: boolean;
+  imageUrl?: string;
 }
 
 export interface DemoApplication {
@@ -435,6 +436,7 @@ export const GIGS: DemoGig[] = [
     postedAgo: "2h ago",
     distanceKm: 0.3,
     urgent: true,
+    imageUrl: "https://images.unsplash.com/photo-1573865526739-10659fec78a5?w=600&h=360&fit=crop&q=80",
   },
   {
     id: "community-2",
@@ -478,6 +480,7 @@ export const GIGS: DemoGig[] = [
     urgent: true,
     startTime: "19:00",
     endTime: "19:30",
+    imageUrl: "https://images.unsplash.com/photo-1552053831-71594a27632d?w=600&h=360&fit=crop&q=80",
   },
   {
     id: "community-5",
@@ -491,6 +494,7 @@ export const GIGS: DemoGig[] = [
     postedAgo: "30m ago",
     distanceKm: 2.1,
     urgent: true,
+    imageUrl: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&h=360&fit=crop&q=80",
   },
   {
     id: "community-6",

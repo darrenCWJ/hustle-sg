@@ -110,6 +110,14 @@ export default function DemoGigDetailPage() {
           ← Browse Gigs
         </button>
 
+        {/* Hero image */}
+        {gig.imageUrl && (
+          <div style={{ marginBottom: 28, borderRadius: 16, overflow: "hidden", border: "1px solid var(--color-line)" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={gig.imageUrl} alt={gig.title} style={{ width: "100%", maxHeight: 320, objectFit: "cover", display: "block" }} />
+          </div>
+        )}
+
         {/* Budget */}
         <div style={{ marginBottom: 12 }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 36, fontWeight: 800, color: "var(--color-ink)" }}>
@@ -216,6 +224,14 @@ export default function DemoGigDetailPage() {
             ← Back
           </button>
         </div>
+
+        {/* Hero image — mobile */}
+        {gig.imageUrl && (
+          <div style={{ width: "100%", maxHeight: 240, overflow: "hidden" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={gig.imageUrl} alt={gig.title} style={{ width: "100%", height: 240, objectFit: "cover", display: "block" }} />
+          </div>
+        )}
 
         <div style={{ padding: "20px 20px 0" }}>
           {/* Budget */}

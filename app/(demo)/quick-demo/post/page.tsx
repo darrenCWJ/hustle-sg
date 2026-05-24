@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useDemo } from "../DemoProvider";
 import { useViewMode } from "../ViewModeContext";
@@ -235,6 +235,8 @@ export default function DemoPostPage() {
     headcount: 1,
     questions: "",
   });
+  const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [postedGig, setPostedGig] = useState<{ id: string; title: string; skills: string[]; category: string } | null>(null);
   const [offerStatuses, setOfferStatuses] = useState<Record<string, "idle" | "sending" | "sent">>({});
   const [skillSuggestions, setSkillSuggestions] = useState<string[]>([]);
@@ -269,6 +271,12 @@ export default function DemoPostPage() {
         setSuggestLoading(false);
       }
     }
+  }
+
+  function handleImageFile(file: File) {
+    const reader = new FileReader();
+    reader.onload = (e) => setImageUrl(e.target?.result as string);
+    reader.readAsDataURL(file);
   }
 
   function toggleDay(day: number) {
@@ -356,6 +364,7 @@ export default function DemoPostPage() {
       endTime: endTime || undefined,
       days: daysOfWeek.length > 0 ? daysOfWeek : undefined,
       questions: parsedQuestions.length > 0 ? parsedQuestions : undefined,
+      imageUrl: imageUrl || undefined,
     };
 
     const gigId = postGig(gig);
@@ -598,6 +607,53 @@ export default function DemoPostPage() {
           placeholder="Describe scope, deliverables, timeline…"
           style={{ ...inputStyle, resize: "vertical" }}
         />
+
+        {/* Image upload */}
+        <div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={e => { const f = e.target.files?.[0]; if (f) handleImageFile(f); }}
+          />
+          {imageUrl ? (
+            <div style={{ position: "relative", borderRadius: 12, overflow: "hidden", border: "1px solid var(--color-line)" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={imageUrl} alt="Preview" style={{ width: "100%", maxHeight: 220, objectFit: "cover", display: "block" }} />
+              <button
+                type="button"
+                onClick={() => { setImageUrl(undefined); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.55)", color: "#fff", fontSize: 14, cursor: "pointer", display: "grid", placeItems: "center", fontWeight: 700 }}
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                width: "100%",
+                padding: "14px 0",
+                borderRadius: 12,
+                border: "1.5px dashed var(--color-line)",
+                background: "transparent",
+                color: "var(--color-ink-mute)",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+              }}
+            >
+              <span style={{ fontSize: 18 }}>📷</span>
+              {isCommunity ? "Add a photo (e.g. how your pet looks)" : "Add a photo (optional)"}
+            </button>
+          )}
+        </div>
 
         {/* 2-col grid */}
         <div style={{ display: "grid", gridTemplateColumns: viewMode === "desktop" ? "1fr 1fr" : "1fr", gap: 10 }}>
