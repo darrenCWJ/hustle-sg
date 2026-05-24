@@ -24,7 +24,7 @@ function getStep(status: string) {
 
 export default function DemoApplicationsPage() {
   const router = useRouter();
-  const { getApplicationsForAccount, getMessagesForApplication, getAllGigs } = useDemo();
+  const { getApplicationsForAccount, getMessagesForApplication, getAllGigs, hasRated, activeAccount } = useDemo();
   const { viewMode } = useViewMode();
   const apps = getApplicationsForAccount();
   const allGigs = getAllGigs();
@@ -138,6 +138,24 @@ export default function DemoApplicationsPage() {
                       </button>
                     </div>
                   )}
+                  {a.status === "completed" && (
+                    <div style={{ marginTop: 10, padding: "12px 14px", borderRadius: 10, background: "#f5f3ff", border: "1px solid #ddd6fe", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                      <div>
+                        <p style={{ fontSize: 12, fontWeight: 700, color: "#6d28d9", margin: "0 0 2px" }}>Gig completed!</p>
+                        <p style={{ fontSize: 11, color: "#7c3aed", margin: 0, opacity: 0.8 }}>
+                          {hasRated(a.id, activeAccount.id) ? "You've already left a review." : "Share your experience working with this employer."}
+                        </p>
+                      </div>
+                      {!hasRated(a.id, activeAccount.id) && (
+                        <button
+                          onClick={() => router.push(`/quick-demo/rate/${a.id}`)}
+                          style={{ fontSize: 12, fontWeight: 700, padding: "7px 16px", borderRadius: 999, border: "none", background: "#7c3aed", color: "#fff", cursor: "pointer", whiteSpace: "nowrap" }}
+                        >
+                          Rate employer →
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </li>
               );
             })}
@@ -220,6 +238,21 @@ export default function DemoApplicationsPage() {
                       >
                         View messages →
                       </button>
+                    </div>
+                  )}
+                  {app.status === "completed" && (
+                    <div style={{ marginTop: 8, padding: "10px 12px", borderRadius: 8, background: "#f5f3ff", border: "1px solid #ddd6fe", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                      <p style={{ fontSize: 11, fontWeight: 700, color: "#6d28d9", margin: 0 }}>
+                        {hasRated(app.id, activeAccount.id) ? "Review submitted ✓" : "Gig completed!"}
+                      </p>
+                      {!hasRated(app.id, activeAccount.id) && (
+                        <button
+                          onClick={() => router.push(`/quick-demo/rate/${app.id}`)}
+                          style={{ fontSize: 11, fontWeight: 700, padding: "5px 12px", borderRadius: 6, border: "none", background: "#7c3aed", color: "#fff", cursor: "pointer", whiteSpace: "nowrap" }}
+                        >
+                          Rate employer →
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
