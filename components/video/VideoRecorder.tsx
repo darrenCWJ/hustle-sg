@@ -27,7 +27,9 @@ export function VideoRecorder({ maxSeconds, onRecorded }: Props) {
     if (streamRef.current) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 1280, height: 720, facingMode: "user" },
+        // Use ideal constraints so the phone picks the closest supported resolution
+        // instead of throwing OverconstrainedError (which surfaces as "permission denied")
+        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: true,
       });
       streamRef.current = stream;
@@ -35,8 +37,15 @@ export function VideoRecorder({ maxSeconds, onRecorded }: Props) {
         videoRef.current.srcObject = stream;
         videoRef.current.muted = true;
       }
-    } catch (err: any) {
-      setError(err?.message ?? "Camera access denied");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.toLowerCase().includes("permission") || msg.toLowerCase().includes("allowed") || msg.toLowerCase().includes("denied")) {
+        setError("Camera permission denied. Please allow camera access in your browser settings and try again.");
+      } else if (msg.toLowerCase().includes("constraint") || msg.toLowerCase().includes("overconstrained")) {
+        setError("Your camera doesn't support the required settings. Please try a different browser.");
+      } else {
+        setError("Could not access camera: " + msg);
+      }
     }
   };
 
@@ -44,9 +53,21 @@ export function VideoRecorder({ maxSeconds, onRecorded }: Props) {
     await ensureCamera();
     if (!streamRef.current) return;
     chunksRef.current = [];
-    const rec = new MediaRecorder(streamRef.current, {
-      mimeType: supportedMimeType(),
-    });
+    const mimeType = supportedMimeType();
+    let rec: MediaRecorder;
+    try {
+      rec = mimeType
+        ? new MediaRecorder(streamRef.current, { mimeType })
+        : new MediaRecorder(streamRef.current);
+    } catch {
+      // mimeType rejected by browser — fall back to no constraint
+      try {
+        rec = new MediaRecorder(streamRef.current);
+      } catch (err: unknown) {
+        setError("Recording not supported on this browser: " + (err instanceof Error ? err.message : String(err)));
+        return;
+      }
+    }
     rec.ondataavailable = (e) => {
       if (e.data.size > 0) chunksRef.current.push(e.data);
     };
@@ -162,13 +183,16 @@ function formatClock(s: number): string {
 
 function supportedMimeType(): string {
   const candidates = [
+    "video/mp4;codecs=avc1,mp4a.40.2", // iOS Safari (must check first)
+    "video/mp4;codecs=h264",
+    "video/mp4",
     "video/webm;codecs=vp9,opus",
     "video/webm;codecs=vp8,opus",
     "video/webm",
-    "video/mp4",
   ];
+  if (typeof MediaRecorder === "undefined") return "";
   for (const c of candidates) {
     if (MediaRecorder.isTypeSupported?.(c)) return c;
   }
-  return "video/webm";
+  return ""; // let the browser pick
 }
