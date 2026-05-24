@@ -138,6 +138,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
 
   const pendingWrite = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   // ── Hydration ──────────────────────────────────────────────────────────────
 
@@ -179,6 +180,15 @@ export function DemoProvider({ children }: { children: ReactNode }) {
 
     const channel = supabase
       .channel(`demo-session-${sessionId}`)
+      // Broadcast: near-instant cross-device sync (~50ms)
+      .on("broadcast", { event: "state" }, ({ payload }) => {
+        const incoming = payload as SharedState;
+        if (incoming) {
+          setShared(incoming);
+          saveCachedShared(sessionId, incoming);
+        }
+      })
+      // postgres_changes: fallback for devices that join after a broadcast was sent
       .on(
         "postgres_changes",
         {
@@ -189,13 +199,19 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         },
         (payload) => {
           const incoming = (payload.new as { state: SharedState }).state;
-          if (incoming) setShared(incoming);
+          if (incoming) {
+            setShared(incoming);
+            saveCachedShared(sessionId, incoming);
+          }
         },
       )
       .subscribe();
 
+    channelRef.current = channel;
+
     return () => {
       supabase.removeChannel(channel);
+      channelRef.current = null;
     };
   }, [sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -209,13 +225,17 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         .from("demo_sessions")
         .upsert({ id: sessionId, state: nextShared, updated_at: new Date().toISOString() })
         .then(() => {});
-    }, 200);
+    }, 400);
   }
 
   function mutateShared(updater: (prev: SharedState) => SharedState) {
     setShared((prev) => {
       const next = updater(prev);
-      if (sessionId) saveCachedShared(sessionId, next);
+      if (sessionId) {
+        saveCachedShared(sessionId, next);
+        // Broadcast immediately — no DB round-trip, other devices get it in ~50ms
+        channelRef.current?.send({ type: "broadcast", event: "state", payload: next });
+      }
       schedulePersist(next);
       return next;
     });
