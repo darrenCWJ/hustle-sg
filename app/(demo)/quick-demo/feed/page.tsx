@@ -6,12 +6,12 @@ import { useDemo } from "../DemoProvider";
 import { useViewMode } from "../ViewModeContext";
 import { DemoSwipeCardDeck } from "./DemoSwipeCardDeck";
 
-type FeedFilter = "all" | "community" | "urgent";
+type FeedFilter = "all" | "foryou" | "urgent";
 
 const FILTER_TABS: { key: FeedFilter; label: string }[] = [
-  { key: "all",       label: "All"             },
-  { key: "community", label: "🤝 Community"    },
-  { key: "urgent",    label: "⚡ Urgent nearby" },
+  { key: "all",    label: "All"             },
+  { key: "foryou", label: "✨ For You"      },
+  { key: "urgent", label: "⚡ Urgent nearby" },
 ];
 
 export default function DemoFeedPage() {
@@ -27,9 +27,8 @@ export default function DemoFeedPage() {
   const baseGigs = getGigsForAccount().filter(g => !appliedGigIds.has(g.id));
 
   const gigs = (() => {
-    if (filter === "community") {
-      return [...baseGigs.filter(g => g.category === "community")]
-        .sort((a, b) => (a.distanceKm ?? 99) - (b.distanceKm ?? 99));
+    if (filter === "foryou") {
+      return baseGigs.filter(g => activeAccount.categories.includes(g.category));
     }
     if (filter === "urgent") {
       return [...baseGigs.filter(g => g.urgent === true)]
@@ -72,7 +71,7 @@ export default function DemoFeedPage() {
           </span>
         </div>
         <h1 style={{ fontFamily: "var(--font-display)", fontSize: 20, margin: "0 0 8px", letterSpacing: "-0.025em", color: "var(--color-ink)" }}>
-          {filter === "community" ? "Community Help"
+          {filter === "foryou" ? activeAccount.specialization ?? "Matched for You"
             : filter === "urgent" ? "Urgent Nearby"
             : activeAccount.specialization ?? "Instant Gigs"}
         </h1>
@@ -106,16 +105,13 @@ export default function DemoFeedPage() {
           })}
         </div>
 
-        {filter !== "all" && (
-          <p style={{ fontSize: 11, color: "var(--color-ink-mute)", margin: "0 0 6px" }}>
-            {filter === "urgent" ? "Sorted by distance · urgent requests first" : "Sorted by distance · closest first"}
-          </p>
-        )}
-        {filter === "all" && (
-          <p style={{ fontSize: 11, color: "var(--color-ink-mute)", margin: "0 0 6px" }}>
-            Swipe right to apply · left to skip
-          </p>
-        )}
+        <p style={{ fontSize: 11, color: "var(--color-ink-mute)", margin: "0 0 6px" }}>
+          {filter === "foryou"
+            ? `Matched to your skills · ${gigs.length} gig${gigs.length !== 1 ? "s" : ""}`
+            : filter === "urgent"
+            ? "Sorted by distance · urgent requests first"
+            : "Swipe right to apply · left to skip"}
+        </p>
       </div>
 
       {/* Swipe deck */}
