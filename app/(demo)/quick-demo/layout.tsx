@@ -12,9 +12,26 @@ import { PROFILES } from "./data";
 // ── Thin demo account-switcher bar ─────────────────────────────────────────────
 
 function DemoBar() {
-  const { activeAccountId, switchAccount, resetDemo, sessionId } = useDemo();
+  const { activeAccountId, switchAccount, resetDemo, sessionId, createSession } = useDemo();
   const { viewMode, setViewMode } = useViewMode();
   const router = useRouter();
+  const [sessionOpen, setSessionOpen] = useState(false);
+  const [joinCode, setJoinCode] = useState("");
+  const [joining, setJoining] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!sessionOpen) return;
+    function onClickOutside(e: MouseEvent) {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setSessionOpen(false);
+        setJoinCode("");
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [sessionOpen]);
 
   function handleSwitch(id: string) {
     switchAccount(id);
@@ -30,6 +47,27 @@ function DemoBar() {
     if (!sessionId) return;
     const url = `${window.location.origin}/quick-demo?s=${sessionId}`;
     navigator.clipboard.writeText(url).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  async function handleJoin() {
+    const code = joinCode.trim().toUpperCase();
+    if (code.length < 4) return;
+    setJoining(true);
+    await createSession(code);
+    setJoining(false);
+    setSessionOpen(false);
+    setJoinCode("");
+    router.push("/quick-demo");
+  }
+
+  async function handleNewSession() {
+    setJoining(true);
+    await createSession();
+    setJoining(false);
+    setSessionOpen(false);
+    router.push("/quick-demo");
   }
 
   return (
@@ -76,54 +114,145 @@ function DemoBar() {
         </button>
       </div>
 
-      {/* Session link chip — always visible once a session exists */}
-      {sessionId ? (
+      {/* Session chip + popover */}
+      <div ref={popoverRef} style={{ position: "relative", flexShrink: 0 }}>
         <button
-          onClick={copySessionLink}
-          title="Click to copy shareable link for cross-device demo"
+          onClick={() => setSessionOpen((o) => !o)}
+          title={sessionId ? "Manage session" : "Create a session to enable cross-device demo"}
           style={{
             display: "flex",
             alignItems: "center",
             gap: 5,
             fontSize: 10,
             fontWeight: 700,
-            fontFamily: "var(--font-mono)",
+            fontFamily: sessionId ? "var(--font-mono)" : "inherit",
             padding: "3px 8px",
             borderRadius: 5,
-            border: "1px solid #a78bfa",
-            background: "transparent",
-            color: "#a78bfa",
+            border: `1px solid ${sessionId ? "#a78bfa" : "#334155"}`,
+            background: sessionOpen ? (sessionId ? "#2d1f6e" : "#1e293b") : "transparent",
+            color: sessionId ? "#a78bfa" : "#475569",
             cursor: "pointer",
-            letterSpacing: "0.08em",
-            flexShrink: 0,
+            letterSpacing: sessionId ? "0.08em" : undefined,
             whiteSpace: "nowrap",
           }}
         >
-          📱 {sessionId}
+          📱 {sessionId ?? "Connect device"}
         </button>
-      ) : (
-        <button
-          onClick={() => router.push("/quick-demo")}
-          title="Create a session to enable cross-device demo"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 5,
-            fontSize: 10,
-            fontWeight: 700,
-            padding: "3px 8px",
-            borderRadius: 5,
-            border: "1px solid #334155",
-            background: "transparent",
-            color: "#475569",
-            cursor: "pointer",
-            flexShrink: 0,
-            whiteSpace: "nowrap",
-          }}
-        >
-          📱 Connect device
-        </button>
-      )}
+
+        {sessionOpen && (
+          <div
+            style={{
+              position: "absolute",
+              top: "calc(100% + 6px)",
+              left: 0,
+              width: 240,
+              background: "#1e293b",
+              border: "1px solid #334155",
+              borderRadius: 10,
+              padding: 12,
+              zIndex: 200,
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+            }}
+          >
+            {sessionId && (
+              <>
+                <p style={{ margin: 0, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#64748b", fontWeight: 700 }}>
+                  Current session
+                </p>
+                <button
+                  onClick={copySessionLink}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "6px 10px",
+                    borderRadius: 6,
+                    border: "1px solid #334155",
+                    background: "transparent",
+                    color: "#a78bfa",
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
+                    cursor: "pointer",
+                    width: "100%",
+                  }}
+                >
+                  {sessionId}
+                  <span style={{ fontSize: 10, color: copied ? "#4ade80" : "#64748b", fontFamily: "inherit", letterSpacing: 0 }}>
+                    {copied ? "Copied!" : "Copy link"}
+                  </span>
+                </button>
+                <div style={{ height: 1, background: "#334155", margin: "2px 0" }} />
+              </>
+            )}
+
+            <p style={{ margin: 0, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#64748b", fontWeight: 700 }}>
+              Switch session
+            </p>
+            <div style={{ display: "flex", gap: 6 }}>
+              <input
+                type="text"
+                value={joinCode}
+                onChange={(e) => setJoinCode(e.target.value.toUpperCase().slice(0, 8))}
+                onKeyDown={(e) => e.key === "Enter" && handleJoin()}
+                placeholder="Enter code"
+                autoFocus
+                style={{
+                  flex: 1,
+                  padding: "6px 10px",
+                  borderRadius: 6,
+                  border: "1px solid #334155",
+                  background: "#0f172a",
+                  color: "#e2e8f0",
+                  fontSize: 12,
+                  fontFamily: "var(--font-mono)",
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  outline: "none",
+                  minWidth: 0,
+                }}
+              />
+              <button
+                onClick={handleJoin}
+                disabled={joinCode.trim().length < 4 || joining}
+                style={{
+                  padding: "6px 10px",
+                  borderRadius: 6,
+                  border: "none",
+                  background: joinCode.trim().length >= 4 ? "#7c3aed" : "#1e293b",
+                  color: joinCode.trim().length >= 4 ? "#fff" : "#475569",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: joinCode.trim().length >= 4 ? "pointer" : "default",
+                  flexShrink: 0,
+                }}
+              >
+                {joining ? "…" : "Join"}
+              </button>
+            </div>
+            <button
+              onClick={handleNewSession}
+              disabled={joining}
+              style={{
+                padding: "6px 0",
+                borderRadius: 6,
+                border: "1px solid #334155",
+                background: "transparent",
+                color: "#94a3b8",
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: "pointer",
+                width: "100%",
+              }}
+            >
+              + New session
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Scrollable avatar strip */}
       <div
