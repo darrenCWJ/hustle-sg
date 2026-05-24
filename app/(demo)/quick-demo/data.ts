@@ -27,6 +27,8 @@ export interface DemoGig {
   endTime?: string;   // "HH:MM"
   days?: number[];    // 0=Sun … 6=Sat
   questions?: string[]; // async interview questions, up to 3
+  distanceKm?: number;  // for community/local gigs
+  urgent?: boolean;
 }
 
 export interface DemoApplication {
@@ -418,5 +420,103 @@ export const GIGS: DemoGig[] = [
     startTime: "14:00",
     endTime: "16:00",
     days: [6],
+  },
+
+  // ─── Community Help ────────────────────────────────────────────────
+  {
+    id: "community-1",
+    title: "Lost cat — Mochi is missing",
+    description:
+      "My grey tabby Mochi escaped from Block 412 this morning. Please help look out — last seen near the void deck. I'll reward anyone who finds him. Just needs someone to spot and message me.",
+    category: "community",
+    skills: [],
+    budget: "$30 reward",
+    location: "Toa Payoh (Blk 412)",
+    postedAgo: "2h ago",
+    distanceKm: 0.3,
+    urgent: true,
+  },
+  {
+    id: "community-2",
+    title: "Grocery run — elderly neighbour needs help",
+    description:
+      "My 78-year-old neighbour Mdm Tan can't make it to NTUC today. Simple grocery list, less than $50 of items. I'll reimburse fully + $15 for your time. Pick up from Bishan MRT NTUC, deliver to Blk 160.",
+    category: "community",
+    skills: [],
+    budget: "$15",
+    location: "Bishan (Blk 160)",
+    postedAgo: "1h ago",
+    distanceKm: 0.6,
+    urgent: true,
+  },
+  {
+    id: "community-3",
+    title: "Help moving boxes — this Saturday morning",
+    description:
+      "Moving from a 4-room flat to a 3-room flat. Need 2 helpers for about 3 hours to carry boxes. Lift available. I'll provide drinks and lunch. Heavy items already handled by movers.",
+    category: "community",
+    skills: [],
+    budget: "$40/pax",
+    location: "Ang Mo Kio Ave 3",
+    postedAgo: "3h ago",
+    distanceKm: 1.2,
+    startTime: "09:00",
+    endTime: "12:00",
+    days: [6],
+  },
+  {
+    id: "community-4",
+    title: "Dog walk needed — Shiba Inu, 30 min",
+    description:
+      "Working late tonight and my Shiba Inu Kaito needs his evening walk. Very friendly and walks well on leash. Just 30 minutes around the estate. Muzzle not needed.",
+    category: "community",
+    skills: [],
+    budget: "$12",
+    location: "Serangoon Gardens",
+    postedAgo: "45m ago",
+    distanceKm: 1.5,
+    urgent: true,
+    startTime: "19:00",
+    endTime: "19:30",
+  },
+  {
+    id: "community-5",
+    title: "Lost dog — Corgi named Butter",
+    description:
+      "Butter ran out of our gate during the afternoon. She's a golden Corgi with a red collar. Very friendly — will approach strangers. Please WhatsApp me immediately if spotted. Last seen near Serangoon North Ave 4.",
+    category: "community",
+    skills: [],
+    budget: "$80 reward",
+    location: "Serangoon North",
+    postedAgo: "30m ago",
+    distanceKm: 2.1,
+    urgent: true,
+  },
+  {
+    id: "community-6",
+    title: "Babysitting — tonight 7–10pm",
+    description:
+      "Need a responsible person to watch my 4-year-old daughter for 3 hours while I attend a work dinner. She's well-behaved and will mostly be playing or watching cartoons. Must be comfortable with children.",
+    category: "community",
+    skills: [],
+    budget: "$25",
+    location: "Hougang Ave 8",
+    postedAgo: "1h ago",
+    distanceKm: 0.4,
+    urgent: true,
+    startTime: "19:00",
+    endTime: "22:00",
+  },
+  {
+    id: "community-7",
+    title: "Plant watering while I travel",
+    description:
+      "Going to Bangkok for 5 days (Thu–Mon). Have about 20 indoor plants — mostly ferns and pothos. Just need someone to water every other day and let in some sunlight. Happy to give you a plant as a thank-you!",
+    category: "community",
+    skills: [],
+    budget: "$30",
+    location: "Punggol Waterway",
+    postedAgo: "4h ago",
+    distanceKm: 3.2,
   },
 ];

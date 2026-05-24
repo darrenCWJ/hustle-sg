@@ -26,6 +26,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   marketing: "#ec4899",
   content: "#6366f1",
   tuition: "#10b981",
+  community: "#f97316",
 };
 
 interface Props {
@@ -205,15 +206,35 @@ export function DemoSwipeCardDeck({ gigs: initial }: Props) {
 
           {/* Employer + category */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 13, color: "var(--color-ink-soft)" }}>
-              Darren Loh
-              <span style={{ marginLeft: 5, fontSize: 10, color: "var(--color-jade, #16a34a)", fontWeight: 700 }}>
-                ✓ Verified
-              </span>
-            </span>
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: catColor }}>
-              {top.category}
-            </span>
+            {top.category === "community" ? (
+              <>
+                <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 999, background: "#fff7ed", color: "#f97316", border: "1px solid #fed7aa", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                  🤝 Community Help
+                </span>
+                {top.urgent && (
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                    ⚡ Urgent
+                  </span>
+                )}
+                {top.distanceKm !== undefined && (
+                  <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 999, background: "var(--color-muted)", color: "var(--color-ink-soft)", letterSpacing: "0.03em" }}>
+                    📍 {top.distanceKm} km away
+                  </span>
+                )}
+              </>
+            ) : (
+              <>
+                <span style={{ fontSize: 13, color: "var(--color-ink-soft)" }}>
+                  Darren Loh
+                  <span style={{ marginLeft: 5, fontSize: 10, color: "var(--color-jade, #16a34a)", fontWeight: 700 }}>
+                    ✓ Verified
+                  </span>
+                </span>
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: catColor }}>
+                  {top.category}
+                </span>
+              </>
+            )}
           </div>
 
           {/* Location */}

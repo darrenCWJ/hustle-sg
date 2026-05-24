@@ -38,7 +38,7 @@ function avatarHue(name: string) {
 function ApplicantsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { getApplicationsForRequestor, updateApplicationStatus, getMessagesForApplication, sendDirectOffer } = useDemo();
+  const { getApplicationsForRequestor, updateApplicationStatus, shortlistApplicant, getMessagesForApplication, sendDirectOffer } = useDemo();
   const { viewMode } = useViewMode();
 
   const gigFilter = searchParams.get("gig");
@@ -186,7 +186,7 @@ function ApplicantsContent() {
                         <div style={{ display: "flex", gap: 6 }}>
                           {a.status === "applied" && (
                             <>
-                              <button onClick={() => updateApplicationStatus(a.id, "shortlisted")} style={{ padding: "6px 12px", borderRadius: 999, background: "#dcfce7", color: "#166534", fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer" }}>
+                              <button onClick={() => shortlistApplicant(a.id, title)} style={{ padding: "6px 12px", borderRadius: 999, background: "#dcfce7", color: "#166534", fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer" }}>
                                 Shortlist
                               </button>
                               <button onClick={() => updateApplicationStatus(a.id, "rejected")} style={{ padding: "6px 12px", borderRadius: 999, border: "1px solid var(--color-line)", background: "transparent", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
@@ -195,6 +195,11 @@ function ApplicantsContent() {
                             </>
                           )}
                           {a.status === "shortlisted" && (
+                            <span style={{ fontSize: 11, color: "var(--color-ink-mute)", fontStyle: "italic" }}>
+                              Awaiting interview
+                            </span>
+                          )}
+                          {a.status === "interviewing" && (
                             <button onClick={() => updateApplicationStatus(a.id, "accepted")} style={{ padding: "6px 12px", borderRadius: 999, background: "var(--color-ink)", color: "var(--color-surface)", fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer" }}>
                               Accept
                             </button>

@@ -98,6 +98,20 @@ export default function DemoApplicationsPage() {
                       ))}
                     </div>
                   )}
+                  {a.status === "shortlisted" && gig?.questions && gig.questions.length > 0 && (
+                    <div style={{ marginTop: 10, padding: "12px 14px", borderRadius: 10, background: "#fef9c3", border: "1px solid #fde68a", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                      <div>
+                        <p style={{ fontSize: 12, fontWeight: 700, color: "#854d0e", margin: "0 0 2px" }}>Interview request received</p>
+                        <p style={{ fontSize: 11, color: "#92400e", margin: 0 }}>Record {gig.questions.length} short video answer{gig.questions.length !== 1 ? "s" : ""} to proceed.</p>
+                      </div>
+                      <button
+                        onClick={() => router.push(`/quick-demo/interview/${a.id}`)}
+                        style={{ fontSize: 12, fontWeight: 700, padding: "7px 16px", borderRadius: 999, border: "none", background: "#854d0e", color: "#fff", cursor: "pointer", whiteSpace: "nowrap" }}
+                      >
+                        Complete interview →
+                      </button>
+                    </div>
+                  )}
                 </li>
               );
             })}
@@ -150,6 +164,14 @@ export default function DemoApplicationsPage() {
                   >
                     Messages{msgs.length > 0 ? ` (${msgs.length})` : ""}
                   </button>
+                  {app.status === "shortlisted" && gig?.questions && gig.questions.length > 0 && (
+                    <button
+                      onClick={() => router.push(`/quick-demo/interview/${app.id}`)}
+                      style={{ fontSize: 11, fontWeight: 700, padding: "6px 12px", borderRadius: 8, border: "none", background: "#854d0e", color: "#fff", cursor: "pointer", marginTop: 8, width: "100%", textAlign: "center" }}
+                    >
+                      Complete interview →
+                    </button>
+                  )}
                 </div>
               );
             })}

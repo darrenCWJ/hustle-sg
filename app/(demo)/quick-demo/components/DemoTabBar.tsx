@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Zap, Search, Timer, Bell, User, Briefcase, Plus } from "lucide-react";
+import { Zap, Search, ClipboardList, Bell, User, Briefcase, Plus, Timer } from "lucide-react";
 import { useDemo } from "../DemoProvider";
 
 const WORKER_TABS = [
-  { href: "/quick-demo/feed", icon: Zap, label: "Feed" },
-  { href: "/quick-demo/gigs", icon: Search, label: "Browse" },
-  { href: "/quick-demo/instant", icon: Timer, label: "Instant" },
-  { href: "/quick-demo/messages", icon: Bell, label: "Messages" },
-  { href: "/quick-demo/profile", icon: User, label: "Profile" },
+  { href: "/quick-demo/feed",         icon: Zap,           label: "Feed"    },
+  { href: "/quick-demo/gigs",         icon: Search,        label: "Browse"  },
+  { href: "/quick-demo/applications", icon: ClipboardList, label: "Applied" },
+  { href: "/quick-demo/messages",     icon: Bell,          label: "Messages"},
+  { href: "/quick-demo/profile",      icon: User,          label: "Profile" },
 ];
 
 const EMPLOYER_TABS = [
@@ -29,6 +29,10 @@ export function DemoTabBar() {
 
   const messagesBadge = activeAccount.role === "freelancer"
     ? applications.filter((a) => a.freelancerId === activeAccount.id && a.status === "offered").length
+    : 0;
+
+  const appliedBadge = activeAccount.role === "freelancer"
+    ? applications.filter((a) => a.freelancerId === activeAccount.id && a.status === "shortlisted").length
     : 0;
 
   return (
@@ -82,6 +86,29 @@ export function DemoTabBar() {
                     background: "var(--color-accent)",
                   }}
                 />
+              )}
+              {href === "/quick-demo/applications" && appliedBadge > 0 && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: -4,
+                    right: -6,
+                    minWidth: 16,
+                    height: 16,
+                    borderRadius: 999,
+                    background: "#f59e0b",
+                    color: "#fff",
+                    fontSize: 9,
+                    fontWeight: 800,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "0 3px",
+                    lineHeight: 1,
+                  }}
+                >
+                  {appliedBadge}
+                </span>
               )}
               {href === "/quick-demo/messages" && messagesBadge > 0 && (
                 <span

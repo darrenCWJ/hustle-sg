@@ -1,16 +1,42 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDemo } from "../DemoProvider";
 import { useViewMode } from "../ViewModeContext";
 import { DemoSwipeCardDeck } from "./DemoSwipeCardDeck";
 
+type FeedFilter = "all" | "community" | "urgent";
+
+const FILTER_TABS: { key: FeedFilter; label: string }[] = [
+  { key: "all",       label: "All"             },
+  { key: "community", label: "🤝 Community"    },
+  { key: "urgent",    label: "⚡ Urgent nearby" },
+];
+
 export default function DemoFeedPage() {
-  const { activeAccount, getGigsForAccount } = useDemo();
+  const { activeAccount, getGigsForAccount, applications } = useDemo();
   const { viewMode } = useViewMode();
   const router = useRouter();
-  const gigs = getGigsForAccount();
+  const [filter, setFilter] = useState<FeedFilter>("all");
+
+  const appliedGigIds = new Set(
+    applications.filter(a => a.freelancerId === activeAccount.id).map(a => a.gigId)
+  );
+
+  const baseGigs = getGigsForAccount().filter(g => !appliedGigIds.has(g.id));
+
+  const gigs = (() => {
+    if (filter === "community") {
+      return [...baseGigs.filter(g => g.category === "community")]
+        .sort((a, b) => (a.distanceKm ?? 99) - (b.distanceKm ?? 99));
+    }
+    if (filter === "urgent") {
+      return [...baseGigs.filter(g => g.urgent === true)]
+        .sort((a, b) => (a.distanceKm ?? 99) - (b.distanceKm ?? 99));
+    }
+    return baseGigs;
+  })();
 
   useEffect(() => {
     if (viewMode === "desktop") {
@@ -23,7 +49,7 @@ export default function DemoFeedPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       {/* Header */}
-      <div style={{ padding: "10px 16px 8px", flexShrink: 0 }}>
+      <div style={{ padding: "10px 16px 0", flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
           <span style={{
             display: "inline-flex",
@@ -45,17 +71,56 @@ export default function DemoFeedPage() {
             {gigs.length} available
           </span>
         </div>
-        <h1 style={{ fontFamily: "var(--font-display)", fontSize: 20, margin: "0 0 2px", letterSpacing: "-0.025em", color: "var(--color-ink)" }}>
-          {activeAccount.specialization ?? "Instant Gigs"}
+        <h1 style={{ fontFamily: "var(--font-display)", fontSize: 20, margin: "0 0 8px", letterSpacing: "-0.025em", color: "var(--color-ink)" }}>
+          {filter === "community" ? "Community Help"
+            : filter === "urgent" ? "Urgent Nearby"
+            : activeAccount.specialization ?? "Instant Gigs"}
         </h1>
-        <p style={{ fontSize: 11, color: "var(--color-ink-mute)", margin: 0 }}>
-          Swipe right to apply · left to skip
-        </p>
+
+        {/* Filter chips */}
+        <div style={{ display: "flex", gap: 6, marginBottom: 10, overflowX: "auto", paddingBottom: 2 }}>
+          {FILTER_TABS.map(({ key, label }) => {
+            const active = filter === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setFilter(key)}
+                style={{
+                  flexShrink: 0,
+                  padding: "5px 12px",
+                  borderRadius: 999,
+                  border: active ? "none" : "1px solid var(--color-line)",
+                  background: active ? "var(--color-ink)" : "var(--color-surface)",
+                  color: active ? "var(--color-surface)" : "var(--color-ink-mute)",
+                  fontSize: 11,
+                  fontWeight: active ? 700 : 500,
+                  cursor: "pointer",
+                  letterSpacing: "0.02em",
+                  transition: "all 0.12s",
+                  WebkitTapHighlightColor: "transparent",
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+
+        {filter !== "all" && (
+          <p style={{ fontSize: 11, color: "var(--color-ink-mute)", margin: "0 0 6px" }}>
+            {filter === "urgent" ? "Sorted by distance · urgent requests first" : "Sorted by distance · closest first"}
+          </p>
+        )}
+        {filter === "all" && (
+          <p style={{ fontSize: 11, color: "var(--color-ink-mute)", margin: "0 0 6px" }}>
+            Swipe right to apply · left to skip
+          </p>
+        )}
       </div>
 
       {/* Swipe deck */}
       <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
-        <DemoSwipeCardDeck key={activeAccount.id} gigs={gigs} />
+        <DemoSwipeCardDeck key={`${activeAccount.id}-${filter}`} gigs={gigs} />
       </div>
 
       <style>{`

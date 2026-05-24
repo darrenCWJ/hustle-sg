@@ -22,6 +22,69 @@ function scoreMatch(profile: DemoProfile, skills: string[]): number {
   return matches / gigLower.length;
 }
 
+const COMMUNITY_TEMPLATES = [
+  {
+    emoji: "🐾",
+    label: "Lost Pet",
+    form: {
+      title: "Help find my lost cat near Tampines",
+      description: "My cat Mochi went missing near Block 123, Tampines Ave 5. He's an orange tabby, 3 years old, neutered, wearing a blue collar. Please help search the area or message me if spotted. Reward for anyone who helps find him.",
+      category: "community",
+      location: "Tampines Ave 5",
+      skills: "",
+      budget: "50",
+      budgetKind: "fixed" as const,
+      headcount: 3,
+      questions: "",
+    },
+  },
+  {
+    emoji: "🛒",
+    label: "Grocery Run",
+    form: {
+      title: "Grocery pickup & delivery — Bishan",
+      description: "Need someone to pick up a small grocery list from NTUC FairPrice at Bishan Junction 8 and deliver to my home nearby. Should take about 45 minutes total. Will reimburse cost + tip.",
+      category: "community",
+      location: "Bishan",
+      skills: "",
+      budget: "15",
+      budgetKind: "fixed" as const,
+      headcount: 1,
+      questions: "",
+    },
+  },
+  {
+    emoji: "📦",
+    label: "Moving Help",
+    form: {
+      title: "Help moving furniture — Jurong East",
+      description: "Moving a few pieces of furniture between two units in the same HDB block. Need 2–3 people for about 2 hours. No heavy lifting experience required, just willing hands. Drinks and snacks provided.",
+      category: "community",
+      location: "Jurong East",
+      skills: "",
+      budget: "80",
+      budgetKind: "fixed" as const,
+      headcount: 3,
+      questions: "",
+    },
+  },
+  {
+    emoji: "🐕",
+    label: "Dog Walk",
+    form: {
+      title: "Dog walker needed — Clementi, this week",
+      description: "Looking for someone to walk my golden retriever Biscuit once a day (30 min) around Clementi Woods Park this week while I'm travelling. Dog is friendly and leash-trained.",
+      category: "community",
+      location: "Clementi",
+      skills: "",
+      budget: "20",
+      budgetKind: "hourly" as const,
+      headcount: 1,
+      questions: "",
+    },
+  },
+];
+
 const DEMO_TEMPLATES = [
   {
     emoji: "⚛️",
@@ -101,17 +164,18 @@ const DEMO_TEMPLATES = [
 ];
 
 const CATEGORIES = [
-  { value: "",          label: "Category" },
-  { value: "tech",      label: "Tech" },
-  { value: "design",    label: "Design" },
-  { value: "marketing", label: "Marketing" },
-  { value: "tuition",   label: "Tuition" },
-  { value: "events",    label: "Events" },
-  { value: "video",     label: "Video / Photography" },
-  { value: "admin",     label: "Admin / Operations" },
-  { value: "logistics", label: "Logistics / Delivery" },
-  { value: "beauty",    label: "Beauty / Wellness" },
-  { value: "other",     label: "Other" },
+  { value: "",           label: "Category" },
+  { value: "community",  label: "Community Help" },
+  { value: "tech",       label: "Tech" },
+  { value: "design",     label: "Design" },
+  { value: "marketing",  label: "Marketing" },
+  { value: "tuition",    label: "Tuition" },
+  { value: "events",     label: "Events" },
+  { value: "video",      label: "Video / Photography" },
+  { value: "admin",      label: "Admin / Operations" },
+  { value: "logistics",  label: "Logistics / Delivery" },
+  { value: "beauty",     label: "Beauty / Wellness" },
+  { value: "other",      label: "Other" },
 ];
 
 const DURATION_OPTIONS = [
@@ -159,6 +223,7 @@ export default function DemoPostPage() {
   const { postGig, sendDirectOffer, activeAccount } = useDemo();
   const { viewMode } = useViewMode();
 
+  const [isCommunity, setIsCommunity] = useState(false);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -191,15 +256,18 @@ export default function DemoPostPage() {
   const [gigMode, setGigMode] = useState<GigMode>("approval");
   const [deadline, setDeadline] = useState("");
 
-  async function applyTemplate(t: typeof DEMO_TEMPLATES[number]) {
+  async function applyTemplate(t: typeof DEMO_TEMPLATES[number], community = false) {
     setForm(t.form);
+    setIsCommunity(community);
     setSkillSuggestions([]);
-    setSuggestLoading(true);
-    try {
-      const result = await suggestSkills(t.form.title, t.form.description);
-      setSkillSuggestions(result);
-    } finally {
-      setSuggestLoading(false);
+    if (!community) {
+      setSuggestLoading(true);
+      try {
+        const result = await suggestSkills(t.form.title, t.form.description);
+        setSkillSuggestions(result);
+      } finally {
+        setSuggestLoading(false);
+      }
     }
   }
 
@@ -452,17 +520,43 @@ export default function DemoPostPage() {
         Describe what you need done.
       </h1>
 
-      {/* Demo template strip */}
+      {/* Post type toggle + template strip */}
       <div style={{ marginBottom: 28 }}>
+        {/* Type selector */}
+        <div style={{ display: "flex", gap: 6, marginBottom: 12, padding: 4, borderRadius: 12, background: "var(--color-muted)", width: "fit-content" }}>
+          <button
+            type="button"
+            onClick={() => { setIsCommunity(false); setForm(f => ({ ...f, category: "" })); }}
+            style={{ padding: "6px 16px", borderRadius: 8, border: "none", background: !isCommunity ? "var(--color-surface)" : "transparent", color: "var(--color-ink)", fontSize: 13, fontWeight: 600, cursor: "pointer", boxShadow: !isCommunity ? "0 1px 3px rgba(0,0,0,0.1)" : "none", transition: "all 0.15s" }}
+          >
+            💼 Gig / Job
+          </button>
+          <button
+            type="button"
+            onClick={() => { setIsCommunity(true); setForm(f => ({ ...f, category: "community", skills: "" })); setSkillSuggestions([]); }}
+            style={{ padding: "6px 16px", borderRadius: 8, border: "none", background: isCommunity ? "var(--color-surface)" : "transparent", color: "var(--color-ink)", fontSize: 13, fontWeight: 600, cursor: "pointer", boxShadow: isCommunity ? "0 1px 3px rgba(0,0,0,0.1)" : "none", transition: "all 0.15s" }}
+          >
+            🤝 Community Help
+          </button>
+        </div>
+
+        {/* Description */}
+        {isCommunity && (
+          <p style={{ fontSize: 12, color: "var(--color-ink-soft)", margin: "0 0 10px", lineHeight: 1.5 }}>
+            Post a help request that anyone nearby can respond to — no skills required. Great for lost pets, grocery runs, moving help, and neighbourhood favours.
+          </p>
+        )}
+
+        {/* Templates */}
         <p style={{ fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-ink-mute)", margin: "0 0 8px" }}>
           ✦ Quick-fill with a demo template
         </p>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {DEMO_TEMPLATES.map((t) => (
+          {(isCommunity ? COMMUNITY_TEMPLATES : DEMO_TEMPLATES).map((t) => (
             <button
               key={t.label}
               type="button"
-              onClick={() => applyTemplate(t)}
+              onClick={() => applyTemplate(t as typeof DEMO_TEMPLATES[number], isCommunity)}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -470,8 +564,8 @@ export default function DemoPostPage() {
                 padding: "7px 14px",
                 borderRadius: 999,
                 border: "1px solid var(--color-line)",
-                background: form.title === t.form.title ? "var(--color-ink)" : "var(--color-surface-raised)",
-                color: form.title === t.form.title ? "var(--color-surface)" : "var(--color-ink)",
+                background: form.title === t.form.title ? (isCommunity ? "#f97316" : "var(--color-ink)") : "var(--color-surface-raised)",
+                color: form.title === t.form.title ? "#fff" : "var(--color-ink)",
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: "pointer",
@@ -524,8 +618,8 @@ export default function DemoPostPage() {
             style={inputStyle}
           />
 
-          {/* Skills — full width */}
-          <div style={{ gridColumn: viewMode === "desktop" ? "span 2" : undefined, display: "flex", flexDirection: "column", gap: 8 }}>
+          {/* Skills — full width, hidden for community posts */}
+          <div style={{ gridColumn: viewMode === "desktop" ? "span 2" : undefined, display: isCommunity ? "none" : "flex", flexDirection: "column", gap: 8 }}>
             <div style={{ display: "flex", gap: 8 }}>
               <input
                 value={form.skills}
@@ -620,8 +714,8 @@ export default function DemoPostPage() {
           </select>
         </div>
 
-        {/* Interview questions */}
-        <div>
+        {/* Interview questions — hidden for community posts */}
+        <div style={{ display: isCommunity ? "none" : "block" }}>
           <label style={{ fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", fontWeight: 600, color: "var(--color-ink-soft)", display: "block", marginBottom: 8 }}>
             Async interview questions (one per line, up to 3, 90s each)
           </label>

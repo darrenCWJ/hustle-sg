@@ -63,6 +63,7 @@ interface DemoContextValue {
   sendDirectOffer: (freelancerId: string, gigId: string) => void;
   postGig: (gig: Omit<DemoGig, "id">) => string;
   updateApplicationStatus: (appId: string, status: DemoApplication["status"]) => void;
+  shortlistApplicant: (appId: string, gigTitle: string) => void;
   sendMessage: (applicationId: string, body: string) => void;
   bookSlot: (slot: BookedSlot) => void;
   rateUser: (rating: Omit<DemoRating, "id" | "createdAt">) => void;
@@ -390,6 +391,25 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     [], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
+  const shortlistApplicant = useCallback((appId: string, gigTitle: string) => {
+    mutateShared((prev) => {
+      const msg: DemoMessage = {
+        id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        applicationId: appId,
+        senderId: activeAccountId,
+        body: `Great news! You've been shortlisted for "${gigTitle}". Please complete a short async video interview to proceed. Tap "Complete interview" in your Messages or Applications tab to get started.`,
+        createdAt: new Date().toISOString(),
+      };
+      return {
+        ...prev,
+        applications: prev.applications.map((a) =>
+          a.id === appId ? { ...a, status: "shortlisted" } : a,
+        ),
+        messages: [...prev.messages, msg],
+      };
+    });
+  }, [activeAccountId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const sendMessage = useCallback((applicationId: string, body: string) => {
     mutateShared((prev) => {
       const msg: DemoMessage = {
@@ -487,7 +507,9 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   const getAllGigs = useCallback(() => allGigs, [allGigs]);
 
   const getGigsForAccount = useCallback(() => {
-    return allGigs.filter((g) => activeAccount.categories.includes(g.category));
+    return allGigs.filter((g) =>
+      g.category === "community" || activeAccount.categories.includes(g.category)
+    );
   }, [allGigs, activeAccount]);
 
   const getApplicationsForAccount = useCallback(() => {
@@ -528,6 +550,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         sendDirectOffer,
         postGig,
         updateApplicationStatus,
+        shortlistApplicant,
         sendMessage,
         bookSlot,
         rateUser,

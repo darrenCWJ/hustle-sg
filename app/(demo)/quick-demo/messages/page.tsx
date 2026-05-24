@@ -213,6 +213,25 @@ function MessagesContent() {
         </div>
       </div>
 
+      {/* Interview card — visible to freelancer when shortlisted */}
+      {app.status === "shortlisted" && activeAccount.role === "freelancer" && gig && gig.questions && gig.questions.length > 0 && (
+        <div style={{ margin: "10px 12px 0", padding: "14px 16px", borderRadius: 14, background: "#fef9c3", border: "1px solid #fde68a", flexShrink: 0 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#854d0e", margin: "0 0 6px" }}>
+            Interview request
+          </p>
+          <p style={{ fontSize: 14, fontWeight: 700, color: "var(--color-ink)", margin: "0 0 2px" }}>{gig.title}</p>
+          <p style={{ fontSize: 12, color: "var(--color-ink-soft)", margin: "0 0 12px" }}>
+            Record {gig.questions.length} short video answer{gig.questions.length !== 1 ? "s" : ""} to proceed with your application.
+          </p>
+          <button
+            onClick={() => router.push(`/quick-demo/interview/${appId}`)}
+            style={{ fontSize: 12, fontWeight: 700, padding: "7px 14px", borderRadius: 999, border: "none", background: "#854d0e", color: "#fff", cursor: "pointer" }}
+          >
+            Complete interview →
+          </button>
+        </div>
+      )}
+
       {/* Offer card — visible to freelancer when status is offered */}
       {app.status === "offered" && activeAccount.role === "freelancer" && gig && (
         <div style={{ margin: "10px 12px 0", padding: "14px 16px", borderRadius: 14, background: "var(--color-accent-soft)", border: "1px solid var(--color-accent)", flexShrink: 0 }}>

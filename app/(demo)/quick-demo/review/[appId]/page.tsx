@@ -27,6 +27,7 @@ export default function DemoReviewPage() {
     activeAccount,
     applications,
     updateApplicationStatus,
+    shortlistApplicant,
     sendMessage,
     getMessagesForApplication,
     getInterviewResponses,
@@ -99,12 +100,18 @@ export default function DemoReviewPage() {
           <span style={{ width: 52, height: 52, borderRadius: "50%", background: `oklch(78% 0.08 ${hue})`, color: `oklch(22% 0.08 ${hue})`, display: "grid", placeItems: "center", fontSize: 16, fontWeight: 700, flexShrink: 0 }}>
             {initials}
           </span>
-          <div>
+          <div style={{ flex: 1 }}>
             <p style={{ margin: 0, fontWeight: 700, fontSize: 18 }}>{name}</p>
             {freelancer?.headline && (
               <p style={{ margin: "3px 0 0", fontSize: 13, color: "var(--color-ink-soft)" }}>{freelancer.headline}</p>
             )}
           </div>
+          <button
+            onClick={() => router.push(`/quick-demo/profile/${freelancer?.id}`)}
+            style={{ padding: "7px 16px", borderRadius: 999, border: "1px solid var(--color-line)", background: "transparent", fontSize: 12, fontWeight: 600, color: "var(--color-accent)", cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}
+          >
+            View profile →
+          </button>
         </div>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: freelancer?.skills?.length ? 14 : 0 }}>
@@ -197,13 +204,13 @@ export default function DemoReviewPage() {
             Your decision
           </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            {(app.status === "applied" || app.status === "interviewing") && (
+            {app.status === "applied" && (
               <>
                 <button
-                  onClick={() => updateApplicationStatus(appId, "shortlisted")}
+                  onClick={() => shortlistApplicant(appId, gig?.title ?? "")}
                   style={{ padding: "10px 22px", borderRadius: 999, background: "#dcfce7", color: "#166534", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer" }}
                 >
-                  Shortlist
+                  Shortlist & send interview
                 </button>
                 <button
                   onClick={() => updateApplicationStatus(appId, "rejected")}
@@ -214,6 +221,19 @@ export default function DemoReviewPage() {
               </>
             )}
             {app.status === "shortlisted" && (
+              <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", width: "100%" }}>
+                <p style={{ fontSize: 13, color: "var(--color-ink-soft)", margin: 0, flex: 1 }}>
+                  Interview request sent — waiting for candidate to complete their video responses.
+                </p>
+                <button
+                  onClick={() => updateApplicationStatus(appId, "rejected")}
+                  style={{ padding: "8px 18px", borderRadius: 999, border: "1px solid var(--color-line)", background: "transparent", fontSize: 13, fontWeight: 600, cursor: "pointer", color: "var(--color-ink-mute)" }}
+                >
+                  Withdraw
+                </button>
+              </div>
+            )}
+            {app.status === "interviewing" && (
               <>
                 <button
                   onClick={() => updateApplicationStatus(appId, "accepted")}
