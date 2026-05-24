@@ -210,7 +210,7 @@ export default function DemoReviewPage() {
                   onClick={() => shortlistApplicant(appId, gig?.title ?? "")}
                   style={{ padding: "10px 22px", borderRadius: 999, background: "#dcfce7", color: "#166534", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer" }}
                 >
-                  Shortlist & send interview
+                  {questions.length > 0 ? "Shortlist & send interview" : "Shortlist"}
                 </button>
                 <button
                   onClick={() => updateApplicationStatus(appId, "rejected")}
@@ -220,7 +220,7 @@ export default function DemoReviewPage() {
                 </button>
               </>
             )}
-            {app.status === "shortlisted" && (
+            {app.status === "shortlisted" && questions.length > 0 && (
               <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", width: "100%" }}>
                 <p style={{ fontSize: 13, color: "var(--color-ink-soft)", margin: 0, flex: 1 }}>
                   Interview request sent — waiting for candidate to complete their video responses.
@@ -232,6 +232,22 @@ export default function DemoReviewPage() {
                   Withdraw
                 </button>
               </div>
+            )}
+            {app.status === "shortlisted" && questions.length === 0 && (
+              <>
+                <button
+                  onClick={() => updateApplicationStatus(appId, "accepted")}
+                  style={{ padding: "10px 22px", borderRadius: 999, background: "var(--color-ink)", color: "var(--color-surface)", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer" }}
+                >
+                  Accept — Hire this person
+                </button>
+                <button
+                  onClick={() => updateApplicationStatus(appId, "rejected")}
+                  style={{ padding: "10px 22px", borderRadius: 999, border: "1px solid var(--color-line)", background: "transparent", fontSize: 14, fontWeight: 600, cursor: "pointer", color: "var(--color-ink-mute)" }}
+                >
+                  Reject
+                </button>
+              </>
             )}
             {app.status === "interviewing" && (
               <>

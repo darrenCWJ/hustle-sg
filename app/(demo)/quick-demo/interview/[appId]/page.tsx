@@ -165,7 +165,7 @@ export default function DemoInterviewPage() {
         </div>
       ) : (
         <div style={{ marginBottom: 20 }}>
-          <VideoRecorder maxSeconds={90} onRecorded={handleRecorded} />
+          <VideoRecorder key={currentIdx} maxSeconds={90} onRecorded={handleRecorded} />
         </div>
       )}
 

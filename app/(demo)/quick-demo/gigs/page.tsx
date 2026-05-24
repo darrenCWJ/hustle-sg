@@ -587,6 +587,7 @@ export default function DemoGigsPage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <style>{`.cat-scroll::-webkit-scrollbar{display:none}`}</style>
       <div style={{ padding: "10px 16px 8px", borderBottom: "1px solid var(--color-line)", flexShrink: 0 }}>
         <p style={{ fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--color-ink-mute)", margin: "0 0 4px", fontWeight: 600 }}>
           All open gigs
@@ -599,7 +600,7 @@ export default function DemoGigsPage() {
         </p>
       </div>
 
-      <div style={{ display: "flex", gap: 6, padding: "8px 12px", overflowX: "auto", flexShrink: 0, scrollbarWidth: "none" }}>
+      <div className="cat-scroll" style={{ display: "flex", gap: 6, padding: "8px 12px", overflowX: "scroll", WebkitOverflowScrolling: "touch", flexShrink: 0, scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}>
         <button onClick={() => setSelectedCat(null)} style={{ fontSize: 11, fontWeight: selectedCat === null ? 700 : 500, padding: "5px 12px", borderRadius: 999, border: "1px solid", borderColor: selectedCat === null ? "var(--color-ink)" : "var(--color-line)", background: selectedCat === null ? "var(--color-ink)" : "transparent", color: selectedCat === null ? "var(--color-surface)" : "var(--color-ink-soft)", cursor: "pointer", whiteSpace: "nowrap" }}>
           All
         </button>

@@ -140,6 +140,9 @@ export function DemoProvider({ children }: { children: ReactNode }) {
 
   const pendingWrite = useRef<ReturnType<typeof setTimeout> | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const pendingBroadcastRef = useRef<SharedState | null>(null);
+  // Ref so stale closures (useCallback with [] deps) always read the current sessionId
+  const sessionIdRef = useRef<string | null>(null);
 
   // ── Hydration ──────────────────────────────────────────────────────────────
 
@@ -174,6 +177,9 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Keep ref in sync so stale closures always see the current session id
+  useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
+
   // ── Realtime subscription ──────────────────────────────────────────────────
 
   useEffect(() => {
@@ -181,7 +187,6 @@ export function DemoProvider({ children }: { children: ReactNode }) {
 
     const channel = supabase
       .channel(`demo-session-${sessionId}`)
-      // Broadcast: near-instant cross-device sync (~50ms)
       .on("broadcast", { event: "state" }, ({ payload }) => {
         const incoming = payload as SharedState;
         if (incoming) {
@@ -189,23 +194,6 @@ export function DemoProvider({ children }: { children: ReactNode }) {
           saveCachedShared(sessionId, incoming);
         }
       })
-      // postgres_changes: fallback for devices that join after a broadcast was sent
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "demo_sessions",
-          filter: `id=eq.${sessionId}`,
-        },
-        (payload) => {
-          const incoming = (payload.new as { state: SharedState }).state;
-          if (incoming) {
-            setShared(incoming);
-            saveCachedShared(sessionId, incoming);
-          }
-        },
-      )
       .subscribe();
 
     channelRef.current = channel;
@@ -219,12 +207,13 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   // ── Persist shared state ───────────────────────────────────────────────────
 
   function schedulePersist(nextShared: SharedState) {
-    if (!sessionId) return;
+    const sid = sessionIdRef.current;
+    if (!sid) return;
     if (pendingWrite.current) clearTimeout(pendingWrite.current);
     pendingWrite.current = setTimeout(() => {
       supabase
         .from("demo_sessions")
-        .upsert({ id: sessionId, state: nextShared, updated_at: new Date().toISOString() })
+        .upsert({ id: sid, state: nextShared, updated_at: new Date().toISOString() })
         .then(() => {});
     }, 400);
   }
@@ -232,15 +221,26 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   function mutateShared(updater: (prev: SharedState) => SharedState) {
     setShared((prev) => {
       const next = updater(prev);
-      if (sessionId) {
-        saveCachedShared(sessionId, next);
-        // Broadcast immediately — no DB round-trip, other devices get it in ~50ms
-        channelRef.current?.send({ type: "broadcast", event: "state", payload: next });
+      const sid = sessionIdRef.current;
+      if (sid) {
+        saveCachedShared(sid, next);
+        // Queue broadcast — sent in useEffect after state is committed, not inside the updater
+        pendingBroadcastRef.current = next;
       }
       schedulePersist(next);
       return next;
     });
   }
+
+  // Broadcast queued state updates after React commits the render.
+  // Calling channel.send() inside a state updater is unreliable in React 18
+  // concurrent mode (updaters can run multiple times or be discarded).
+  useEffect(() => {
+    const next = pendingBroadcastRef.current;
+    if (!next || !sessionId) return;
+    pendingBroadcastRef.current = null;
+    channelRef.current?.send({ type: "broadcast", event: "state", payload: next });
+  }, [shared]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Actions ────────────────────────────────────────────────────────────────
 
@@ -381,23 +381,44 @@ export function DemoProvider({ children }: { children: ReactNode }) {
 
   const updateApplicationStatus = useCallback(
     (appId: string, status: DemoApplication["status"]) => {
-      mutateShared((prev) => ({
-        ...prev,
-        applications: prev.applications.map((a) =>
-          a.id === appId ? { ...a, status } : a,
-        ),
-      }));
+      mutateShared((prev) => {
+        const app = prev.applications.find((a) => a.id === appId);
+        const gig = [...GIGS, ...(prev.customGigs ?? [])].find((g) => g.id === app?.gigId);
+        let newMessages = prev.messages;
+        if (status === "accepted" && app) {
+          const acceptMsg: DemoMessage = {
+            id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            applicationId: appId,
+            senderId: activeAccountId,
+            body: `Congratulations! You've been accepted for "${gig?.title ?? "the gig"}". We'll be in touch with next steps. Looking forward to working with you!`,
+            createdAt: new Date().toISOString(),
+          };
+          newMessages = [...prev.messages, acceptMsg];
+        }
+        return {
+          ...prev,
+          applications: prev.applications.map((a) =>
+            a.id === appId ? { ...a, status } : a,
+          ),
+          messages: newMessages,
+        };
+      });
     },
-    [], // eslint-disable-line react-hooks/exhaustive-deps
+    [activeAccountId], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   const shortlistApplicant = useCallback((appId: string, gigTitle: string) => {
     mutateShared((prev) => {
+      const app = prev.applications.find((a) => a.id === appId);
+      const gig = [...GIGS, ...(prev.customGigs ?? [])].find((g) => g.id === app?.gigId);
+      const hasQuestions = (gig?.questions ?? []).length > 0;
       const msg: DemoMessage = {
         id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         applicationId: appId,
         senderId: activeAccountId,
-        body: `Great news! You've been shortlisted for "${gigTitle}". Please complete a short async video interview to proceed. Tap "Complete interview" in your Messages or Applications tab to get started.`,
+        body: hasQuestions
+          ? `Great news! You've been shortlisted for "${gigTitle}". Please complete a short async video interview to proceed. Tap "Complete interview" in your Applications tab to get started.`
+          : `Great news! You've been shortlisted for "${gigTitle}". The employer will review your profile and confirm shortly — keep an eye on your Applications tab for updates.`,
         createdAt: new Date().toISOString(),
       };
       return {

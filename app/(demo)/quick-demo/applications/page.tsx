@@ -79,6 +79,12 @@ export default function DemoApplicationsPage() {
                         {conf.label}
                       </span>
                       <button
+                        onClick={() => router.push("/quick-demo/profile/requestor")}
+                        style={{ fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 999, border: "1px solid var(--color-line)", background: "transparent", color: "var(--color-ink-soft)", cursor: "pointer", whiteSpace: "nowrap" }}
+                      >
+                        Employer
+                      </button>
+                      <button
                         onClick={() => router.push(`/quick-demo/messages?app=${a.id}`)}
                         style={{ fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 999, border: "1px solid var(--color-line)", background: "transparent", color: "var(--color-accent)", cursor: "pointer", whiteSpace: "nowrap" }}
                       >
@@ -109,6 +115,26 @@ export default function DemoApplicationsPage() {
                         style={{ fontSize: 12, fontWeight: 700, padding: "7px 16px", borderRadius: 999, border: "none", background: "#854d0e", color: "#fff", cursor: "pointer", whiteSpace: "nowrap" }}
                       >
                         Complete interview →
+                      </button>
+                    </div>
+                  )}
+                  {a.status === "shortlisted" && (!gig?.questions || gig.questions.length === 0) && (
+                    <div style={{ marginTop: 10, padding: "12px 14px", borderRadius: 10, background: "#dcfce7", border: "1px solid #bbf7d0" }}>
+                      <p style={{ fontSize: 12, fontWeight: 700, color: "#166534", margin: "0 0 2px" }}>You've been shortlisted!</p>
+                      <p style={{ fontSize: 11, color: "#166534", margin: 0, opacity: 0.8 }}>The employer is reviewing your profile and will confirm shortly.</p>
+                    </div>
+                  )}
+                  {a.status === "accepted" && (
+                    <div style={{ marginTop: 10, padding: "12px 14px", borderRadius: 10, background: "var(--color-ink)", border: "1px solid var(--color-ink)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                      <div>
+                        <p style={{ fontSize: 12, fontWeight: 700, color: "var(--color-surface)", margin: "0 0 2px" }}>Congratulations! You got the gig</p>
+                        <p style={{ fontSize: 11, color: "var(--color-surface)", margin: 0, opacity: 0.7 }}>Check your messages for next steps from the employer.</p>
+                      </div>
+                      <button
+                        onClick={() => router.push(`/quick-demo/messages?app=${a.id}`)}
+                        style={{ fontSize: 12, fontWeight: 700, padding: "7px 16px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.3)", background: "transparent", color: "var(--color-surface)", cursor: "pointer", whiteSpace: "nowrap" }}
+                      >
+                        View messages →
                       </button>
                     </div>
                   )}
@@ -158,12 +184,20 @@ export default function DemoApplicationsPage() {
                   <p style={{ fontSize: 11, color: "var(--color-ink-mute)", margin: "0 0 8px" }}>
                     {gig?.budget ?? ""}{gig?.location ? ` · ${gig.location}` : ""}
                   </p>
-                  <button
-                    onClick={() => router.push(`/quick-demo/messages?app=${app.id}`)}
-                    style={{ fontSize: 11, fontWeight: 600, padding: "6px 12px", borderRadius: 8, border: "1px solid var(--color-line)", background: "transparent", color: "var(--color-accent)", cursor: "pointer" }}
-                  >
-                    Messages{msgs.length > 0 ? ` (${msgs.length})` : ""}
-                  </button>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button
+                      onClick={() => router.push("/quick-demo/profile/requestor")}
+                      style={{ fontSize: 11, fontWeight: 600, padding: "6px 12px", borderRadius: 8, border: "1px solid var(--color-line)", background: "transparent", color: "var(--color-ink-soft)", cursor: "pointer" }}
+                    >
+                      Employer
+                    </button>
+                    <button
+                      onClick={() => router.push(`/quick-demo/messages?app=${app.id}`)}
+                      style={{ fontSize: 11, fontWeight: 600, padding: "6px 12px", borderRadius: 8, border: "1px solid var(--color-line)", background: "transparent", color: "var(--color-accent)", cursor: "pointer" }}
+                    >
+                      Messages{msgs.length > 0 ? ` (${msgs.length})` : ""}
+                    </button>
+                  </div>
                   {app.status === "shortlisted" && gig?.questions && gig.questions.length > 0 && (
                     <button
                       onClick={() => router.push(`/quick-demo/interview/${app.id}`)}
@@ -171,6 +205,22 @@ export default function DemoApplicationsPage() {
                     >
                       Complete interview →
                     </button>
+                  )}
+                  {app.status === "shortlisted" && (!gig?.questions || gig.questions.length === 0) && (
+                    <div style={{ marginTop: 8, padding: "8px 10px", borderRadius: 8, background: "#dcfce7", border: "1px solid #bbf7d0" }}>
+                      <p style={{ fontSize: 11, fontWeight: 700, color: "#166534", margin: 0 }}>You've been shortlisted! Awaiting employer decision.</p>
+                    </div>
+                  )}
+                  {app.status === "accepted" && (
+                    <div style={{ marginTop: 8, padding: "8px 10px", borderRadius: 8, background: "var(--color-ink)" }}>
+                      <p style={{ fontSize: 11, fontWeight: 700, color: "var(--color-surface)", margin: "0 0 4px" }}>Congratulations! You got the gig</p>
+                      <button
+                        onClick={() => router.push(`/quick-demo/messages?app=${app.id}`)}
+                        style={{ fontSize: 10, fontWeight: 700, padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.3)", background: "transparent", color: "var(--color-surface)", cursor: "pointer" }}
+                      >
+                        View messages →
+                      </button>
+                    </div>
                   )}
                 </div>
               );

@@ -194,10 +194,20 @@ function ApplicantsContent() {
                               </button>
                             </>
                           )}
-                          {a.status === "shortlisted" && (
+                          {a.status === "shortlisted" && (a.gig?.questions ?? []).length > 0 && (
                             <span style={{ fontSize: 11, color: "var(--color-ink-mute)", fontStyle: "italic" }}>
                               Awaiting interview
                             </span>
+                          )}
+                          {a.status === "shortlisted" && (a.gig?.questions ?? []).length === 0 && (
+                            <>
+                              <button onClick={() => updateApplicationStatus(a.id, "accepted")} style={{ padding: "6px 12px", borderRadius: 999, background: "var(--color-ink)", color: "var(--color-surface)", fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer" }}>
+                                Accept
+                              </button>
+                              <button onClick={() => updateApplicationStatus(a.id, "rejected")} style={{ padding: "6px 12px", borderRadius: 999, border: "1px solid var(--color-line)", background: "transparent", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                                Reject
+                              </button>
+                            </>
                           )}
                           {a.status === "interviewing" && (
                             <button onClick={() => updateApplicationStatus(a.id, "accepted")} style={{ padding: "6px 12px", borderRadius: 999, background: "var(--color-ink)", color: "var(--color-surface)", fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer" }}>

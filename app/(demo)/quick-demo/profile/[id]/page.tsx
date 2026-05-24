@@ -21,6 +21,15 @@ interface WorkEntry {
   outcome?: string;
 }
 
+interface HireEntry {
+  title: string;
+  freelancerType: string;
+  budget: string;
+  duration: string;
+  category: string;
+  outcome?: string;
+}
+
 const MOCK_DATA: Record<string, {
   trustScore: number;
   creds: MockCred[];
@@ -29,15 +38,33 @@ const MOCK_DATA: Record<string, {
   memberSince: string;
   responseTime: string;
   workHistory: WorkEntry[];
+  companyName?: string;
+  uen?: string;
+  industry?: string;
+  companySize?: string;
+  hiringHistory?: HireEntry[];
+  employerStats?: { gigsPosted: number; totalHires: number; paymentOnTime: string };
 }> = {
   requestor: {
-    trustScore: 62,
-    bio: "Operations Director at Demo Corp SG. Regularly engages freelance talent across tech, design, and events.",
-    location: "Singapore",
-    memberSince: "Mar 2024",
+    trustScore: 81,
+    bio: "Operations Director at Demo Corp SG Pte Ltd, a regional logistics and supply chain company serving 200+ enterprise clients across SEA. We engage freelance talent for tech, marketing, events, and content to keep our lean team agile and move fast.",
+    location: "Tanjong Pagar, Singapore",
+    memberSince: "Jan 2024",
     responseTime: "< 2 hrs",
     creds: [],
     workHistory: [],
+    companyName: "Demo Corp SG Pte Ltd",
+    uen: "202401234A",
+    industry: "Logistics & Supply Chain",
+    companySize: "51–200 employees",
+    employerStats: { gigsPosted: 14, totalHires: 11, paymentOnTime: "100%" },
+    hiringHistory: [
+      { title: "Company website redesign — React + CMS", freelancerType: "Full-stack developer", budget: "$8,500", duration: "6 weeks", category: "tech", outcome: "Launched on schedule, 40% faster load time" },
+      { title: "Annual company dinner — 200 pax", freelancerType: "Event coordinator", budget: "$6,200", duration: "4 weeks", category: "events", outcome: "Flawless execution, 96% satisfaction score" },
+      { title: "LinkedIn & social media content strategy", freelancerType: "Content strategist", budget: "$2,400", duration: "3 months", category: "marketing", outcome: "Follower growth 2.4× in Q1" },
+      { title: "Internal ops dashboard — automation tool", freelancerType: "Full-stack developer", budget: "$5,800", duration: "2 months", category: "tech", outcome: "Replaced 3 manual spreadsheet processes" },
+      { title: "Brand identity refresh — logo + collateral", freelancerType: "Brand designer", budget: "$3,600", duration: "5 weeks", category: "design", outcome: "New brand rolled out across all client touchpoints" },
+    ],
   },
   it: {
     trustScore: 91,
@@ -220,6 +247,7 @@ export default function FreelancerProfilePage() {
   const { bg: avBg, fg: avFg } = avatarColors(profile.name);
   const ini = initials(profile.name);
   const verifiedCreds = mock.creds.filter(c => c.verified).length;
+  const isEmployer = profile.role === "employer";
 
   const myRatings = (ratings ?? []).filter(r => r.toId === profileId);
   const avgStars = myRatings.length > 0
@@ -229,7 +257,13 @@ export default function FreelancerProfilePage() {
   const displayRating = avgStars ?? profile.rating ?? null;
   const totalGigs = (profile.completedGigs ?? 0) + mock.workHistory.length;
 
-  const STATS = [
+  const STATS = isEmployer ? [
+    { label: "Gigs posted", value: mock.employerStats?.gigsPosted ?? 0, sub: "on HustleSG" },
+    { label: "Total hires", value: mock.employerStats?.totalHires ?? 0, sub: "freelancers engaged" },
+    { label: "Payment", value: mock.employerStats?.paymentOnTime ?? "—", sub: "on-time rate" },
+    { label: "Rating", value: displayRating !== null ? `★ ${displayRating}` : "—", sub: myRatings.length > 0 ? `${myRatings.length} review${myRatings.length !== 1 ? "s" : ""}` : "from freelancers" },
+    { label: "Response", value: mock.responseTime, sub: "avg. response time" },
+  ] : [
     { label: "Gigs completed", value: totalGigs, sub: "verified on platform" },
     { label: "Rating", value: displayRating !== null ? `★ ${displayRating}` : "—", sub: myRatings.length > 0 ? `${myRatings.length} review${myRatings.length !== 1 ? "s" : ""}` : "from past clients" },
     { label: "Rate", value: profile.hourlyRate ?? "TBD", sub: "typical engagement" },
@@ -252,9 +286,25 @@ export default function FreelancerProfilePage() {
         <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 40, marginBottom: 36, alignItems: "start" }}>
           <div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: "#dcfce7", color: "#166534", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                Singpass ✓
-              </span>
+              {isEmployer ? (
+                <>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: "#dbeafe", color: "#1e40af", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                    ACRA ✓
+                  </span>
+                  {mock.uen && (
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--color-ink-mute)", padding: "3px 10px", borderRadius: 999, background: "var(--color-muted)" }}>
+                      UEN {mock.uen}
+                    </span>
+                  )}
+                  {mock.companyName && (
+                    <span style={{ fontSize: 12, color: "var(--color-ink-soft)", fontWeight: 600 }}>{mock.companyName}</span>
+                  )}
+                </>
+              ) : (
+                <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: "#dcfce7", color: "#166534", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                  Singpass ✓
+                </span>
+              )}
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--color-ink-mute)", padding: "3px 10px", borderRadius: 999, background: "var(--color-muted)" }}>
                 @{profile.name.toLowerCase().replace(/\s+/g, ".")}
               </span>
@@ -290,16 +340,22 @@ export default function FreelancerProfilePage() {
           {/* Trust panel */}
           <div style={{ borderRadius: 20, background: "var(--color-ink)", color: "var(--color-surface)", padding: 28 }}>
             <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--color-accent)", fontWeight: 700, margin: "0 0 6px" }}>Trust score</p>
-            <h3 style={{ fontFamily: "var(--font-display)", fontSize: 22, margin: "0 0 20px", letterSpacing: "-0.025em" }}>Verified freelancer</h3>
+            <h3 style={{ fontFamily: "var(--font-display)", fontSize: 22, margin: "0 0 20px", letterSpacing: "-0.025em" }}>{isEmployer ? "Verified employer" : "Verified freelancer"}</h3>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 22 }}>
-              {[
+              {(isEmployer ? [
+                { label: "ACRA registration", value: "Verified ✓", ok: true },
+                { label: "UEN matched", value: mock.uen ?? "—", ok: true },
+                { label: "PayNow business acct", value: "Linked ✓", ok: true },
+                { label: "Payment history", value: `${mock.employerStats?.paymentOnTime ?? "—"} on time`, ok: true },
+                { label: "Response time", value: mock.responseTime, ok: true },
+              ] : [
                 { label: "Singpass identity", value: "L2 verified", ok: true },
                 { label: "MyInfo prefill", value: "synced ✓", ok: true },
                 { label: "WSQ / degree certs", value: verifiedCreds > 0 ? `${verifiedCreds} of ${mock.creds.length} verified` : "None uploaded", ok: verifiedCreds > 0 },
                 { label: "Completed gigs", value: totalGigs > 0 ? `${totalGigs} done` : "None yet", ok: totalGigs > 0 },
                 { label: "Response time", value: mock.responseTime, ok: true },
-              ].map(item => (
+              ]).map(item => (
                 <div key={item.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                   <span style={{ fontSize: 13, color: "oklch(100% 0 0 / 0.7)" }}>{item.label}</span>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -346,41 +402,66 @@ export default function FreelancerProfilePage() {
           {/* LEFT: work history + reviews */}
           <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
 
-            {/* Work history */}
-            {mock.workHistory.length > 0 && (
+            {/* Work history (freelancer) / Hiring history (employer) */}
+            {(isEmployer ? (mock.hiringHistory ?? []).length > 0 : mock.workHistory.length > 0) && (
               <section>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-                  <h2 style={{ fontFamily: "var(--font-display)", fontSize: 22, margin: 0, letterSpacing: "-0.02em" }}>Work history</h2>
-                  <span style={{ fontSize: 12, color: "var(--color-ink-soft)", fontFamily: "var(--font-mono)" }}>{mock.workHistory.length} past gigs</span>
+                  <h2 style={{ fontFamily: "var(--font-display)", fontSize: 22, margin: 0, letterSpacing: "-0.02em" }}>
+                    {isEmployer ? "Hiring history" : "Work history"}
+                  </h2>
+                  <span style={{ fontSize: 12, color: "var(--color-ink-soft)", fontFamily: "var(--font-mono)" }}>
+                    {isEmployer ? `${(mock.hiringHistory ?? []).length} past hires` : `${mock.workHistory.length} past gigs`}
+                  </span>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {mock.workHistory.map((w, i) => {
-                    const catStyle = CATEGORY_COLORS[w.category] ?? { bg: "var(--color-muted)", fg: "var(--color-ink-soft)" };
-                    return (
-                      <div key={i} style={{ padding: "16px 18px", borderRadius: 14, border: "1px solid var(--color-line)", background: "var(--color-surface-raised)" }}>
-                        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 6 }}>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{ fontFamily: "var(--font-display)", fontSize: 16, margin: "0 0 3px", letterSpacing: "-0.015em", lineHeight: 1.2 }}>{w.title}</p>
-                            <p style={{ fontSize: 12, color: "var(--color-ink-mute)", margin: 0 }}>
-                              {w.client} · {w.duration}
-                            </p>
+                  {isEmployer
+                    ? (mock.hiringHistory ?? []).map((h, i) => {
+                        const catStyle = CATEGORY_COLORS[h.category] ?? { bg: "var(--color-muted)", fg: "var(--color-ink-soft)" };
+                        return (
+                          <div key={i} style={{ padding: "16px 18px", borderRadius: 14, border: "1px solid var(--color-line)", background: "var(--color-surface-raised)" }}>
+                            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 6 }}>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ fontFamily: "var(--font-display)", fontSize: 16, margin: "0 0 3px", letterSpacing: "-0.015em", lineHeight: 1.2 }}>{h.title}</p>
+                                <p style={{ fontSize: 12, color: "var(--color-ink-mute)", margin: 0 }}>{h.freelancerType} · {h.duration}</p>
+                              </div>
+                              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
+                                <span style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 700, color: "var(--color-ink)" }}>{h.budget}</span>
+                                <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: catStyle.bg, color: catStyle.fg, letterSpacing: "0.06em", textTransform: "uppercase" }}>{h.category}</span>
+                              </div>
+                            </div>
+                            {h.outcome && (
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, paddingTop: 8, borderTop: "1px solid var(--color-line)" }}>
+                                <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 700 }}>✓</span>
+                                <span style={{ fontSize: 12, color: "var(--color-ink-soft)" }}>{h.outcome}</span>
+                              </div>
+                            )}
                           </div>
-                          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
-                            <span style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 700, color: "var(--color-ink)" }}>{w.budget}</span>
-                            <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: catStyle.bg, color: catStyle.fg, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                              {w.category}
-                            </span>
+                        );
+                      })
+                    : mock.workHistory.map((w, i) => {
+                        const catStyle = CATEGORY_COLORS[w.category] ?? { bg: "var(--color-muted)", fg: "var(--color-ink-soft)" };
+                        return (
+                          <div key={i} style={{ padding: "16px 18px", borderRadius: 14, border: "1px solid var(--color-line)", background: "var(--color-surface-raised)" }}>
+                            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 6 }}>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ fontFamily: "var(--font-display)", fontSize: 16, margin: "0 0 3px", letterSpacing: "-0.015em", lineHeight: 1.2 }}>{w.title}</p>
+                                <p style={{ fontSize: 12, color: "var(--color-ink-mute)", margin: 0 }}>{w.client} · {w.duration}</p>
+                              </div>
+                              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
+                                <span style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 700, color: "var(--color-ink)" }}>{w.budget}</span>
+                                <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: catStyle.bg, color: catStyle.fg, letterSpacing: "0.06em", textTransform: "uppercase" }}>{w.category}</span>
+                              </div>
+                            </div>
+                            {w.outcome && (
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, paddingTop: 8, borderTop: "1px solid var(--color-line)" }}>
+                                <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 700 }}>✓</span>
+                                <span style={{ fontSize: 12, color: "var(--color-ink-soft)" }}>{w.outcome}</span>
+                              </div>
+                            )}
                           </div>
-                        </div>
-                        {w.outcome && (
-                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, paddingTop: 8, borderTop: "1px solid var(--color-line)" }}>
-                            <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 700 }}>✓</span>
-                            <span style={{ fontSize: 12, color: "var(--color-ink-soft)" }}>{w.outcome}</span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                        );
+                      })
+                  }
                 </div>
               </section>
             )}
@@ -415,49 +496,98 @@ export default function FreelancerProfilePage() {
             )}
           </div>
 
-          {/* RIGHT: credentials */}
+          {/* RIGHT: employer company info OR freelancer credentials */}
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            {mock.creds.length > 0 && (
-              <section>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                  <h2 style={{ fontFamily: "var(--font-display)", fontSize: 20, margin: 0, letterSpacing: "-0.02em" }}>Credentials</h2>
-                  <span style={{ fontSize: 12, color: "var(--color-ink-mute)", fontFamily: "var(--font-mono)" }}>{verifiedCreds}/{mock.creds.length} verified</span>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {mock.creds.map((cred, i) => {
-                    const ic = issuerColor(cred.issuer);
-                    return (
-                      <div key={i} style={{ padding: "14px 16px", borderRadius: 12, border: `1px solid ${cred.verified ? "#bbf7d0" : "var(--color-line)"}`, background: "var(--color-surface-raised)" }}>
-                        <div style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 8 }}>
-                          <div style={{ width: 34, height: 34, borderRadius: 8, background: ic.bg, color: ic.fg, display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700, flexShrink: 0, fontFamily: "var(--font-mono)" }}>
-                            {cred.issuer.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--color-ink-mute)", margin: "0 0 2px", fontWeight: 600 }}>{cred.issuer}</p>
-                            <p style={{ fontSize: 13, fontWeight: 700, color: "var(--color-ink)", margin: 0, lineHeight: 1.3 }}>{cred.title}</p>
-                          </div>
-                          <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: cred.verified ? "#dcfce7" : "var(--color-muted)", color: cred.verified ? "#166534" : "var(--color-ink-mute)", flexShrink: 0 }}>
-                            {cred.verified ? "Verified ✓" : "Pending"}
-                          </span>
-                        </div>
-                        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                          {cred.skills.map(s => (
-                            <span key={s} style={{ fontSize: 10, padding: "2px 8px", borderRadius: 999, background: "var(--color-muted)", color: "var(--color-ink-mute)", fontWeight: 600, letterSpacing: "0.04em" }}>
-                              {s}
-                            </span>
-                          ))}
-                        </div>
+            {isEmployer ? (
+              <>
+                <section>
+                  <h2 style={{ fontFamily: "var(--font-display)", fontSize: 20, margin: "0 0 14px", letterSpacing: "-0.02em" }}>Company details</h2>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {[
+                      { label: "Registered name", value: mock.companyName ?? "—" },
+                      { label: "UEN", value: mock.uen ?? "—" },
+                      { label: "Industry", value: mock.industry ?? "—" },
+                      { label: "Company size", value: mock.companySize ?? "—" },
+                      { label: "HustleSG since", value: mock.memberSince },
+                    ].map(item => (
+                      <div key={item.label} style={{ padding: "12px 16px", borderRadius: 12, background: "var(--color-surface-raised)", border: "1px solid var(--color-line)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+                        <span style={{ fontSize: 12, color: "var(--color-ink-mute)", fontWeight: 600 }}>{item.label}</span>
+                        <span style={{ fontSize: 13, color: "var(--color-ink)", fontWeight: 700, fontFamily: item.label === "UEN" ? "var(--font-mono)" : "inherit" }}>{item.value}</span>
                       </div>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
-            {mock.creds.length === 0 && (
-              <div style={{ padding: "20px 16px", borderRadius: 14, background: "var(--color-muted)", fontSize: 13, color: "var(--color-ink-mute)", textAlign: "center" }}>
-                No credentials uploaded yet.
-              </div>
+                    ))}
+                  </div>
+                </section>
+                <section>
+                  <h2 style={{ fontFamily: "var(--font-display)", fontSize: 20, margin: "0 0 14px", letterSpacing: "-0.02em" }}>Verified by</h2>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {[
+                      { issuer: "ACRA Singapore", title: "Business registration verified", sub: "Company registered and active", ok: true },
+                      { issuer: "PayNow / DBS", title: "Business bank account", sub: "Payment method verified", ok: true },
+                    ].map((item, i) => {
+                      const ic = issuerColor(item.issuer);
+                      return (
+                        <div key={i} style={{ padding: "14px 16px", borderRadius: 12, border: "1px solid #bbf7d0", background: "var(--color-surface-raised)" }}>
+                          <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                            <div style={{ width: 34, height: 34, borderRadius: 8, background: ic.bg, color: ic.fg, display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700, flexShrink: 0, fontFamily: "var(--font-mono)" }}>
+                              {item.issuer.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <p style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--color-ink-mute)", margin: "0 0 2px", fontWeight: 600 }}>{item.issuer}</p>
+                              <p style={{ fontSize: 13, fontWeight: 700, color: "var(--color-ink)", margin: "0 0 1px", lineHeight: 1.3 }}>{item.title}</p>
+                              <p style={{ fontSize: 11, color: "var(--color-ink-mute)", margin: 0 }}>{item.sub}</p>
+                            </div>
+                            <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "#dcfce7", color: "#166534", flexShrink: 0 }}>Verified ✓</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              </>
+            ) : (
+              <>
+                {mock.creds.length > 0 && (
+                  <section>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                      <h2 style={{ fontFamily: "var(--font-display)", fontSize: 20, margin: 0, letterSpacing: "-0.02em" }}>Credentials</h2>
+                      <span style={{ fontSize: 12, color: "var(--color-ink-mute)", fontFamily: "var(--font-mono)" }}>{verifiedCreds}/{mock.creds.length} verified</span>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      {mock.creds.map((cred, i) => {
+                        const ic = issuerColor(cred.issuer);
+                        return (
+                          <div key={i} style={{ padding: "14px 16px", borderRadius: 12, border: `1px solid ${cred.verified ? "#bbf7d0" : "var(--color-line)"}`, background: "var(--color-surface-raised)" }}>
+                            <div style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 8 }}>
+                              <div style={{ width: 34, height: 34, borderRadius: 8, background: ic.bg, color: ic.fg, display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700, flexShrink: 0, fontFamily: "var(--font-mono)" }}>
+                                {cred.issuer.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--color-ink-mute)", margin: "0 0 2px", fontWeight: 600 }}>{cred.issuer}</p>
+                                <p style={{ fontSize: 13, fontWeight: 700, color: "var(--color-ink)", margin: 0, lineHeight: 1.3 }}>{cred.title}</p>
+                              </div>
+                              <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: cred.verified ? "#dcfce7" : "var(--color-muted)", color: cred.verified ? "#166534" : "var(--color-ink-mute)", flexShrink: 0 }}>
+                                {cred.verified ? "Verified ✓" : "Pending"}
+                              </span>
+                            </div>
+                            <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                              {cred.skills.map(s => (
+                                <span key={s} style={{ fontSize: 10, padding: "2px 8px", borderRadius: 999, background: "var(--color-muted)", color: "var(--color-ink-mute)", fontWeight: 600, letterSpacing: "0.04em" }}>
+                                  {s}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+                )}
+                {mock.creds.length === 0 && (
+                  <div style={{ padding: "20px 16px", borderRadius: 14, background: "var(--color-muted)", fontSize: 13, color: "var(--color-ink-mute)", textAlign: "center" }}>
+                    No credentials uploaded yet.
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -495,9 +625,15 @@ export default function FreelancerProfilePage() {
                 <p style={{ fontSize: 12, color: "var(--color-ink-mute)", margin: 0 }}>{profile.headline}</p>
               )}
             </div>
-            <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: "#dcfce7", color: "#166534", letterSpacing: "0.06em", textTransform: "uppercase", flexShrink: 0 }}>
-              Singpass ✓
-            </span>
+            {isEmployer ? (
+              <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: "#dbeafe", color: "#1e40af", letterSpacing: "0.06em", textTransform: "uppercase", flexShrink: 0 }}>
+                ACRA ✓
+              </span>
+            ) : (
+              <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: "#dcfce7", color: "#166534", letterSpacing: "0.06em", textTransform: "uppercase", flexShrink: 0 }}>
+                Singpass ✓
+              </span>
+            )}
           </div>
 
           {mock.bio && (
@@ -562,21 +698,22 @@ export default function FreelancerProfilePage() {
           </div>
         )}
 
-        {/* Work history — mobile compact */}
-        {mock.workHistory.length > 0 && (
+        {/* Work history (freelancer) / Hiring history (employer) — mobile compact */}
+        {(isEmployer ? (mock.hiringHistory ?? []).length > 0 : mock.workHistory.length > 0) && (
           <div>
             <p style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--color-ink-mute)", margin: "0 0 8px", fontWeight: 600 }}>
-              Work history · {mock.workHistory.length} gigs
+              {isEmployer ? `Hiring history · ${(mock.hiringHistory ?? []).length} hires` : `Work history · ${mock.workHistory.length} gigs`}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {mock.workHistory.map((w, i) => {
+              {(isEmployer ? (mock.hiringHistory ?? []) : mock.workHistory).map((w, i) => {
                 const catStyle = CATEGORY_COLORS[w.category] ?? { bg: "var(--color-muted)", fg: "var(--color-ink-soft)" };
+                const subtitle = isEmployer ? `${(w as HireEntry).freelancerType} · ${w.duration}` : `${(w as WorkEntry).client} · ${w.duration}`;
                 return (
                   <div key={i} style={{ padding: "12px 14px", borderRadius: 12, border: "1px solid var(--color-line)", background: "var(--color-surface-raised)" }}>
                     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: 13, fontWeight: 600, color: "var(--color-ink)", margin: "0 0 2px", lineHeight: 1.3 }}>{w.title}</p>
-                        <p style={{ fontSize: 11, color: "var(--color-ink-mute)", margin: 0 }}>{w.client} · {w.duration}</p>
+                        <p style={{ fontSize: 11, color: "var(--color-ink-mute)", margin: 0 }}>{subtitle}</p>
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3, flexShrink: 0 }}>
                         <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700, color: "var(--color-ink)" }}>{w.budget}</span>
@@ -593,8 +730,27 @@ export default function FreelancerProfilePage() {
           </div>
         )}
 
-        {/* Credentials */}
-        {mock.creds.length > 0 ? (
+        {/* Credentials (freelancer) / Company info (employer) */}
+        {isEmployer ? (
+          <div>
+            <p style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--color-ink-mute)", margin: "0 0 8px", fontWeight: 600 }}>Company details</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {[
+                { label: "Company", value: mock.companyName ?? "—" },
+                { label: "UEN", value: mock.uen ?? "—", mono: true },
+                { label: "Industry", value: mock.industry ?? "—" },
+                { label: "Size", value: mock.companySize ?? "—" },
+                { label: "ACRA", value: "Verified ✓", highlight: true },
+                { label: "PayNow", value: "Linked ✓", highlight: true },
+              ].map(item => (
+                <div key={item.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", borderRadius: 10, background: "var(--color-surface-raised)", border: "1px solid var(--color-line)" }}>
+                  <span style={{ fontSize: 11, color: "var(--color-ink-mute)", fontWeight: 600 }}>{item.label}</span>
+                  <span style={{ fontSize: 12, color: item.highlight ? "#166534" : "var(--color-ink)", fontWeight: 700, fontFamily: item.mono ? "var(--font-mono)" : "inherit" }}>{item.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : mock.creds.length > 0 ? (
           <div>
             <p style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--color-ink-mute)", margin: "0 0 8px", fontWeight: 600 }}>
               Credentials · {verifiedCreds}/{mock.creds.length} verified
