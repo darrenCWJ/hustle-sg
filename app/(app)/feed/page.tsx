@@ -5,6 +5,7 @@ import { FeedClientPage } from "./FeedClientPage";
 import { loadSavedGigIds } from "@/app/actions/gigs";
 import { GeolocationCapture } from "@/components/location/GeolocationCapture";
 import { PushAutoSubscribe } from "@/components/notifications/PushAutoSubscribe";
+import { PrimingCards } from "@/components/consent/PrimingCards";
 
 export default async function FeedPage() {
   const supabase = await createClient();
@@ -23,8 +24,11 @@ export default async function FeedPage() {
 
   return (
     <>
+      {/* Passive re-sync for already-granted permissions… */}
       <PushAutoSubscribe />
       <GeolocationCapture hasLocation={hasLocation} />
+      {/* …and explicit, user-tapped priming for first-time opt-in (Phase 5.1). */}
+      <PrimingCards hasLocation={hasLocation} />
       <FeedClientPage matches={matches} initialSavedIds={savedIds} />
     </>
   );

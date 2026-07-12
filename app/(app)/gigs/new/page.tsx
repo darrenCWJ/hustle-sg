@@ -47,60 +47,98 @@ export default async function NewGigPage() {
       <h1 className="font-display text-display-md mt-2 mb-10">Describe what you need done.</h1>
 
       <form action={postGigAction} className="space-y-4">
-        <input
-          required
-          name="title"
-          placeholder="Gig title"
-          className="w-full rounded-xl border border-line px-4 py-3 bg-surface-raised"
-        />
-        <textarea
-          required
-          name="description"
-          rows={6}
-          placeholder="Describe scope, deliverables, timeline…"
-          className="w-full rounded-xl border border-line px-4 py-3 bg-surface-raised"
-        />
-        <div className="grid md:grid-cols-2 gap-3">
-          <select
-            name="category"
-            className="rounded-xl border border-line px-4 py-3 bg-surface-raised"
-          >
-            <option value="">Category</option>
-            <option value="tech">Tech</option>
-            <option value="design">Design</option>
-            <option value="marketing">Marketing</option>
-            <option value="tuition">Tuition</option>
-            <option value="events">Events</option>
-            <option value="video">Video / Photography</option>
-            <option value="admin">Admin / Operations</option>
-            <option value="logistics">Logistics / Delivery</option>
-            <option value="beauty">Beauty / Wellness</option>
-            <option value="other">Other</option>
-          </select>
+        {/* Real labels, not placeholder-only fields (Phase 5.2): placeholders
+            vanish on input and screen readers can't rely on them. */}
+        <div>
+          <label htmlFor="gig-title" className="text-xs uppercase tracking-widest text-ink-soft">
+            Gig title
+          </label>
           <input
-            name="location"
-            placeholder="Location (e.g. Tanjong Pagar or Remote)"
-            className="rounded-xl border border-line px-4 py-3 bg-surface-raised"
+            required
+            id="gig-title"
+            name="title"
+            placeholder="e.g. Weekend barista for pop-up café"
+            className="mt-2 w-full rounded-xl border border-line px-4 py-3 bg-surface-raised"
           />
+        </div>
+        <div>
+          <label htmlFor="gig-description" className="text-xs uppercase tracking-widest text-ink-soft">
+            Description
+          </label>
+          <textarea
+            required
+            id="gig-description"
+            name="description"
+            rows={6}
+            placeholder="Describe scope, deliverables, timeline…"
+            className="mt-2 w-full rounded-xl border border-line px-4 py-3 bg-surface-raised"
+          />
+        </div>
+        <div className="grid md:grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="gig-category" className="text-xs uppercase tracking-widest text-ink-soft">
+              Category
+            </label>
+            <select
+              id="gig-category"
+              name="category"
+              className="mt-2 w-full rounded-xl border border-line px-4 py-3 bg-surface-raised"
+            >
+              <option value="">Choose a category</option>
+              <option value="tech">Tech</option>
+              <option value="design">Design</option>
+              <option value="marketing">Marketing</option>
+              <option value="tuition">Tuition</option>
+              <option value="events">Events</option>
+              <option value="video">Video / Photography</option>
+              <option value="admin">Admin / Operations</option>
+              <option value="logistics">Logistics / Delivery</option>
+              <option value="beauty">Beauty / Wellness</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="gig-location" className="text-xs uppercase tracking-widest text-ink-soft">
+              Location
+            </label>
+            <input
+              id="gig-location"
+              name="location"
+              placeholder="e.g. Tanjong Pagar or Remote"
+              className="mt-2 w-full rounded-xl border border-line px-4 py-3 bg-surface-raised"
+            />
+          </div>
           <SkillsSuggestor />
           <div className="md:col-span-2">
             <HeadcountStepper />
           </div>
-          <input
-            type="number"
-            min={1}
-            step="0.01"
-            name="budget_sgd"
-            placeholder="Budget in S$ (e.g. 800)"
-            className="rounded-xl border border-line px-4 py-3 bg-surface-raised"
-          />
-          <select
-            name="budget_kind"
-            className="rounded-xl border border-line px-4 py-3 bg-surface-raised"
-          >
-            <option value="fixed">Fixed</option>
-            <option value="hourly">Hourly</option>
-          </select>
+          <div>
+            <label htmlFor="gig-budget" className="text-xs uppercase tracking-widest text-ink-soft">
+              Budget (S$)
+            </label>
+            <input
+              type="number"
+              min={1}
+              step="0.01"
+              id="gig-budget"
+              name="budget_sgd"
+              placeholder="e.g. 800"
+              className="mt-2 w-full rounded-xl border border-line px-4 py-3 bg-surface-raised"
+            />
+          </div>
+          <div>
+            <label htmlFor="gig-budget-kind" className="text-xs uppercase tracking-widest text-ink-soft">
+              Budget type
+            </label>
+            <select
+              id="gig-budget-kind"
+              name="budget_kind"
+              className="mt-2 w-full rounded-xl border border-line px-4 py-3 bg-surface-raised"
+            >
+              <option value="fixed">Fixed</option>
+              <option value="hourly">Hourly</option>
+            </select>
+          </div>
         </div>
 
         <div>

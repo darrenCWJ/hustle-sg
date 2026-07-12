@@ -59,42 +59,71 @@ export function CertificationsEditor({ certs }: { certs: Certification[] }) {
       </div>
 
       <div className="mb-8 rounded-card bg-surface-raised border border-line p-6">
+        {/* Real labels, not placeholder-only fields (Phase 5.2). */}
         <div className="grid md:grid-cols-2 gap-3">
-          <input
-            placeholder="Issuer (e.g. SkillsFuture SG)"
-            value={issuer}
-            onChange={(e) => setIssuer(e.target.value)}
-            className="rounded-xl border border-line px-4 py-3 bg-surface"
-          />
-          <input
-            placeholder="Certificate title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="rounded-xl border border-line px-4 py-3 bg-surface"
-          />
-          <select
-            value={kind}
-            onChange={(e) => setKind(e.target.value as any)}
-            className="rounded-xl border border-line px-4 py-3 bg-surface"
-          >
-            <option value="wsq">WSQ</option>
-            <option value="university">University</option>
-            <option value="accreditation">Accreditation</option>
-            <option value="other">Other</option>
-          </select>
-          <input
-            type="date"
-            value={issuedAt}
-            onChange={(e) => setIssuedAt(e.target.value)}
-            className="rounded-xl border border-line px-4 py-3 bg-surface"
-          />
+          <div>
+            <label htmlFor="cert-issuer" className="text-xs uppercase tracking-widest text-ink-soft">
+              Issuer
+            </label>
+            <input
+              id="cert-issuer"
+              placeholder="e.g. SkillsFuture SG"
+              value={issuer}
+              onChange={(e) => setIssuer(e.target.value)}
+              className="mt-2 w-full rounded-xl border border-line px-4 py-3 bg-surface"
+            />
+          </div>
+          <div>
+            <label htmlFor="cert-title" className="text-xs uppercase tracking-widest text-ink-soft">
+              Certificate title
+            </label>
+            <input
+              id="cert-title"
+              placeholder="e.g. Food Safety Level 1"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="mt-2 w-full rounded-xl border border-line px-4 py-3 bg-surface"
+            />
+          </div>
+          <div>
+            <label htmlFor="cert-kind" className="text-xs uppercase tracking-widest text-ink-soft">
+              Type
+            </label>
+            <select
+              id="cert-kind"
+              value={kind}
+              onChange={(e) => setKind(e.target.value as any)}
+              className="mt-2 w-full rounded-xl border border-line px-4 py-3 bg-surface"
+            >
+              <option value="wsq">WSQ</option>
+              <option value="university">University</option>
+              <option value="accreditation">Accreditation</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="cert-issued-at" className="text-xs uppercase tracking-widest text-ink-soft">
+              Issue date
+            </label>
+            <input
+              id="cert-issued-at"
+              type="date"
+              value={issuedAt}
+              onChange={(e) => setIssuedAt(e.target.value)}
+              className="mt-2 w-full rounded-xl border border-line px-4 py-3 bg-surface"
+            />
+          </div>
         </div>
+        <label htmlFor="cert-raw-text" className="mt-4 block text-xs uppercase tracking-widest text-ink-soft">
+          Certificate text (optional)
+        </label>
         <textarea
-          placeholder="Paste the certificate text for AI to extract skills (optional)"
+          id="cert-raw-text"
+          placeholder="Paste the certificate text for AI to extract skills"
           value={rawText}
           onChange={(e) => setRawText(e.target.value)}
           rows={3}
-          className="mt-3 w-full rounded-xl border border-line px-4 py-3 bg-surface"
+          className="mt-2 w-full rounded-xl border border-line px-4 py-3 bg-surface"
         />
 
         {error && <p className="text-sm text-accent mt-2">{error}</p>}
