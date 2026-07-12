@@ -28,6 +28,16 @@ const nextConfig = {
   // Disables the Next.js 15.3+ segment-explorer devtools overlay, which causes
   // a "SegmentViewNode not in React Client Manifest" error in the dev server.
   devIndicators: false,
+  // OpenCerts verification (server-only): keep the OpenAttestation/JSON-LD
+  // stack out of the bundle — rdf-canonize probes an optional native module
+  // that trips a bundler warning, and these run fine from node_modules.
+  serverExternalPackages: [
+    "@govtechsg/opencerts-verify",
+    "@govtechsg/oa-verify",
+    "@govtechsg/open-attestation",
+    "jsonld",
+    "rdf-canonize",
+  ],
   experimental: {
     serverActions: { bodySizeLimit: "10mb" },
   },
