@@ -1,7 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { formatSgd, timeAgo } from "@/lib/utils";
+import { aggregateRatings } from "@/lib/trust/ratings";
 import { ReportButton } from "@/components/safety/ReportButton";
 import { applyToGig } from "./actions";
 import { RecommendedCandidates } from "./RecommendedCandidates";
@@ -52,6 +53,32 @@ export default async function GigDetailPage({
   const isOwnGig = !!user && user.id === gig.employer_id;
   const isEmployerOnly = userRole === "employer";
   const employerVerified = Boolean(gig.employer?.singpass_verified_at);
+
+  // Job authenticity: show the employer's REAL track record on every gig so
+  // applicants can judge whether a posting is genuine. Computed with the
+  // service client — an applicant's RLS view can't see the employer's past
+  // (closed/filled) gigs, but the aggregate numbers are public trust signals.
+  const service = createServiceClient();
+  const [empGigs, empHires, empRatings, empProfile] = await Promise.all([
+    service.from("gigs").select("id, status").eq("employer_id", gig.employer_id),
+    service
+      .from("applications")
+      .select("applicant_id, gigs!inner(employer_id)")
+      .eq("gigs.employer_id", gig.employer_id)
+      .in("status", ["hired", "completed"]),
+    service.from("ratings").select("from_id, stars").eq("to_id", gig.employer_id),
+    service.from("profiles").select("created_at").eq("id", gig.employer_id).single(),
+  ]);
+  const employerGigCount = (empGigs.data ?? []).length;
+  const employerFilledCount = (empGigs.data ?? []).filter((g) => g.status === "filled").length;
+  const employerDistinctHires = new Set((empHires.data ?? []).map((a) => a.applicant_id)).size;
+  const employerRatingAgg = aggregateRatings(
+    (empRatings.data ?? []).map((r) => ({ from_id: r.from_id, stars: r.stars })),
+  );
+  const employerSince = empProfile.data?.created_at
+    ? new Date(empProfile.data.created_at).toLocaleDateString("en-SG", { month: "short", year: "numeric" })
+    : null;
+  const isFirstPosting = employerGigCount <= 1;
   const isClosed = gig.applications_close_at
     ? new Date(gig.applications_close_at) < new Date()
     : false;
@@ -476,6 +503,44 @@ export default async function GigDetailPage({
                   {employerVerified ? "Singpass-verified" : "Unverified"}
                 </p>
               </div>
+            </div>
+
+            {/* Employer track record — real numbers, so applicants can judge
+                whether this posting is genuine. */}
+            <div style={{ borderTop: "1px solid oklch(100% 0 0 / 0.15)", paddingTop: 14, display: "flex", flexDirection: "column", gap: 7, fontSize: 12.5, color: "oklch(100% 0 0 / 0.8)" }}>
+              {isFirstPosting ? (
+                <p style={{ margin: 0, padding: "8px 12px", borderRadius: 10, background: "oklch(100% 0 0 / 0.08)", fontSize: 12, lineHeight: 1.5 }}>
+                  ⚠ <strong>First posting from this employer.</strong> No track
+                  record yet — agree scope and payment terms before starting.
+                </p>
+              ) : (
+                <>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>Gigs posted</span>
+                    <span style={{ fontFamily: "var(--font-mono)" }}>
+                      {employerGigCount} · {employerFilledCount} filled
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>Workers hired</span>
+                    <span style={{ fontFamily: "var(--font-mono)" }}>{employerDistinctHires} distinct</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>Rating from workers</span>
+                    <span style={{ fontFamily: "var(--font-mono)" }}>
+                      {employerRatingAgg.average !== null
+                        ? `★ ${employerRatingAgg.average} (${employerRatingAgg.uniqueRaters} reviewer${employerRatingAgg.uniqueRaters !== 1 ? "s" : ""})`
+                        : "no reviews yet"}
+                    </span>
+                  </div>
+                </>
+              )}
+              {employerSince && (
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Member since</span>
+                  <span style={{ fontFamily: "var(--font-mono)" }}>{employerSince}</span>
+                </div>
+              )}
             </div>
 
             {/* Apply form */}

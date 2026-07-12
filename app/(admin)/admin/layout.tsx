@@ -29,6 +29,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           <Link href="/admin/certs" style={{ color: "var(--color-ink-soft)" }}>Verifications</Link>
           <Link href="/admin/disputes" style={{ color: "var(--color-ink-soft)" }}>Disputes</Link>
           <Link href="/admin/errors" style={{ color: "var(--color-ink-soft)" }}>Errors</Link>
+          <Link href="/admin/fraud" style={{ color: "var(--color-ink-soft)" }}>Fraud</Link>
         </nav>
         <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--color-ink-mute)", fontFamily: "var(--font-mono)" }}>
           @{admin.handle}

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { computeTrustScore } from "@/lib/trust/score";
+import { aggregateRatings } from "@/lib/trust/ratings";
 import { ReportButton } from "@/components/safety/ReportButton";
 import { BlockButton } from "@/components/safety/BlockButton";
 import Link from "next/link";
@@ -46,10 +47,10 @@ export default async function ProfilePage({
       .order("start_date", { ascending: false }),
     supabase
       .from("ratings")
-      .select("id, stars, review, created_at, from:profiles!ratings_from_id_fkey(display_name)")
+      .select("id, stars, review, created_at, from_id, from:profiles!ratings_from_id_fkey(display_name)")
       .eq("to_id", profile.id)
       .order("created_at", { ascending: false })
-      .limit(10),
+      .limit(50),
   ]);
 
   const {
@@ -106,17 +107,25 @@ export default async function ProfilePage({
   const verifiedCerts = (certs ?? []).filter((c: any) => c.verified);
   const totalCerts = (certs ?? []).length;
   const hiredCount = (hiredApps ?? []).length;
+  // Collusion resistance: repeat hires from ONE employer count once toward
+  // trust — a rehire loop can't farm track-record points.
+  const distinctEmployersHiredBy = new Set(
+    (hiredApps ?? []).map((a: any) => a.gigs?.employer_id).filter(Boolean),
+  ).size;
 
   const ratings = ratingsRaw ?? [];
-  const avgStars = ratings.length > 0
-    ? Math.round((ratings.reduce((s: number, r: any) => s + r.stars, 0) / ratings.length) * 10) / 10
-    : null;
+  // Pair-aware average: each unique rater counts once (lib/trust/ratings.ts) —
+  // a rating ring can't drag the number with repeat 5★s.
+  const ratingAgg = aggregateRatings(
+    ratings.map((r: any) => ({ from_id: r.from_id, stars: r.stars })),
+  );
+  const avgStars = ratingAgg.average;
 
   const trust = computeTrustScore({
     singpassVerified: verified,
     verifiedCertCount: verifiedCerts.length,
     portfolioItemCount: (items ?? []).length,
-    hiredCount,
+    hiredCount: distinctEmployersHiredBy,
   });
 
   // Aggregate top skills from all certs' extracted_skills
@@ -508,7 +517,10 @@ export default async function ProfilePage({
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ color: "#f59e0b", fontSize: 22 }}>★</span>
               <span style={{ fontFamily: "var(--font-display)", fontSize: 28, letterSpacing: "-0.03em" }}>{avgStars}</span>
-              <span style={{ fontSize: 12, color: "var(--color-ink-soft)" }}>from {ratings.length} review{ratings.length !== 1 ? "s" : ""}</span>
+              <span style={{ fontSize: 12, color: "var(--color-ink-soft)" }}>
+                from {ratingAgg.uniqueRaters} reviewer{ratingAgg.uniqueRaters !== 1 ? "s" : ""}
+                {ratingAgg.totalRatings !== ratingAgg.uniqueRaters ? ` (${ratingAgg.totalRatings} reviews)` : ""}
+              </span>
             </div>
           ) : (
             // Honest "unproven" signal (Phase 2.2): zero reviews reads as new,

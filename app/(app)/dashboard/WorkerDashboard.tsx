@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/utils";
 import { DashboardCalendar, type RecommendedGig, type BookedGig } from "@/components/dashboard/DashboardCalendar";
 import { NotificationsToggle } from "@/components/notifications/NotificationsToggle";
+import { ActionNeeded } from "@/components/dashboard/ActionNeeded";
 import { matchGigsForUser } from "@/lib/ai/match";
 
 const STATUS_CONFIG: Record<string, { bg: string; fg: string; label: string }> = {
@@ -121,6 +122,35 @@ export async function WorkerDashboard({ userId, handle }: { userId: string; hand
   const activeApps  = visibleApps.filter((a) => ["applied", "interviewing", "offered"].includes(a.status));
   const hired       = apps.filter((a) => a.status === "hired").length;
 
+  // "Needs your attention": offers waiting, interviews to record, reviews
+  // owed on completed gigs, and unread message threads.
+  const offersWaiting = apps.filter((a) => a.status === "offered").length;
+  const interviewsToRecord = apps.filter((a) => a.status === "interviewing").length;
+  const completedIds = apps.filter((a) => a.status === "completed").map((a) => a.id);
+  const [{ data: myRatings }, unreadRes] = await Promise.all([
+    completedIds.length
+      ? supabase
+          .from("ratings")
+          .select("application_id")
+          .eq("from_id", userId)
+          .in("application_id", completedIds)
+      : Promise.resolve({ data: [] as Array<{ application_id: string }> }),
+    supabase
+      .from("messages")
+      .select("id", { count: "exact", head: true })
+      .neq("sender_id", userId)
+      .is("read_at", null),
+  ]);
+  const ratedIds = new Set((myRatings ?? []).map((r) => r.application_id));
+  const reviewsOwed = completedIds.filter((id) => !ratedIds.has(id)).length;
+
+  const actionItems = [
+    { count: offersWaiting, label: "offers waiting for your answer", href: "/applications", urgent: true },
+    { count: unreadRes.count ?? 0, label: "unread messages", href: "/messages", urgent: true },
+    { count: interviewsToRecord, label: "interviews to record", href: "/applications" },
+    { count: reviewsOwed, label: "completed gigs awaiting your review", href: "/applications" },
+  ];
+
   return (
     <div>
       {/* Header */}
@@ -146,6 +176,8 @@ export async function WorkerDashboard({ userId, handle }: { userId: string; hand
           </Link>
         </div>
       </header>
+
+      <ActionNeeded items={actionItems} />
 
       {/* KPI tiles */}
       <section style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 36 }}>

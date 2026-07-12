@@ -1035,6 +1035,20 @@ export type Database = {
         Args: { p_key: string; p_limit: number; p_window_seconds: number }
         Returns: boolean
       }
+      collusion_pairs: {
+        Args: { p_min_score?: number }
+        Returns: {
+          completed_between: number
+          employer_id: string
+          fast_rated: number
+          gigs_between: number
+          mutual_five_star: number
+          ratings_between: number
+          silent_completions: number
+          suspicion_score: number
+          worker_id: string
+        }[]
+      }
       decide_application: {
         Args: { p_app_id: string; p_decision: string }
         Returns: Json

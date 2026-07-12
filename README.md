@@ -35,7 +35,10 @@ Singapore-first gig platform for verified side hustlers. AI + distance-matched g
 | Availability calendar | Weekly grid on the worker dashboard; the feed marks gigs that **fit your schedule** (day + working-window overlap) with a badge and filter |
 | Applicant triage | Status filters, search, sort, and true DB pagination on the employer pipeline |
 | Trust & safety | Report users/gigs, block users (hidden across matching, lists, applying, messaging), disputes with a state machine |
-| Admin surface | `/admin` (role-gated, unlinked): report triage, cert review queue, dispute resolution, error log. Promote via SQL only |
+| Job authenticity | Every gig shows the employer's real track record (gigs filled, distinct hires, worker rating, member since) — first-time posters are flagged honestly |
+| Collusion resistance | Rating averages count each rater **once**; repeat hires from one employer count once toward trust; `/admin/fraud` surfaces rating-ring signals (mutual 5★s, zero-message completions, instant ratings) |
+| Action-first dashboards | Both dashboards open with a "needs your attention" strip: offers waiting, interviews, reviews owed, unread messages, disputes — real counts, deep links |
+| Admin surface | `/admin` (role-gated, unlinked): report triage, cert review queue, dispute resolution, error log, fraud signals. Promote via SQL only |
 | Observability | First-party error store — server captures + client error-boundary reports land in `app_errors`, viewable at `/admin/errors` |
 | Match instrumentation | Every apply/shortlist/offer/hire/reject/withdraw/complete/rate writes to `match_events` for future ranking work |
 | Entrepreneur onboarding | Entity-type wizard → name reservation → mock-ACRA registration → post-reg guidance (CPF, GST, banking) |
@@ -50,7 +53,7 @@ cp .env.example .env.local   # fill in every variable — comments explain each
 
 ### Database
 
-Migrations live in `supabase/migrations/` (`0001` → `0039`) and cover schema, RLS, pgvector matching, storage bucket limits, rate limiting, trust & safety tables, messaging, instrumentation, and the pg_cron reminder job.
+Migrations live in `supabase/migrations/` (`0001` → `0040`) and cover schema, RLS, pgvector matching, storage bucket limits, rate limiting, trust & safety tables, messaging, instrumentation, and the pg_cron reminder job.
 
 ```bash
 npx supabase db push

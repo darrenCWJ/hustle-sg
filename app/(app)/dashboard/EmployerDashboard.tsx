@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { timeAgo, formatSgd, budgetKindLabel } from "@/lib/utils";
 import { NotificationsToggle } from "@/components/notifications/NotificationsToggle";
+import { ActionNeeded } from "@/components/dashboard/ActionNeeded";
 
 const GIG_STATUS: Record<string, { label: string; bg: string; fg: string }> = {
   open:   { label: "Open",   bg: "var(--color-jade-soft)", fg: "var(--color-jade-ink)" },
@@ -41,6 +42,56 @@ export async function EmployerDashboard({ userId }: { userId: string }) {
   const pendingReview = apps.filter((a) => a.status === "applied").length;
   const hired = apps.filter((a) => a.status === "hired").length;
 
+  // "Needs your attention": real counts (the list above is a 10-row sample).
+  const countByStatus = (status: string) =>
+    supabase
+      .from("applications")
+      .select("id, gigs!inner(employer_id)", { count: "exact", head: true })
+      .eq("gigs.employer_id", userId)
+      .eq("status", status)
+      .then((r) => r.count ?? 0);
+  const [appliedCount, interviewingCount, completedApps, unreadRes, disputesRes] =
+    await Promise.all([
+      countByStatus("applied"),
+      countByStatus("interviewing"),
+      supabase
+        .from("applications")
+        .select("id, gigs!inner(employer_id)")
+        .eq("gigs.employer_id", userId)
+        .eq("status", "completed")
+        .limit(200),
+      supabase
+        .from("messages")
+        .select("id", { count: "exact", head: true })
+        .neq("sender_id", userId)
+        .is("read_at", null),
+      supabase.from("disputes").select("id, application_id").neq("status", "resolved").limit(20),
+    ]);
+  const completedIds = (completedApps.data ?? []).map((a) => a.id);
+  const { data: myRatings } = completedIds.length
+    ? await supabase
+        .from("ratings")
+        .select("application_id")
+        .eq("from_id", userId)
+        .in("application_id", completedIds)
+    : { data: [] as Array<{ application_id: string }> };
+  const ratedIds = new Set((myRatings ?? []).map((r) => r.application_id));
+  const reviewsOwed = completedIds.filter((id) => !ratedIds.has(id)).length;
+  const openDisputes = disputesRes.data ?? [];
+
+  const actionItems = [
+    { count: appliedCount, label: "new applicants to review", href: "/applicants?status=applied", urgent: true },
+    { count: unreadRes.count ?? 0, label: "unread messages", href: "/messages", urgent: true },
+    { count: interviewingCount, label: "interviews in progress", href: "/applicants?status=interviewing" },
+    { count: reviewsOwed, label: "completed gigs awaiting your review", href: "/applicants?status=completed" },
+    {
+      count: openDisputes.length,
+      label: "open disputes",
+      href: openDisputes[0] ? `/disputes/${openDisputes[0].application_id}` : "/applicants",
+      urgent: true,
+    },
+  ];
+
   return (
     <div>
       {/* Header */}
@@ -70,6 +121,8 @@ export async function EmployerDashboard({ userId }: { userId: string }) {
           </Link>
         </div>
       </header>
+
+      <ActionNeeded items={actionItems} />
 
       {/* KPI tiles */}
       <section style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 36 }}>
