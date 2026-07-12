@@ -46,7 +46,7 @@ export function RehireSelector({ previousHires }: Props) {
         <div>
           <p style={{ margin: 0, fontWeight: 600, fontSize: 14 }}>Send direct offers to previous hires</p>
           <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--color-ink-mute)" }}>
-            They'll get notified immediately when the gig is published.
+            They&apos;ll get notified immediately when the gig is published.
           </p>
         </div>
         <select
@@ -101,7 +101,7 @@ export function RehireSelector({ previousHires }: Props) {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>{h.displayName}</p>
                     <p style={{ margin: "1px 0 0", fontSize: 11, opacity: 0.65, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      @{h.handle} · hired for "{h.gigTitle}"
+                      @{h.handle} · hired for &ldquo;{h.gigTitle}&rdquo;
                     </p>
                   </div>
                   <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 999, background: isSelected ? "oklch(100% 0 0 / 0.15)" : "var(--color-muted)", whiteSpace: "nowrap" }}>

@@ -120,7 +120,7 @@ export default function DemoApplicationsPage() {
                   )}
                   {a.status === "shortlisted" && (!gig?.questions || gig.questions.length === 0) && (
                     <div style={{ marginTop: 10, padding: "12px 14px", borderRadius: 10, background: "#dcfce7", border: "1px solid #bbf7d0" }}>
-                      <p style={{ fontSize: 12, fontWeight: 700, color: "#166534", margin: "0 0 2px" }}>You've been shortlisted!</p>
+                      <p style={{ fontSize: 12, fontWeight: 700, color: "#166534", margin: "0 0 2px" }}>You&apos;ve been shortlisted!</p>
                       <p style={{ fontSize: 11, color: "#166534", margin: 0, opacity: 0.8 }}>The employer is reviewing your profile and will confirm shortly.</p>
                     </div>
                   )}
@@ -226,7 +226,7 @@ export default function DemoApplicationsPage() {
                   )}
                   {app.status === "shortlisted" && (!gig?.questions || gig.questions.length === 0) && (
                     <div style={{ marginTop: 8, padding: "8px 10px", borderRadius: 8, background: "#dcfce7", border: "1px solid #bbf7d0" }}>
-                      <p style={{ fontSize: 11, fontWeight: 700, color: "#166534", margin: 0 }}>You've been shortlisted! Awaiting employer decision.</p>
+                      <p style={{ fontSize: 11, fontWeight: 700, color: "#166534", margin: 0 }}>You&apos;ve been shortlisted! Awaiting employer decision.</p>
                     </div>
                   )}
                   {app.status === "accepted" && (

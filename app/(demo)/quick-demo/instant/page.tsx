@@ -269,7 +269,7 @@ function GigCard({
           <div style={{ paddingTop: 10, paddingBottom: 4, display: "flex", flexDirection: "column", gap: 10 }}>
             {g.description && (
               <div>
-                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--color-ink-mute)", margin: "0 0 5px" }}>What's needed</p>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--color-ink-mute)", margin: "0 0 5px" }}>What&apos;s needed</p>
                 <p style={{ fontSize: 13, color: "var(--color-ink-soft)", margin: 0, lineHeight: 1.55 }}>{g.description}</p>
               </div>
             )}

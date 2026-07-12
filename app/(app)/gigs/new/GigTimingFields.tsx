@@ -171,7 +171,7 @@ export function GigTimingFields() {
               name="ends_at"
               className="w-full rounded-xl border border-line px-4 py-3 bg-surface-raised"
             />
-            <p className="text-xs text-ink-mute">Leave blank if the end date isn't fixed yet.</p>
+            <p className="text-xs text-ink-mute">Leave blank if the end date isn&apos;t fixed yet.</p>
           </div>
         ) : (
           <div className="space-y-4">

@@ -229,7 +229,7 @@ export function GigsClientPage({ gigs }: { gigs: Gig[] }) {
   const cats = Array.from(new Set(gigs.map((g) => g.category).filter(Boolean))) as string[];
 
   const filtered = useMemo(() => {
-    let list = gigs.filter((g) => {
+    const list = gigs.filter((g) => {
       if (
         q &&
         !(

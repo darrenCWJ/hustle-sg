@@ -17,7 +17,7 @@ const STATUS_STYLES: Record<string, { bg: string; fg: string; label: string }> =
 export default function DemoGigDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { activeAccount, applyToGig, applications, getGigsForAccount } = useDemo();
+  const { activeAccount, applyToGig, applications, getGigsForAccount, updateApplicationStatus } = useDemo();
   const { viewMode } = useViewMode();
 
   const allGigs = getGigsForAccount();
@@ -37,8 +37,6 @@ export default function DemoGigDetailPage() {
   const backHref = viewMode === "desktop" ? "/quick-demo/gigs" : "/quick-demo/gigs";
 
   const hasQuestions = (gig.questions?.length ?? 0) > 0;
-
-  const { updateApplicationStatus } = useDemo();
 
   const ApplyBar = () => {
     if (activeAccount.role !== "freelancer") return null;

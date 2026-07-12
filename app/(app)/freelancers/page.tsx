@@ -36,7 +36,7 @@ export default async function FreelancersPage({
     : [];
 
   // If a gig is selected, run AI match RPC to get ranked scores
-  let matchScores: Record<string, number> = {};
+  const matchScores: Record<string, number> = {};
   if (gig_id) {
     const { data: matched } = await supabase.rpc("match_users_for_gig", {
       p_gig_id: gig_id,
