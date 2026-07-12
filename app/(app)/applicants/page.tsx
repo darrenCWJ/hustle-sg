@@ -49,10 +49,21 @@ function sc(status: string) {
   return STATUS_CONFIG[status] ?? STATUS_CONFIG.applied;
 }
 
+const FILTERABLE_STATUSES = [
+  "applied",
+  "interviewing",
+  "shortlisted",
+  "offered",
+  "hired",
+  "completed",
+] as const;
+
+const PAGE_SIZE = 100;
+
 export default async function ApplicantsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ gig?: string }>;
+  searchParams: Promise<{ gig?: string; status?: string; q?: string; page?: string; sort?: string }>;
 }) {
   const supabase = await createClient();
   const {
@@ -60,19 +71,31 @@ export default async function ApplicantsPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/singpass?next=/applicants");
 
-  const { gig: filterGigId } = await searchParams;
+  const params = await searchParams;
+  const filterGigId = params.gig;
+  const filterStatus = FILTERABLE_STATUSES.includes(params.status as never)
+    ? (params.status as (typeof FILTERABLE_STATUSES)[number])
+    : undefined;
+  const searchQuery = (params.q ?? "").trim().toLowerCase();
+  const sortOldest = params.sort === "oldest";
+  const page = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
 
-  // All applications across all gigs this employer posted
-  const { data: apps } = await supabase
+  // Real triage (Phase 3.5): status filter + gig filter + pagination happen in
+  // the query, so large pipelines page correctly instead of capping at 200.
+  let query = supabase
     .from("applications")
     .select(
       `id, status, created_at, cover_note,
        gigs!inner(id, title, status, employer_id),
        applicant:profiles!applications_applicant_id_fkey(id, handle, display_name, headline, singpass_verified_at)`,
+      { count: "exact" },
     )
-    .eq("gigs.employer_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(200);
+    .eq("gigs.employer_id", user.id);
+  if (filterStatus) query = query.eq("status", filterStatus);
+  if (filterGigId) query = query.eq("gig_id", filterGigId);
+  const { data: apps, count: totalCount } = await query
+    .order("created_at", { ascending: sortOldest })
+    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
   const myGigs = await supabase
     .from("gigs")
@@ -80,8 +103,35 @@ export default async function ApplicantsPage({
     .eq("employer_id", user.id)
     .order("created_at", { ascending: false });
 
-  const applications = apps ?? [];
+  // Free-text search applies to the loaded page (name / handle / gig title).
+  const applications = (apps ?? []).filter((a) => {
+    if (!searchQuery) return true;
+    const applicant = a.applicant as any;
+    const gig = a.gigs as any;
+    return (
+      String(applicant?.display_name ?? "").toLowerCase().includes(searchQuery) ||
+      String(applicant?.handle ?? "").toLowerCase().includes(searchQuery) ||
+      String(gig?.title ?? "").toLowerCase().includes(searchQuery)
+    );
+  });
   const openGigs = (myGigs.data ?? []).filter((g) => g.status === "open");
+  const totalPages = Math.max(1, Math.ceil((totalCount ?? 0) / PAGE_SIZE));
+
+  // Preserve the other filters when building any filter/sort/page link.
+  const buildHref = (overrides: Record<string, string | undefined>) => {
+    const next = new URLSearchParams();
+    const merged: Record<string, string | undefined> = {
+      gig: filterGigId,
+      status: filterStatus,
+      q: params.q?.trim() || undefined,
+      sort: sortOldest ? "oldest" : undefined,
+      page: undefined, // filter changes reset pagination unless overridden
+      ...overrides,
+    };
+    for (const [k, v] of Object.entries(merged)) if (v) next.set(k, v);
+    const qs = next.toString();
+    return qs ? `/applicants?${qs}` : "/applicants";
+  };
 
   // Ratings the employer has already submitted
   const appIds = applications.map((a) => a.id);
@@ -114,12 +164,33 @@ export default async function ApplicantsPage({
     byGig.get(gig.id)!.apps.push(a);
   }
 
+  // Pill counts cover the whole (gig-scoped) pipeline, not just this page.
+  const countFor = async (status?: string) => {
+    let cq = supabase
+      .from("applications")
+      .select("id, gigs!inner(employer_id)", { count: "exact", head: true })
+      .eq("gigs.employer_id", user.id);
+    if (status) cq = cq.eq("status", status);
+    if (filterGigId) cq = cq.eq("gig_id", filterGigId);
+    const { count } = await cq;
+    return count ?? 0;
+  };
+  const [allCount, appliedCount, interviewingCount, shortlistedCount, hiredCount, completedCount] =
+    await Promise.all([
+      countFor(),
+      countFor("applied"),
+      countFor("interviewing"),
+      countFor("shortlisted"),
+      countFor("hired"),
+      countFor("completed"),
+    ]);
   const counts = {
-    all: applications.length,
-    applied: applications.filter((a) => a.status === "applied").length,
-    interviewing: applications.filter((a) => a.status === "interviewing").length,
-    shortlisted: applications.filter((a) => a.status === "shortlisted").length,
-    hired: applications.filter((a) => a.status === "hired").length,
+    all: allCount,
+    applied: appliedCount,
+    interviewing: interviewingCount,
+    shortlisted: shortlistedCount,
+    hired: hiredCount,
+    completed: completedCount,
   };
 
   return (
@@ -176,17 +247,17 @@ export default async function ApplicantsPage({
         </Link>
       </header>
 
-      {/* Status summary pills */}
+      {/* Status filters (Phase 3.5: real filters, not static counters) */}
       <div
         style={{
           display: "flex",
           gap: 10,
-          marginBottom: 32,
+          marginBottom: 16,
           flexWrap: "wrap",
         }}
       >
         {[
-          { key: "all", label: "All", count: counts.all },
+          { key: undefined, label: "All", count: counts.all },
           { key: "applied", label: "Applied", count: counts.applied },
           {
             key: "interviewing",
@@ -199,69 +270,141 @@ export default async function ApplicantsPage({
             count: counts.shortlisted,
           },
           { key: "hired", label: "Hired", count: counts.hired },
-        ].map((s) => (
-          <span
-            key={s.key}
-            style={{
-              padding: "7px 16px",
-              borderRadius: 999,
-              border: "1px solid var(--color-line)",
-              fontSize: 13,
-              fontWeight: 600,
-              background: "var(--color-surface-raised)",
-              color: "var(--color-ink)",
-            }}
-          >
-            {s.label}
-            <span
+          { key: "completed", label: "Completed", count: counts.completed },
+        ].map((s) => {
+          const isActive = filterStatus === s.key;
+          return (
+            <Link
+              key={s.label}
+              href={buildHref({ status: s.key })}
+              aria-current={isActive ? "true" : undefined}
               style={{
-                marginLeft: 8,
-                fontFamily: "var(--font-mono)",
-                fontSize: 11,
-                color: "var(--color-ink-soft)",
+                padding: "7px 16px",
+                borderRadius: 999,
+                border: `1px solid ${isActive ? "var(--color-ink)" : "var(--color-line)"}`,
+                fontSize: 13,
+                fontWeight: 600,
+                background: isActive ? "var(--color-ink)" : "var(--color-surface-raised)",
+                color: isActive ? "var(--color-surface)" : "var(--color-ink)",
+                textDecoration: "none",
               }}
             >
-              {s.count}
-            </span>
-          </span>
-        ))}
+              {s.label}
+              <span
+                style={{
+                  marginLeft: 8,
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 11,
+                  color: isActive ? "var(--color-surface)" : "var(--color-ink-soft)",
+                  opacity: isActive ? 0.75 : 1,
+                }}
+              >
+                {s.count}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Search + sort */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 32, flexWrap: "wrap", alignItems: "center" }}>
+        <form method="get" action="/applicants" style={{ display: "flex", gap: 8, margin: 0, flex: 1, minWidth: 260 }}>
+          {filterGigId && <input type="hidden" name="gig" value={filterGigId} />}
+          {filterStatus && <input type="hidden" name="status" value={filterStatus} />}
+          {sortOldest && <input type="hidden" name="sort" value="oldest" />}
+          <label htmlFor="applicant-search" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>
+            Search applicants
+          </label>
+          <input
+            id="applicant-search"
+            type="search"
+            name="q"
+            defaultValue={params.q ?? ""}
+            placeholder="Search by name, handle or gig title…"
+            style={{
+              flex: 1,
+              padding: "9px 16px",
+              borderRadius: 999,
+              border: "1px solid var(--color-line)",
+              background: "var(--color-surface)",
+              color: "var(--color-ink)",
+              fontSize: 13.5,
+            }}
+          />
+          <button
+            type="submit"
+            style={{ padding: "9px 18px", borderRadius: 999, border: "none", background: "var(--color-ink)", color: "var(--color-surface)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+          >
+            Search
+          </button>
+        </form>
+        <Link
+          href={buildHref({ sort: sortOldest ? undefined : "oldest", page: params.page })}
+          style={{ fontSize: 12.5, color: "var(--color-ink-soft)", fontWeight: 600, whiteSpace: "nowrap" }}
+        >
+          {sortOldest ? "↑ Oldest first" : "↓ Newest first"}
+        </Link>
       </div>
 
       {applications.length === 0 ? (
-        <div
-          style={{
-            padding: 80,
-            borderRadius: 24,
-            border: "1px dashed var(--color-line)",
-            textAlign: "center",
-          }}
-        >
-          <p
+        counts.all === 0 ? (
+          <div
             style={{
-              fontFamily: "var(--font-display)",
-              fontSize: 28,
-              margin: "0 0 10px",
+              padding: 80,
+              borderRadius: 24,
+              border: "1px dashed var(--color-line)",
+              textAlign: "center",
             }}
           >
-            No applicants yet.
-          </p>
-          <p style={{ color: "var(--color-ink-soft)", fontSize: 14, margin: "0 0 24px" }}>
-            Post an open assignment to start receiving applications.
-          </p>
-          <Link
-            href="/gigs/new"
+            <p
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: 28,
+                margin: "0 0 10px",
+              }}
+            >
+              No applicants yet.
+            </p>
+            <p style={{ color: "var(--color-ink-soft)", fontSize: 14, margin: "0 0 24px" }}>
+              Post an open assignment to start receiving applications.
+            </p>
+            <Link
+              href="/gigs/new"
+              style={{
+                padding: "10px 24px",
+                borderRadius: 999,
+                background: "var(--color-ink)",
+                color: "var(--color-surface)",
+                fontWeight: 600,
+                fontSize: 14,
+              }}
+            >
+              Post an assignment →
+            </Link>
+          </div>
+        ) : (
+          <div
             style={{
-              padding: "10px 24px",
-              borderRadius: 999,
-              background: "var(--color-ink)",
-              color: "var(--color-surface)",
-              fontWeight: 600,
-              fontSize: 14,
+              padding: 60,
+              borderRadius: 24,
+              border: "1px dashed var(--color-line)",
+              textAlign: "center",
             }}
           >
-            Post an assignment →
-          </Link>
-        </div>
+            <p style={{ fontFamily: "var(--font-display)", fontSize: 24, margin: "0 0 10px" }}>
+              No matches.
+            </p>
+            <p style={{ color: "var(--color-ink-soft)", fontSize: 14, margin: "0 0 20px" }}>
+              Nothing matches this {searchQuery ? "search" : "filter"} — try widening it.
+            </p>
+            <Link
+              href="/applicants"
+              style={{ fontSize: 13, fontWeight: 600, color: "var(--color-ink)", textDecoration: "underline" }}
+            >
+              Clear filters
+            </Link>
+          </div>
+        )
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
           {filterGigId && byGig.has(filterGigId) && (
@@ -547,6 +690,38 @@ export default async function ApplicantsPage({
               </div>
             </section>
           ))}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <nav
+              aria-label="Applicant pages"
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, paddingTop: 8 }}
+            >
+              {page > 1 ? (
+                <Link
+                  href={buildHref({ page: String(page - 1) })}
+                  style={{ padding: "8px 18px", borderRadius: 999, border: "1px solid var(--color-line)", fontSize: 13, fontWeight: 600 }}
+                >
+                  ← Previous
+                </Link>
+              ) : (
+                <span />
+              )}
+              <span style={{ fontSize: 12.5, color: "var(--color-ink-mute)", fontFamily: "var(--font-mono)" }}>
+                Page {page} of {totalPages} · {totalCount ?? 0} total
+              </span>
+              {page < totalPages ? (
+                <Link
+                  href={buildHref({ page: String(page + 1) })}
+                  style={{ padding: "8px 18px", borderRadius: 999, border: "1px solid var(--color-line)", fontSize: 13, fontWeight: 600 }}
+                >
+                  Next →
+                </Link>
+              ) : (
+                <span />
+              )}
+            </nav>
+          )}
         </div>
       )}
     </main>
