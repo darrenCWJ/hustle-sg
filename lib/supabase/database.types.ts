@@ -531,6 +531,7 @@ export type Database = {
           handle: string
           headline: string | null
           id: string
+          is_admin: boolean
           lat: number | null
           lon: number | null
           nric_hash: string | null
@@ -547,6 +548,7 @@ export type Database = {
           handle: string
           headline?: string | null
           id: string
+          is_admin?: boolean
           lat?: number | null
           lon?: number | null
           nric_hash?: string | null
@@ -563,6 +565,7 @@ export type Database = {
           handle?: string
           headline?: string | null
           id?: string
+          is_admin?: boolean
           lat?: number | null
           lon?: number | null
           nric_hash?: string | null
