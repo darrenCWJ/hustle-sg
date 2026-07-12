@@ -16,7 +16,6 @@ export async function decideApplication(
   const { data, error } = await supabase.rpc("decide_application", {
     p_app_id:   applicationId,
     p_decision: decision,
-    p_actor_id: user.id,
   });
 
   if (error) return { error: error.message };

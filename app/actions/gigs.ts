@@ -16,7 +16,6 @@ export async function acceptInstantGig(gigId: string): Promise<{ ok: boolean; er
 
   const { data, error } = await supabase.rpc("accept_instant_gig", {
     p_gig_id:  gigId,
-    p_user_id: user.id,
   });
 
   if (error) return { ok: false, error: error.message };
