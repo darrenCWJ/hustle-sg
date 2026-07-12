@@ -4,19 +4,24 @@ import { createServiceClient } from "@/lib/supabase/server";
 export default async function AdminOverviewPage() {
   const service = createServiceClient();
 
-  const [openReports, reviewingReports, pendingCerts] = await Promise.all([
+  const [openReports, reviewingReports, pendingCerts, openDisputes] = await Promise.all([
     service.from("reports").select("id", { count: "exact", head: true }).eq("status", "open"),
     service.from("reports").select("id", { count: "exact", head: true }).eq("status", "under_review"),
     service
       .from("certifications")
       .select("id", { count: "exact", head: true })
       .eq("verification_status", "pending"),
+    service
+      .from("disputes")
+      .select("id", { count: "exact", head: true })
+      .neq("status", "resolved"),
   ]);
 
   const cards = [
     { label: "Open reports", count: openReports.count ?? 0, href: "/admin/reports" },
     { label: "Under review", count: reviewingReports.count ?? 0, href: "/admin/reports" },
     { label: "Certs awaiting verification", count: pendingCerts.count ?? 0, href: "/admin/certs" },
+    { label: "Active disputes", count: openDisputes.count ?? 0, href: "/admin/disputes" },
   ];
 
   return (

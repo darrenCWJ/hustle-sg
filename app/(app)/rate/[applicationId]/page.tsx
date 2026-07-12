@@ -93,6 +93,13 @@ export default async function RatePage({
           isEmployer={isEmployer}
         />
       )}
+
+      <p style={{ fontSize: 12.5, color: "var(--color-ink-mute)", margin: "24px 0 0", textAlign: "center" }}>
+        Had a problem with this gig?{" "}
+        <a href={`/disputes/${applicationId}`} style={{ color: "var(--color-ink-soft)", fontWeight: 600 }}>
+          Open a dispute
+        </a>
+      </p>
     </main>
   );
 }

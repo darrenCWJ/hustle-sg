@@ -252,6 +252,57 @@ export type Database = {
         }
         Relationships: []
       }
+      disputes: {
+        Row: {
+          application_id: string
+          created_at: string
+          details: string
+          id: string
+          opened_by: string
+          reason: string
+          resolution_note: string | null
+          resolved_at: string | null
+          status: string
+        }
+        Insert: {
+          application_id: string
+          created_at?: string
+          details?: string
+          id?: string
+          opened_by: string
+          reason: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          status?: string
+        }
+        Update: {
+          application_id?: string
+          created_at?: string
+          details?: string
+          id?: string
+          opened_by?: string
+          reason?: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disputes_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disputes_opened_by_fkey"
+            columns: ["opened_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gigs: {
         Row: {
           applications_close_at: string | null

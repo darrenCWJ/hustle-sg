@@ -475,7 +475,13 @@ export default async function ApplicationsPage() {
                       )}
                     </div>
                   ) : a.status === "hired" ? (
-                    <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                    <div style={{ display: "flex", gap: 8, flexShrink: 0, alignItems: "center" }}>
+                      <Link
+                        href={`/disputes/${a.id}`}
+                        style={{ fontSize: 11.5, color: "var(--color-ink-mute)", fontWeight: 600 }}
+                      >
+                        Report issue
+                      </Link>
                       {gig?.id && (
                         <Link
                           href={`/gigs/${gig.id}`}
