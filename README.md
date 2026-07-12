@@ -96,7 +96,10 @@ app/
 ├── (app)/disputes/              Open + track disputes
 ├── (app)/interviews|rate/       Async video interviews, double-blind reviews
 ├── (admin)/admin/               Reports, cert review, disputes, errors (role-gated)
-├── (mobile)/m/                  Mobile surface (shares domain logic with desktop)
+├── (mobile)/m/                  Mobile surface (shares domain logic with desktop).
+│                                Phones are auto-redirected here by middleware
+│                                (UA/client-hint detection; "Use desktop site"
+│                                on /m/profile opts out via cookie)
 └── api/                         push/subscribe, storage/sign (Zod + same-origin)
 
 lib/

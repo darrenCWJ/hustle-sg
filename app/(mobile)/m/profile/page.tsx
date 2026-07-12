@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { computeTrustScore } from "@/lib/trust/score";
+import { switchToDesktopSite } from "@/app/actions/view-mode";
 import { MobilePushToggle } from "./MobilePushToggle";
 
 export default async function MobileProfilePage() {
@@ -360,6 +361,27 @@ export default async function MobileProfilePage() {
         >
           Edit profile ↗
         </Link>
+        {/* Opt out of the phone → /m auto-redirect (middleware.ts) */}
+        <form action={switchToDesktopSite}>
+          <button
+            type="submit"
+            style={{
+              display: "block",
+              width: "100%",
+              padding: "14px 20px",
+              borderRadius: 14,
+              background: "transparent",
+              border: "1px solid var(--color-line-soft)",
+              color: "var(--color-ink-mute)",
+              fontSize: 13,
+              fontWeight: 500,
+              textAlign: "center",
+              cursor: "pointer",
+            }}
+          >
+            Use desktop site
+          </button>
+        </form>
       </div>
     </div>
   );

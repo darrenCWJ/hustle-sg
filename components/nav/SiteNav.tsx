@@ -1,6 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { VIEW_COOKIE } from "@/lib/device/mobile-routes";
+import { switchToMobileSite } from "@/app/actions/view-mode";
 import { NavLinks } from "./NavLinks";
 import { UserMenu } from "./UserMenu";
 
@@ -9,6 +12,8 @@ export async function SiteNav() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const jar = await cookies();
+  const optedOutOfMobile = jar.get(VIEW_COOKIE)?.value === "desktop";
 
   const [profileRes, notifsRes] = await Promise.all([
     user
@@ -31,6 +36,25 @@ export async function SiteNav() {
           <span style={{ color: "#1a5dc0", textDecoration: "underline", cursor: "pointer", marginLeft: 4, fontSize: 11 }}>
             How to identify ▾
           </span>
+          {/* Only shown after "Use desktop site" — undoes the opt-out */}
+          {optedOutOfMobile && (
+            <form action={switchToMobileSite} style={{ marginLeft: "auto" }}>
+              <button
+                type="submit"
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#1a5dc0",
+                  textDecoration: "underline",
+                  fontSize: 11,
+                  cursor: "pointer",
+                  padding: 0,
+                }}
+              >
+                Switch to mobile site
+              </button>
+            </form>
+          )}
         </div>
       </div>
 
