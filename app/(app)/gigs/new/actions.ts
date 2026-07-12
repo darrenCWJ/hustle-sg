@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { regenerateGigEmbedding } from "@/lib/ai/match";
 import { notifyMatchedFreelancers } from "@/lib/push/notify";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/security/rate-limit";
 
 const gigSchema = z.object({
   title: z.string().min(3).max(160),
@@ -40,6 +41,16 @@ export async function postGig(formData: FormData) {
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   if (profile?.role === "freelancer") return { ok: false as const, error: "Switch your role to Employer to post assignments." };
+
+  // Posting triggers a paid embedding call + push fan-out; throttle per user.
+  const allowed = await checkRateLimit(
+    `gig-post:${user.id}`,
+    RATE_LIMITS.gigPost.limit,
+    RATE_LIMITS.gigPost.windowSeconds,
+  );
+  if (!allowed) {
+    return { ok: false as const, error: "You're posting too quickly. Please try again later." };
+  }
 
   const parsed = gigSchema.safeParse({
     title: formData.get("title"),
@@ -187,6 +198,20 @@ export async function suggestSkills(
   description: string,
 ): Promise<string[]> {
   if (!title.trim() && !description.trim()) return [];
+
+  // Requires auth + throttle: this hits a paid Claude endpoint (finding M4).
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const allowed = await checkRateLimit(
+    `skill-suggest:${user.id}`,
+    RATE_LIMITS.skillSuggest.limit,
+    RATE_LIMITS.skillSuggest.windowSeconds,
+  );
+  if (!allowed) return [];
+
+  if (!process.env.ANTHROPIC_API_KEY) return [];
   const Anthropic = (await import("@anthropic-ai/sdk")).default;
   const client = new Anthropic();
   const msg = await client.messages.create({

@@ -103,10 +103,23 @@ export async function closeGig(gigId: string) {
   return { ok: true as const };
 }
 
+const APPLICATION_STATUSES = [
+  "interviewing",
+  "shortlisted",
+  "offered",
+  "hired",
+  "rejected",
+] as const;
+
 export async function updateApplicationStatus(
   applicationId: string,
   status: "interviewing" | "shortlisted" | "offered" | "hired" | "rejected",
 ) {
+  // Server Action params are network-exposed; the TS union is erased at runtime.
+  if (!APPLICATION_STATUSES.includes(status)) {
+    return { ok: false as const, error: "Invalid status" };
+  }
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false as const, error: "Not authenticated" };

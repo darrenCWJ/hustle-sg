@@ -1,13 +1,25 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+
+const ratingSchema = z.object({
+  applicationId: z.string().uuid(),
+  stars: z.number().int().min(1).max(5),
+  review: z.string().max(1000),
+});
 
 export async function submitRating(
   applicationId: string,
   stars: number,
   review: string,
 ): Promise<{ error?: string }> {
+  const parsed = ratingSchema.safeParse({ applicationId, stars, review });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid rating" };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

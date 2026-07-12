@@ -1,9 +1,24 @@
 "use server";
 
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { notifyInstantGigPosted } from "@/lib/push/notify";
 import { buildGigEmbeddingText, generateEmbedding } from "@/lib/ai/embeddings";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/security/rate-limit";
+
+const instantGigSchema = z.object({
+  title: z.string().trim().min(1, "Title is required").max(200),
+  description: z.string().trim().min(1, "Description is required").max(4000),
+  skills: z.array(z.string().trim().min(1)).max(20),
+  urgency: z.enum(["now", "today", "weekend"]),
+  location: z.string().trim().max(200),
+  lat: z.number().min(-90).max(90).nullable(),
+  lon: z.number().min(-180).max(180).nullable(),
+  budgetCents: z.number().int().min(0).max(100_000_000),
+  budgetKind: z.enum(["fixed", "hourly"]),
+  category: z.string().trim().max(60),
+});
 
 export interface InstantGigRow {
   id: string;
@@ -50,7 +65,10 @@ export async function fetchTodayInstantGigs(userId?: string): Promise<InstantGig
     .order("created_at", { ascending: false })
     .limit(30);
 
-  if (error) return [];
+  if (error) {
+    console.error("[instant] fetchTodayInstantGigs", error);
+    return [];
+  }
 
   // Fetch employer display names
   const employerIds = [...new Set(gigs.map((g) => g.employer_id))];
@@ -81,12 +99,14 @@ export async function fetchTodayInstantGigs(userId?: string): Promise<InstantGig
     id: g.id,
     title: g.title,
     description: g.description ?? "",
-    location: g.location,
+    location: g.location ?? "",
     lat: g.lat,
     lon: g.lon,
-    budget_cents: g.budget_cents,
-    budget_kind: g.budget_kind,
-    instant_urgency: g.instant_urgency,
+    budget_cents: g.budget_cents ?? 0,
+    budget_kind: (g.budget_kind === "hourly" ? "hourly" : "fixed") as "fixed" | "hourly",
+    instant_urgency: (g.instant_urgency === "now" || g.instant_urgency === "weekend"
+      ? g.instant_urgency
+      : "today") as "now" | "today" | "weekend",
     skills_required: g.skills_required ?? [],
     duration_label: g.duration_label ?? null,
     hours_required: g.hours_required ?? null,
@@ -118,24 +138,38 @@ export async function createInstantGig(formData: FormData): Promise<{ ok: boolea
     return { ok: false, error: "Only employers can post instant gigs." };
   }
 
-  const title = formData.get("title") as string;
-  const description = formData.get("description") as string;
-  const skillsRaw = formData.get("skills") as string;
-  const urgency = formData.get("urgency") as "now" | "today" | "weekend";
-  const location = formData.get("location") as string;
-  const lat = formData.get("lat") ? Number(formData.get("lat")) : null;
-  const lon = formData.get("lon") ? Number(formData.get("lon")) : null;
-  const budgetCents = Math.round(Number(formData.get("budget_cents") ?? 0));
-  const budgetKind = (formData.get("budget_kind") ?? "fixed") as "fixed" | "hourly";
-  const category = (formData.get("category") ?? "other") as string;
-
-  if (!title?.trim() || !description?.trim()) {
-    return { ok: false, error: "Title and description are required." };
+  // Posting triggers a paid embedding call + push fan-out; throttle per user.
+  const allowed = await checkRateLimit(
+    `gig-post:${user.id}`,
+    RATE_LIMITS.gigPost.limit,
+    RATE_LIMITS.gigPost.windowSeconds,
+  );
+  if (!allowed) {
+    return { ok: false, error: "You're posting too quickly. Please try again later." };
   }
 
-  const skills = skillsRaw
-    ? skillsRaw.split(",").map((s) => s.trim()).filter(Boolean)
-    : [];
+  const skillsRaw = String(formData.get("skills") ?? "");
+  const latRaw = formData.get("lat");
+  const lonRaw = formData.get("lon");
+
+  const parsed = instantGigSchema.safeParse({
+    title: String(formData.get("title") ?? ""),
+    description: String(formData.get("description") ?? ""),
+    skills: skillsRaw.split(",").map((s) => s.trim()).filter(Boolean),
+    urgency: formData.get("urgency") ?? "today",
+    location: String(formData.get("location") ?? ""),
+    lat: latRaw ? Number(latRaw) : null,
+    lon: lonRaw ? Number(lonRaw) : null,
+    budgetCents: Math.round(Number(formData.get("budget_cents") ?? 0)),
+    budgetKind: formData.get("budget_kind") ?? "fixed",
+    category: String(formData.get("category") ?? "other"),
+  });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const {
+    title, description, skills, urgency, location, lat, lon, budgetCents, budgetKind, category,
+  } = parsed.data;
 
   const startOffset = urgency === "now" ? 0 : urgency === "today" ? 4 : 48;
   const startAt = new Date(Date.now() + startOffset * 3600000).toISOString();
@@ -170,7 +204,9 @@ export async function createInstantGig(formData: FormData): Promise<{ ok: boolea
   if (error) return { ok: false, error: error.message };
 
   // Notify matched freelancers asynchronously (don't block UI)
-  notifyInstantGigPosted(gig.id).catch(() => {});
+  notifyInstantGigPosted(gig.id).catch((err) => {
+    console.error("[instant] notifyInstantGigPosted", err);
+  });
 
   return { ok: true, gigId: gig.id };
 }
