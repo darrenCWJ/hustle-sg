@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { saveAvailability } from "@/app/actions/availability";
+import { gigFitsAvailability } from "@/lib/availability/fit";
 
 export interface RecommendedGig {
   id: string;
@@ -106,9 +107,11 @@ function getGigDayCol(gig: RecommendedGig): number | null {
 }
 
 function gigMatchesSchedule(gig: RecommendedGig, slots: number[][]): boolean {
-  const col = getGigDayCol(gig);
-  if (col === null) return slots.flat().some(v => v === 1);
-  return slots[col]?.some(v => v === 1) ?? false;
+  // Shared hour/duration-aware fit (lib/availability/fit.ts) — the same logic
+  // the feed badge and push targeting use, so all three surfaces agree.
+  // The grid stores 2 for booked slots; the fit helper expects 1 = free.
+  const freeOnly = slots.map((day) => day.map((v) => (v === 1 ? 1 : 0)));
+  return gigFitsAvailability(freeOnly, gig);
 }
 
 function formatBudget(cents: number | null, kind: string): string {

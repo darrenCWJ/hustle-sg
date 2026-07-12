@@ -32,7 +32,7 @@ Singapore-first gig platform for verified side hustlers. AI + distance-matched g
 | Double-blind reviews | A rating stays hidden until both parties submit or 14 days pass (enforced in RLS). Either party can mark a gig completed. Daily pg_cron reminders |
 | Lifecycle controls | Withdraw application, edit/delete gig (delete only with zero applicants), honest close outcomes (filled vs cancelled) |
 | Rehire & repost | Direct offers to previous hires when posting (rehire selector) or from the applicants page; **↻ Repost** copies a past gig into the form (fresh timing/deadline required) |
-| Availability calendar | Weekly grid on the worker dashboard; the feed marks gigs that **fit your schedule** (day + working-window overlap) with a badge and filter |
+| Availability calendar | Weekly grid on the worker dashboard; the feed marks + boosts gigs that **fit your schedule**; push alerts skip freelancers whose calendar says they're busy |
 | Applicant triage | Status filters, search, sort, and true DB pagination on the employer pipeline |
 | Trust & safety | Report users/gigs, block users (hidden across matching, lists, applying, messaging), disputes with a state machine |
 | Job authenticity | Every gig shows the employer's real track record (gigs filled, distinct hires, worker rating, member since) — first-time posters are flagged honestly |
@@ -54,7 +54,7 @@ cp .env.example .env.local   # fill in every variable — comments explain each
 
 ### Database
 
-Migrations live in `supabase/migrations/` (`0001` → `0041`) and cover schema, RLS, pgvector matching, storage bucket limits, rate limiting, trust & safety tables, messaging, instrumentation, and the pg_cron reminder job.
+Migrations live in `supabase/migrations/` (`0001` → `0042`) and cover schema, RLS, pgvector matching, storage bucket limits, rate limiting, trust & safety tables, messaging, instrumentation, and the pg_cron reminder job.
 
 ```bash
 npx supabase db push

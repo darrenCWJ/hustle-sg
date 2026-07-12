@@ -41,6 +41,23 @@ export async function recordFraudVerdict(input: {
     return { ok: false, error: "Could not save the verdict" };
   }
 
+  // Transparency: confirming has real consequences (ratings excluded, pair
+  // suspended from matching each other) — both parties are told, with an
+  // appeal path. Marking legitimate lifts everything, so no notice needed.
+  if (input.verdict === "confirmed") {
+    await service.from("notifications").insert(
+      [input.employerId, input.workerId].map((userId) => ({
+        user_id: userId,
+        kind: "application_status_changed",
+        title: "A review found unusual activity on your account",
+        body:
+          "Ratings between you and one counterparty no longer count toward public scores, and you won't be matched with each other. If you believe this is a mistake, use the Report button on your own profile with reason 'Something else' and an admin will re-review.",
+        link: "/dashboard",
+        data: { kind: "fraud_confirmed" },
+      })),
+    );
+  }
+
   revalidatePath("/admin/fraud");
   return { ok: true };
 }

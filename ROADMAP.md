@@ -19,18 +19,20 @@
 
 ## Next (high value, no external dependencies)
 
-- [ ] **E2E money-path test** — Playwright: sign in → apply → record interview
-  → shortlist → message → hire → complete → double-blind rate. Locks the core
-  loop against regressions. (Top engineering priority.)
-- [ ] **Availability-aware push targeting** — instant-gig alerts only to
-  freelancers whose calendar actually fits (helper exists; wire into
-  `notifyInstantGigPosted`), plus a ranking boost for fitting gigs.
-- [ ] **Dashboard calendar consistency** — adopt the shared hour/duration fit
-  helper in `DashboardCalendar` (still uses its own day-level check).
-- [ ] **Repost polish** — carry recurrence days + working window (not dates)
-  into reposts.
-- [ ] **Admin fraud actions, phase 2** — one-click "suspend pair matching"
-  (exclude a confirmed pair from match functions), notify parties, appeal path.
+- [x] **E2E money-path test** — `tests/e2e/money-path.spec.ts`: post → apply →
+  shortlist → message → hire → complete → double-blind mutual rate, driven
+  through the real UI with two browser contexts. Passing (~30s).
+- [x] **Availability-aware push targeting** — instant AND regular gig alerts
+  skip freelancers whose calendar says they're busy (users without a calendar
+  are never penalised); feed ranking gives fitting gigs a small ordering boost.
+- [x] **Dashboard calendar consistency** — `DashboardCalendar` now uses the
+  shared hour/duration fit helper, so calendar, feed badge and push targeting
+  all agree.
+- [x] **Repost polish** — reposts carry the schedule *shape* (days, working
+  window, duration, cadence) but never dates or deadlines.
+- [x] **Admin fraud actions, phase 2** — confirming a pair suspends them from
+  matching with each other (migration 0042, lifted automatically if re-marked
+  legitimate), and both parties are notified with an appeal path.
 
 ## Later (needs data, accounts, or product decisions)
 

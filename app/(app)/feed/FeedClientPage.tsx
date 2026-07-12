@@ -55,7 +55,13 @@ export function FeedClientPage({ matches, initialSavedIds = [], hasAvailability 
     else if (filter === "saved") list = list.filter((m) => saved.has(m.gig_id));
     else if (filter === "fits") list = list.filter((m) => m.fits_schedule === true);
     if (sort === "budget") list = [...list].sort((a, b) => (b.budget_cents ?? 0) - (a.budget_cents ?? 0));
-    else list = [...list].sort((a, b) => b.score - a.score);
+    // Ranking boost: schedule-fitting gigs edge ahead of near-equal matches
+    // (displayed match % stays the raw score — the boost only orders).
+    else
+      list = [...list].sort(
+        (a, b) =>
+          b.score + (b.fits_schedule === true ? 0.05 : 0) - (a.score + (a.fits_schedule === true ? 0.05 : 0)),
+      );
     return list;
   }, [matches, filter, sort, saved]);
 

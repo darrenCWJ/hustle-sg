@@ -43,11 +43,19 @@ export default async function NewGigPage({
     budgetKind: string;
     headcount: number;
     questions: string;
+    timing: {
+      durationLabel: string | null;
+      startTime: string | null;
+      endTime: string | null;
+      daysOfWeek: number[] | null;
+      hoursRequired: number | null;
+      recurrenceCadence: string | null;
+    };
   } | null = null;
   if (from && /^[0-9a-f-]{36}$/i.test(from)) {
     const { data: sourceGig } = await supabase
       .from("gigs")
-      .select("employer_id, title, description, skills_required, category, location, budget_cents, budget_kind, headcount")
+      .select("employer_id, title, description, skills_required, category, location, budget_cents, budget_kind, headcount, duration_label, start_time, end_time, days_of_week, hours_required, recurrence_cadence")
       .eq("id", from)
       .maybeSingle();
     if (sourceGig && sourceGig.employer_id === user.id) {
@@ -66,6 +74,14 @@ export default async function NewGigPage({
         budgetKind: sourceGig.budget_kind,
         headcount: sourceGig.headcount ?? 1,
         questions: (qs ?? []).map((q) => q.prompt).join("\n"),
+        timing: {
+          durationLabel: sourceGig.duration_label,
+          startTime: sourceGig.start_time,
+          endTime: sourceGig.end_time,
+          daysOfWeek: sourceGig.days_of_week,
+          hoursRequired: sourceGig.hours_required,
+          recurrenceCadence: sourceGig.recurrence_cadence,
+        },
       };
     }
   }
@@ -97,8 +113,8 @@ export default async function NewGigPage({
             Reposting &ldquo;{source.title}&rdquo;
           </p>
           <p className="text-xs text-ink-soft mt-1 m-0">
-            Details copied from your previous gig. Set fresh timing and an
-            application deadline below — those aren&apos;t carried over.
+            Details copied from your previous gig. The schedule shape (days, hours) is carried
+            over — set fresh dates and an application deadline below.
           </p>
         </div>
       )}
@@ -221,7 +237,7 @@ export default async function NewGigPage({
 
         <div className="rounded-xl border border-line bg-surface-raised p-5">
           <p className="text-xs uppercase tracking-widest text-ink-soft mb-4">Timing</p>
-          <GigTimingFields />
+          <GigTimingFields initial={source?.timing} />
         </div>
 
         <GigFormSettings />

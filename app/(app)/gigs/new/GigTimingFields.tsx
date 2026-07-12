@@ -28,23 +28,36 @@ interface Milestone { name: string; due_date: string }
 
 type EndType = "duration" | "end_date";
 
-export function GigTimingFields() {
+export interface GigTimingInitial {
+  durationLabel?: string | null;
+  startTime?: string | null; // "HH:MM" or "HH:MM:SS"
+  endTime?: string | null;
+  daysOfWeek?: number[] | null;
+  hoursRequired?: number | null;
+  recurrenceCadence?: string | null;
+}
+
+const toHHMM = (t: string | null | undefined) => (t ? t.slice(0, 5) : "");
+
+export function GigTimingFields({ initial }: { initial?: GigTimingInitial }) {
+  // Reposts carry the SHAPE of the schedule (days, working window, duration)
+  // but never dates/deadlines — a new run of the job happens on new dates.
   const [asap, setAsap]           = useState(true);
   const [endType, setEndType]     = useState<EndType>("duration");
-  const [duration, setDuration]   = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime]     = useState("");
-  const [daysOfWeek, setDaysOfWeek] = useState<number[]>([]);
+  const [duration, setDuration]   = useState(initial?.durationLabel ?? "");
+  const [startTime, setStartTime] = useState(toHHMM(initial?.startTime));
+  const [endTime, setEndTime]     = useState(toHHMM(initial?.endTime));
+  const [daysOfWeek, setDaysOfWeek] = useState<number[]>(initial?.daysOfWeek ?? []);
 
   function toggleDay(day: number) {
     setDaysOfWeek(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
   }
 
   // Less-than-a-day extras
-  const [hours, setHours]         = useState("");
+  const [hours, setHours]         = useState(initial?.hoursRequired ? String(initial.hoursRequired) : "");
 
   // Ongoing extras
-  const [cadence, setCadence]     = useState(CADENCE_OPTIONS[3]);
+  const [cadence, setCadence]     = useState(initial?.recurrenceCadence ?? CADENCE_OPTIONS[3]);
   const [ongoingUntil, setOngoingUntil] = useState("");
 
   // Project-based milestones

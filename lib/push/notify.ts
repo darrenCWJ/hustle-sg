@@ -1,5 +1,11 @@
 import webpush from "web-push";
 import { createServiceClient } from "@/lib/supabase/server";
+import {
+  gigFitsAvailability,
+  hasAnyAvailability,
+  hasScheduleSignal,
+  type GigTiming,
+} from "@/lib/availability/fit";
 
 const VAPID_PUBLIC = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
@@ -22,6 +28,34 @@ interface PushPayload {
   title: string;
   body: string;
   url: string;
+}
+
+/**
+ * Availability-aware targeting (ROADMAP.md): drop candidates whose marked
+ * calendar says they CAN'T do the gig. Users without a calendar are kept
+ * (never punish not filling it in), and gigs with no schedule shape skip the
+ * filter entirely.
+ */
+async function filterBySchedule(
+  candidates: { user_id: string; score: number }[],
+  timing: GigTiming,
+  service: ReturnType<typeof createServiceClient>,
+): Promise<{ user_id: string; score: number }[]> {
+  if (candidates.length === 0 || !hasScheduleSignal(timing)) return candidates;
+
+  const { data: avail } = await service
+    .from("user_availability")
+    .select("user_id, slots")
+    .in("user_id", candidates.map((c) => c.user_id));
+  const slotsByUser = new Map(
+    (avail ?? []).map((a) => [a.user_id, a.slots as unknown as number[][]]),
+  );
+
+  return candidates.filter((c) => {
+    const slots = slotsByUser.get(c.user_id);
+    if (!slots || !hasAnyAvailability(slots)) return true; // no calendar → keep
+    return gigFitsAvailability(slots, timing);
+  });
 }
 
 async function sendPushToUser(userId: string, payload: PushPayload, service: ReturnType<typeof createServiceClient>) {
@@ -58,7 +92,7 @@ export async function notifyInstantGigPosted(gigId: string): Promise<void> {
 
   const { data: gig } = await service
     .from("gigs")
-    .select("title, instant_urgency")
+    .select("title, instant_urgency, is_instant, days_of_week, start_time, end_time, starts_at, hours_required, duration_label")
     .eq("id", gigId)
     .single();
 
@@ -75,9 +109,10 @@ export async function notifyInstantGigPosted(gigId: string): Promise<void> {
 
   if (!matches?.length) return;
 
-  const qualified = (matches as { user_id: string; score: number }[])
-    .filter((m) => m.score >= INSTANT_MATCH_NOTIFY_THRESHOLD)
-    .slice(0, 8);
+  const scored = (matches as { user_id: string; score: number }[])
+    .filter((m) => m.score >= INSTANT_MATCH_NOTIFY_THRESHOLD);
+  // Urgent gigs must not ping people whose calendar says they're busy.
+  const qualified = (await filterBySchedule(scored, gig, service)).slice(0, 8);
 
   if (!qualified.length) return;
 
@@ -107,7 +142,7 @@ export async function notifyMatchedFreelancers(gigId: string): Promise<void> {
 
   const { data: gig } = await service
     .from("gigs")
-    .select("title, category")
+    .select("title, category, is_instant, instant_urgency, days_of_week, start_time, end_time, starts_at, hours_required, duration_label")
     .eq("id", gigId)
     .single();
 
@@ -120,9 +155,10 @@ export async function notifyMatchedFreelancers(gigId: string): Promise<void> {
 
   if (!matches?.length) return;
 
-  const qualified = (matches as { user_id: string; score: number }[]).filter(
+  const scored = (matches as { user_id: string; score: number }[]).filter(
     (m) => m.score >= GIG_MATCH_NOTIFY_THRESHOLD,
-  ).slice(0, 5);
+  );
+  const qualified = (await filterBySchedule(scored, gig, service)).slice(0, 5);
 
   if (!qualified.length) return;
 
