@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { logMatchEvent } from "@/lib/analytics/match-events";
 
 async function respondToOffer(appId: string, accept: boolean): Promise<void> {
   const supabase = await createClient();
@@ -28,6 +29,8 @@ async function respondToOffer(appId: string, accept: boolean): Promise<void> {
     .from("applications")
     .update({ status: accept ? "hired" : "rejected" })
     .eq("id", appId);
+
+  logMatchEvent({ gigId: app.gig_id, userId: user.id, event: accept ? "hire" : "reject" });
 
   const gig = app.gigs as any;
   if (gig?.employer_id) {
@@ -89,6 +92,8 @@ export async function withdrawApplication(appId: string): Promise<void> {
     console.error("[applications] withdrawApplication", error);
     return;
   }
+
+  logMatchEvent({ gigId: app.gig_id, userId: user.id, event: "withdraw" });
 
   const gig = app.gigs as unknown as { title: string; employer_id: string } | null;
   if (gig?.employer_id) {

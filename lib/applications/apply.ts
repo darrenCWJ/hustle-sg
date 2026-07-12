@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { isBlockedBetween } from "@/lib/safety/blocks";
+import { logMatchEvent } from "@/lib/analytics/match-events";
 
 export interface ApplyResult {
   ok: boolean;
@@ -93,6 +94,8 @@ export async function applyToGigCore(
     .select("id")
     .eq("gig_id", gigId)
     .limit(1);
+
+  logMatchEvent({ gigId, userId: user.id, event: "apply" });
 
   return {
     ok: true,

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { logMatchEvent } from "@/lib/analytics/match-events";
 
 const ratingSchema = z.object({
   applicationId: z.string().uuid(),
@@ -55,6 +56,9 @@ export async function submitRating(
   if (error?.code === "23505") return { error: "Already rated" };
   if (error) return { error: error.message };
 
+  // Instrumentation is keyed on the freelancer side of the pair.
+  logMatchEvent({ gigId: app.gig_id, userId: app.applicant_id, event: "rate" });
+
   revalidatePath("/applications");
   revalidatePath("/applicants");
   return {};
@@ -91,6 +95,8 @@ export async function markCompleted(applicationId: string): Promise<void> {
     console.error("[rate] markCompleted", error);
     return;
   }
+
+  logMatchEvent({ gigId: app.gig_id, userId: app.applicant_id, event: "complete" });
 
   // Prompt the other party to leave their (double-blind) review.
   const otherPartyId = isEmployer ? app.applicant_id : gig.employer_id;

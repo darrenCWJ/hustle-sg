@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getBlockedCounterparties } from "@/lib/safety/blocks";
 import { FreelancersClient } from "./FreelancersClient";
 
 export default async function FreelancersPage({
@@ -49,8 +50,14 @@ export default async function FreelancersPage({
     }
   }
 
+  // Blocked pairs don't see each other here either (matched surfaces already
+  // exclude them in SQL; this directory is a plain list).
+  const blocked = user ? await getBlockedCounterparties(user.id) : new Set<string>();
+
   // Flatten freelancers into a clean shape
-  const freelancers = (rawFreelancers ?? []).map((p) => {
+  const freelancers = (rawFreelancers ?? [])
+    .filter((p) => !blocked.has(p.id))
+    .map((p) => {
     const certs = (p.certifications as any[]) ?? [];
     const verifiedCerts = certs.filter((c) => c.verified);
     const allSkills = Array.from(

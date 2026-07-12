@@ -6,6 +6,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { applyToGigCore } from "@/lib/applications/apply";
 import { regenerateGigEmbedding } from "@/lib/ai/match";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/security/rate-limit";
+import { logMatchEvent, type MatchEvent } from "@/lib/analytics/match-events";
 
 export async function applyToGig(gigId: string, formData: FormData) {
   const supabase = await createClient();
@@ -204,6 +205,18 @@ export async function updateApplicationStatus(
         link: gigId ? `/gigs/${gigId}` : "/applications",
         data: { application_id: applicationId, status },
       });
+
+      // Phase 6 instrumentation: status transitions are match outcomes.
+      const eventByStatus: Partial<Record<string, MatchEvent>> = {
+        shortlisted: "shortlist",
+        offered: "offer",
+        hired: "hire",
+        rejected: "reject",
+      };
+      const event = eventByStatus[status];
+      if (event && gigId) {
+        logMatchEvent({ gigId, userId: appRow.applicant_id, event });
+      }
     }
   }
 

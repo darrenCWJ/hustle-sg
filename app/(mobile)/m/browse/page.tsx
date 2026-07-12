@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { getBlockedCounterparties } from "@/lib/safety/blocks";
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -33,10 +34,17 @@ export default async function MobileBrowsePage() {
     profileMap[p.id] = { name: p.display_name ?? "Employer", verified: !!p.singpass_verified_at };
   }
 
-  const gigs = (raw ?? []).map((g) => ({
-    ...g,
-    employer: profileMap[g.employer_id] ?? { name: "Employer", verified: false },
-  }));
+  // Blocked pairs don't see each other's gigs on the plain browse list either.
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const blocked = user ? await getBlockedCounterparties(user.id) : new Set<string>();
+
+  const gigs = (raw ?? [])
+    .filter((g) => !blocked.has(g.employer_id))
+    .map((g) => ({
+      ...g,
+      employer: profileMap[g.employer_id] ?? { name: "Employer", verified: false },
+    }));
 
   const CATEGORY_COLORS: Record<string, string> = {
     engineering: "#3b82f6",
