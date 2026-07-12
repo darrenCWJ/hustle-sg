@@ -5,9 +5,16 @@ const nextConfig = {
       {
         source: "/(.*)",
         headers: [
-          // Explicitly allow camera and microphone so production CDN/proxy
-          // layers don't block getUserMedia with a Permissions-Policy denial.
-          { key: "Permissions-Policy", value: "camera=*, microphone=*" },
+          // Allow camera/microphone for SAME-ORIGIN only (the async video
+          // recorder needs getUserMedia); previously "*" allowed any embedder.
+          { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=(self)" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=31536000; includeSubDomains",
+          },
         ],
       },
     ];

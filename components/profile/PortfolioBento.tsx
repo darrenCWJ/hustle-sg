@@ -1,5 +1,6 @@
 import type { PortfolioItem } from "@/lib/supabase/types";
 import { VideoPlayer } from "./VideoPlayer";
+import { safeHref } from "@/lib/security/url";
 
 const CELL_ROTATION = ["cell-lg tall", "cell-md", "cell-md", "cell-lg", "cell-md tall", "cell-md"];
 
@@ -26,11 +27,12 @@ export function PortfolioBento({ items }: { items: PortfolioItem[] }) {
             </div>
           );
         }
-        if (item.kind === "website" && item.external_url) {
+        const websiteHref = item.kind === "website" ? safeHref(item.external_url) : null;
+        if (websiteHref) {
           return (
             <a
               key={item.id}
-              href={item.external_url}
+              href={websiteHref}
               target="_blank"
               rel="noreferrer noopener"
               className={`${cls} rounded-card border border-line bg-surface-raised p-6 flex flex-col justify-between hover:border-ink transition group`}
@@ -45,7 +47,7 @@ export function PortfolioBento({ items }: { items: PortfolioItem[] }) {
                 )}
               </div>
               <p className="text-xs text-ink-soft mt-4 truncate group-hover:text-ink">
-                {new URL(item.external_url).hostname} →
+                {new URL(websiteHref).hostname} →
               </p>
             </a>
           );
