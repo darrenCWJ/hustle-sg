@@ -1,5 +1,7 @@
+import { notFound } from "next/navigation";
 import { hashNric, mockEmailForHash, mockPasswordForHash } from "@/lib/singpass/nric";
 import { FREELANCERS, EMPLOYERS } from "@/lib/db/fixtures";
+import { DEMO_MODE } from "@/lib/config/demo";
 import { Eyebrow } from "@/components/ui/primitives";
 import { Button } from "@/components/ui/interactive";
 
@@ -172,6 +174,10 @@ function SeededRow({ account }: { account: AccountRow }) {
 }
 
 export default async function AccountsPage() {
+  // This page lists derived login credentials for every seeded identity. It is a
+  // demo convenience and a credential dump — never serve it outside the demo.
+  if (!DEMO_MODE) notFound();
+
   const W = { maxWidth: 1320, margin: "0 auto", padding: "0 28px" };
 
   // Primary demo accounts — have mock MyInfo pre-fill on first login

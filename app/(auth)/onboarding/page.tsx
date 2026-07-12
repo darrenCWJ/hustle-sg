@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { safeNext } from "@/lib/security/safe-redirect";
 import { OnboardingFlow } from "./OnboardingFlow";
 
 export default async function OnboardingPage({
@@ -25,7 +26,7 @@ export default async function OnboardingPage({
     <main className="min-h-screen grid place-items-center px-6 py-20">
       <OnboardingFlow
         displayName={profile?.display_name ?? "friend"}
-        next={next ?? "/feed"}
+        next={safeNext(next, "/feed")}
       />
     </main>
   );

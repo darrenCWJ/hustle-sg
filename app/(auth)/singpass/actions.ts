@@ -8,9 +8,13 @@ import {
   mockPasswordForHash,
 } from "@/lib/singpass/nric";
 import { MOCK_MYINFO } from "@/lib/singpass/mock-profiles";
+import { DEMO_MODE } from "@/lib/config/demo";
+import { safeNext } from "@/lib/security/safe-redirect";
 import { redirect } from "next/navigation";
 
 export async function checkNricExists(nric: string): Promise<boolean> {
+  // Demo-only. When disabled, do not act as an NRIC-existence oracle.
+  if (!DEMO_MODE) return false;
   if (!isValidNric(nric)) return false;
   const hash = await hashNric(nric);
   const admin = createServiceClient();
@@ -23,8 +27,18 @@ export async function checkNricExists(nric: string): Promise<boolean> {
 }
 
 export async function mockSingpassSignIn(formData: FormData) {
+  // Insecure-by-design mock auth: gated to the demo. A real deployment must use
+  // a genuine identity provider (see IMPROVEMENT_PLAN.md Phase 3.1).
+  if (!DEMO_MODE) {
+    return {
+      ok: false as const,
+      error: "Mock Singpass sign-in is disabled on this deployment.",
+    };
+  }
+
   const nric = String(formData.get("nric") ?? "").trim().toUpperCase();
-  const next = String(formData.get("next") ?? "/feed");
+  // Sanitise the post-login redirect target to prevent open-redirect (CWE-601).
+  const next = safeNext(String(formData.get("next") ?? "/feed"), "/feed");
   const displayName = String(formData.get("display_name") ?? "").trim() || null;
 
   if (!isValidNric(nric)) {
@@ -98,23 +112,15 @@ export async function mockSingpassSignIn(formData: FormData) {
     redirect(`/onboarding?next=${encodeURIComponent(next)}`);
   }
 
-  // Mark as re-verified
+  // Mark identity as re-verified. NOTE: Singpass identity verification does NOT
+  // imply any certificate is genuine — credentials are verified separately
+  // against their issuer (see IMPROVEMENT_PLAN.md Phase 2.1). The previous bulk
+  // auto-verify of all pending certs here was a forgeable trust signal (C4) and
+  // has been removed.
   await admin
     .from("profiles")
     .update({ singpass_verified_at: new Date().toISOString(), nric_hash: hash })
     .eq("id", user.id);
-
-  // Auto-verify all pending certs for this user via Singpass trust
-  await admin
-    .from("certifications")
-    .update({
-      verification_status: "verified",
-      verification_method: "singpass",
-      verified_at: new Date().toISOString(),
-      verified: true,
-    })
-    .eq("user_id", user.id)
-    .eq("verification_status", "pending");
 
   redirect(next);
 }

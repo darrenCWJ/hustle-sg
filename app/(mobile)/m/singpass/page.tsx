@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { NRICForm } from "@/components/singpass/NRICForm";
+import { safeNext } from "@/lib/security/safe-redirect";
 
 const SP_RED = "#c0392b";
 
@@ -8,7 +9,7 @@ export default async function MobileSingpassPage({
 }: {
   searchParams: Promise<{ next?: string }>;
 }) {
-  const { next = "/m/feed" } = await searchParams;
+  const next = safeNext((await searchParams).next, "/m/feed");
   const backHref = next.startsWith("/m/") ? next : "/m/feed";
 
   return (
