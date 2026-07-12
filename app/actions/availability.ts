@@ -13,7 +13,8 @@ export async function loadAvailability(): Promise<number[][] | null> {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  return data?.slots ?? null;
+  // slots is a jsonb column; the app only ever writes number[][] into it.
+  return (data?.slots as number[][] | null) ?? null;
 }
 
 export async function saveAvailability(slots: number[][]): Promise<{ ok: boolean; error?: string }> {

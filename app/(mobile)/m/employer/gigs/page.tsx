@@ -249,7 +249,7 @@ export default async function MobileEmployerGigsPage() {
                         color: "var(--color-ink)",
                       }}
                     >
-                      S${(gig.budget_cents / 100).toFixed(0)}
+                      S${((gig.budget_cents ?? 0) / 100).toFixed(0)}
                       <span
                         style={{
                           fontSize: 11,

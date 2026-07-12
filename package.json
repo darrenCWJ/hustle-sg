@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -17,10 +17,9 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.95.1",
-    "@pinecone-database/pinecone": "^7.2.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
-    "@supabase/ssr": "^0.5.2",
+    "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.46.1",
     "@types/three": "^0.184.1",
     "@types/web-push": "^3.6.4",
@@ -37,6 +36,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.6",
     "@playwright/test": "^1.49.0",
     "@types/node": "^22.9.3",
     "@types/react": "^19.0.0",
@@ -44,12 +44,12 @@
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "dotenv": "^16.4.7",
-    "eslint": "^9.15.0",
-    "eslint-config-next": "^15.3.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^15.5.20",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.15",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.5"
+    "vitest": "^4.1.10"
   }
 }

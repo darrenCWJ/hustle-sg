@@ -1,5 +1,11 @@
-// Hand-written database types (keep in sync with supabase/migrations).
-// For production, replace with `supabase gen types typescript`.
+// App-level domain types layered over the GENERATED schema types.
+//
+// The source of truth for table shapes is lib/supabase/database.types.ts
+// (regenerated from the live schema — see that file's header). The interfaces
+// below narrow generated `string` columns to their domain unions (Role,
+// GigStatus, …) for app code; keep them structurally compatible with the
+// generated Row types.
+export type { Database, Json, Tables, TablesInsert, TablesUpdate } from "@/lib/supabase/database.types";
 
 export type Role = "freelancer" | "employer" | "both";
 export type CertKind = "wsq" | "university" | "accreditation" | "other";

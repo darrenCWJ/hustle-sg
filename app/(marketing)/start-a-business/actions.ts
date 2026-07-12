@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { looksReserved, mockAcraUEN } from "@/lib/entrepreneur/entities";
+import type { Json, TablesInsert } from "@/lib/supabase/types";
 
 export async function saveChecklistStep({
   entity_type,
@@ -23,12 +24,12 @@ export async function saveChecklistStep({
   } = await supabase.auth.getUser();
   if (!user) return { ok: false as const, error: "Log in first" };
 
-  const patch: Record<string, unknown> = { user_id: user.id };
+  const patch: TablesInsert<"company_registrations"> = { user_id: user.id };
   if (entity_type !== undefined) patch.entity_type = entity_type;
   if (proposed_name !== undefined) patch.proposed_name = proposed_name;
   if (business_activities !== undefined) patch.business_activities = business_activities;
   if (stage !== undefined) patch.stage = stage;
-  if (checklist_state !== undefined) patch.checklist_state = checklist_state;
+  if (checklist_state !== undefined) patch.checklist_state = checklist_state as Json;
 
   const { error } = await supabase
     .from("company_registrations")

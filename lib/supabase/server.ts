@@ -1,12 +1,15 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createClient as createRaw } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { serverEnv } from "@/lib/env";
+import type { Database } from "@/lib/supabase/types";
 
 export async function createClient() {
   const cookieStore = await cookies();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://placeholder.supabase.co";
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "placeholder-anon-key";
 
-  return createServerClient(
+  return createServerClient<Database>(
     url,
     anon,
     {
@@ -30,10 +33,9 @@ export async function createClient() {
 
 export function createServiceClient() {
   // Only call from trusted server paths. Bypasses RLS.
-  const { createClient: createRaw } = require("@supabase/supabase-js") as typeof import("@supabase/supabase-js");
-  return createRaw(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  return createRaw<Database>(
+    serverEnv.supabaseUrl,
+    serverEnv.supabaseServiceRoleKey,
     { auth: { autoRefreshToken: false, persistSession: false } },
   );
 }

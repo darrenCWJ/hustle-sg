@@ -121,7 +121,7 @@ export default async function MobileFeedPage({
       location: g.location ?? "Singapore",
       lat: g.lat ?? null,
       lon: g.lon ?? null,
-      budget_cents: g.budget_cents,
+      budget_cents: g.budget_cents ?? 0,
       budget_kind: g.budget_kind as "fixed" | "hourly",
       instant_urgency: g.instant_urgency as "now" | "today" | "weekend",
       skills_required: g.skills_required ?? [],

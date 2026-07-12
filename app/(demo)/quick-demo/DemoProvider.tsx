@@ -11,6 +11,7 @@ import {
 } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import type { Json } from "@/lib/supabase/types";
 import {
   PROFILES,
   GIGS,
@@ -189,7 +190,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         .maybeSingle()
         .then(({ data }) => {
           if (data?.state) {
-            const fresh = data.state as SharedState;
+            const fresh = data.state as unknown as SharedState;
             setShared(fresh);
             saveCachedShared(code, fresh);
           }
@@ -236,7 +237,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     pendingWrite.current = setTimeout(() => {
       supabase
         .from("demo_sessions")
-        .upsert({ id: sid, state: nextShared, updated_at: new Date().toISOString() })
+        .upsert({ id: sid, state: nextShared as unknown as Json, updated_at: new Date().toISOString() })
         .then(() => {});
     }, 400);
   }
@@ -276,7 +277,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         .select("state")
         .eq("id", id)
         .maybeSingle();
-      const state: SharedState = (data?.state as SharedState) ?? defaultShared();
+      const state: SharedState = (data?.state as unknown as SharedState) ?? defaultShared();
       setShared(state);
       saveCachedShared(id, state);
     } else {
@@ -284,7 +285,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       const fresh = defaultShared();
       await supabase
         .from("demo_sessions")
-        .upsert({ id, state: fresh, updated_at: new Date().toISOString() });
+        .upsert({ id, state: fresh as unknown as Json, updated_at: new Date().toISOString() });
       setShared(fresh);
       saveCachedShared(id, fresh);
       cleanupStaleVideos();

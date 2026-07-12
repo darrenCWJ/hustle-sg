@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { computeTrustScore } from "@/lib/trust/score";
 import { MobilePushToggle } from "./MobilePushToggle";
 
 export default async function MobileProfilePage() {
@@ -74,15 +75,18 @@ export default async function MobileProfilePage() {
     );
   }
 
+  // NOTE: this previously selected a non-existent `trust_score` column, which
+  // made PostgREST reject the whole query — the page always rendered fallback
+  // data. Surfaced by the generated DB types (IMPROVEMENT_PLAN.md Phase 1.1).
   const { data: profile } = await supabase
     .from("profiles")
-    .select("handle, display_name, headline, bio, role, trust_score, singpass_verified_at, avatar_url")
+    .select("handle, display_name, headline, bio, role, singpass_verified_at, avatar_url")
     .eq("id", user.id)
     .single();
 
   const { data: certs } = await supabase
     .from("certifications")
-    .select("title, issuer, verified_at")
+    .select("title, issuer, verified, verified_at")
     .eq("user_id", user.id)
     .limit(5);
 
@@ -91,10 +95,22 @@ export default async function MobileProfilePage() {
     .select("id, status")
     .eq("applicant_id", user.id);
 
+  const { count: portfolioCount } = await supabase
+    .from("portfolio_items")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id);
+
   const hiredCount = (apps ?? []).filter((a) => a.status === "hired").length;
   const appliedCount = (apps ?? []).length;
 
-  const trustPct = Math.round((profile?.trust_score ?? 0) * 100);
+  // Same formula as the desktop profile page (lib/trust/score.ts).
+  const trust = computeTrustScore({
+    singpassVerified: Boolean(profile?.singpass_verified_at),
+    verifiedCertCount: (certs ?? []).filter((c) => c.verified).length,
+    portfolioItemCount: portfolioCount ?? 0,
+    hiredCount,
+  });
+  const trustPct = trust.score;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", overflowY: "auto" }}>

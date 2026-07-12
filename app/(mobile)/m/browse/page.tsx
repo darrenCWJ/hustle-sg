@@ -230,7 +230,7 @@ export default async function MobileBrowsePage() {
                         color: "var(--color-ink)",
                       }}
                     >
-                      S${(g.budget_cents / 100).toFixed(0)}
+                      S${((g.budget_cents ?? 0) / 100).toFixed(0)}
                       <span
                         style={{
                           fontSize: 11,
