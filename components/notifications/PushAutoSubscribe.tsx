@@ -15,15 +15,17 @@ export function PushAutoSubscribe() {
   useEffect(() => {
     if (!VAPID_PUBLIC) return;
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
-    if (Notification.permission === "denied") return;
+    // Consent best practice: NEVER call Notification.requestPermission() without
+    // a user gesture — an un-primed prompt trains users to hit "Block" and
+    // permanently loses the channel (and silently no-ops on iOS Safari). We only
+    // re-sync a subscription for users who ALREADY opted in via the explicit
+    // notification toggle; first-time opt-in happens there, in context.
+    if (Notification.permission !== "granted") return;
 
     async function subscribe() {
       const reg = await navigator.serviceWorker.ready;
       const existing = await reg.pushManager.getSubscription();
       if (existing) return; // already subscribed
-
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") return;
 
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,

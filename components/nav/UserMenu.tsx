@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { signOut } from "@/app/actions/auth";
 
@@ -12,7 +12,7 @@ interface Props {
 
 export function UserMenu({ displayName, handle, role }: Props) {
   const [open, setOpen] = useState(false);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const isEmployer = role === "employer" || role === "both";
 
   const initials = displayName
@@ -24,20 +24,36 @@ export function UserMenu({ displayName, handle, role }: Props) {
 
   const firstName = displayName.split(" ")[0];
 
-  function onMouseEnter() {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    setOpen(true);
-  }
-
-  function onMouseLeave() {
-    closeTimer.current = setTimeout(() => setOpen(false), 120);
-  }
+  // Accessible dismissal: close on Escape or a click/tap outside. The trigger is
+  // a real <button> so Enter/Space and keyboard focus work natively — the old
+  // hover-only behaviour locked out keyboard and touch users entirely.
+  useEffect(() => {
+    if (!open) return;
+    function onDocPointer(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   return (
-    <div style={{ position: "relative" }} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
+    <div ref={containerRef} style={{ position: "relative" }}>
       {/* Trigger */}
       <button
         type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={`Account menu for ${displayName}`}
         style={{
           display: "flex",
           alignItems: "center",
@@ -58,7 +74,7 @@ export function UserMenu({ displayName, handle, role }: Props) {
             width: 26,
             height: 26,
             borderRadius: "50%",
-            background: open ? "oklch(78% 0.08 38)" : "oklch(78% 0.08 38)",
+            background: "oklch(78% 0.08 38)",
             color: "oklch(22% 0.08 38)",
             display: "grid",
             placeItems: "center",
@@ -85,6 +101,8 @@ export function UserMenu({ displayName, handle, role }: Props) {
       {/* Dropdown */}
       {open && (
         <div
+          role="menu"
+          aria-label="Account"
           style={{
             position: "absolute",
             top: "calc(100% + 6px)",
@@ -103,7 +121,7 @@ export function UserMenu({ displayName, handle, role }: Props) {
             <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--color-ink-mute)", fontFamily: "var(--font-mono)" }}>@{handle}</p>
           </div>
 
-          <div style={{ padding: "6px 0" }}>
+          <div style={{ padding: "6px 0" }} onClick={() => setOpen(false)}>
             <MenuItem href="/dashboard" icon="⊞">Dashboard</MenuItem>
             <MenuItem href={`/profile/${handle}`} icon="◉">My profile</MenuItem>
             {(role === "freelancer" || role === "both") && (
@@ -118,6 +136,7 @@ export function UserMenu({ displayName, handle, role }: Props) {
             <form action={signOut} style={{ margin: 0 }}>
               <button
                 type="submit"
+                role="menuitem"
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -149,6 +168,7 @@ function MenuItem({ href, icon, children }: { href: string; icon: string; childr
   return (
     <Link
       href={href}
+      role="menuitem"
       style={{
         display: "flex",
         alignItems: "center",
