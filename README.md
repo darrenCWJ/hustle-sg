@@ -50,7 +50,7 @@ cp .env.example .env.local   # fill in every variable — comments explain each
 
 ### Database
 
-Migrations live in `supabase/migrations/` (`0001` → `0038`) and cover schema, RLS, pgvector matching, storage bucket limits, rate limiting, trust & safety tables, messaging, instrumentation, and the pg_cron reminder job.
+Migrations live in `supabase/migrations/` (`0001` → `0039`) and cover schema, RLS, pgvector matching, storage bucket limits, rate limiting, trust & safety tables, messaging, instrumentation, and the pg_cron reminder job.
 
 ```bash
 npx supabase db push
