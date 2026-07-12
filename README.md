@@ -36,9 +36,10 @@ Singapore-first gig platform for verified side hustlers. AI + distance-matched g
 | Applicant triage | Status filters, search, sort, and true DB pagination on the employer pipeline |
 | Trust & safety | Report users/gigs, block users (hidden across matching, lists, applying, messaging), disputes with a state machine |
 | Job authenticity | Every gig shows the employer's real track record (gigs filled, distinct hires, worker rating, member since) — first-time posters are flagged honestly |
-| Collusion resistance | Rating averages count each rater **once**; repeat hires from one employer count once toward trust; `/admin/fraud` surfaces rating-ring signals (mutual 5★s, zero-message completions, instant ratings) |
+| Collusion resistance | Rating averages count each rater **once**; repeat hires from one employer count once toward trust; `/admin/fraud` surfaces rating-ring signals (mutual 5★s, zero-message completions, instant ratings). Admin-confirmed pairs' mutual ratings stop counting anywhere |
+| Fraud-model evaluation | Admin verdicts are ground-truth labels: **precision / recall / F1** computed live, with plain-language retune guidance; signal weights + alert threshold tunable in the UI (no code). Labels double as training data for a future learned model |
 | Action-first dashboards | Both dashboards open with a "needs your attention" strip: offers waiting, interviews, reviews owed, unread messages, disputes — real counts, deep links |
-| Admin surface | `/admin` (role-gated, unlinked): report triage, cert review queue, dispute resolution, error log, fraud signals. Promote via SQL only |
+| Admin surface | `/admin` (role-gated, unlinked): report triage, cert review queue, dispute resolution, error log, fraud model (verdicts + tuning + F1), settings (promote/revoke admins by handle — first admin via SQL) |
 | Observability | First-party error store — server captures + client error-boundary reports land in `app_errors`, viewable at `/admin/errors` |
 | Match instrumentation | Every apply/shortlist/offer/hire/reject/withdraw/complete/rate writes to `match_events` for future ranking work |
 | Entrepreneur onboarding | Entity-type wizard → name reservation → mock-ACRA registration → post-reg guidance (CPF, GST, banking) |
@@ -53,7 +54,7 @@ cp .env.example .env.local   # fill in every variable — comments explain each
 
 ### Database
 
-Migrations live in `supabase/migrations/` (`0001` → `0040`) and cover schema, RLS, pgvector matching, storage bucket limits, rate limiting, trust & safety tables, messaging, instrumentation, and the pg_cron reminder job.
+Migrations live in `supabase/migrations/` (`0001` → `0041`) and cover schema, RLS, pgvector matching, storage bucket limits, rate limiting, trust & safety tables, messaging, instrumentation, and the pg_cron reminder job.
 
 ```bash
 npx supabase db push
@@ -128,6 +129,7 @@ All demo accounts are listed at `/accounts` (demo mode only). Highlights: `S1111
 
 See [SECURITY.md](SECURITY.md) for the demo-mode boundary, controls in place, accepted gaps, and the production deploy checklist. Short version: RLS everywhere (initplan-optimised, one policy per command), `auth.uid()`-enforced RPCs, rate limits on paid/abusable endpoints, honest UI claims, and no self-serve trust signals.
 
-## Improvement plan
+## Plans
 
-The codebase was overhauled against [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md) (phases 0–6: security, foundation, trust & safety, product gaps, consolidation, UX, matching). All phases are implemented except items that need external accounts (Stripe, real Singpass OIDC) — the plan file records per-phase status.
+- [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md) — the original phased overhaul (0–6), all implemented; per-phase status table at the top.
+- [ROADMAP.md](ROADMAP.md) — the living forward plan: what's next, what needs external accounts, and the model-health playbook for non-technical admins.

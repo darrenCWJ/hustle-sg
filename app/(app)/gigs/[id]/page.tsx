@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { formatSgd, timeAgo } from "@/lib/utils";
 import { aggregateRatings } from "@/lib/trust/ratings";
+import { getConfirmedFraudCounterparties } from "@/lib/fraud/confirmed";
 import { ReportButton } from "@/components/safety/ReportButton";
 import { applyToGig } from "./actions";
 import { RecommendedCandidates } from "./RecommendedCandidates";
@@ -71,9 +72,15 @@ export default async function GigDetailPage({
   ]);
   const employerGigCount = (empGigs.data ?? []).length;
   const employerFilledCount = (empGigs.data ?? []).filter((g) => g.status === "filled").length;
-  const employerDistinctHires = new Set((empHires.data ?? []).map((a) => a.applicant_id)).size;
+  // Confirmed-fraud counterparties don't count toward the track record.
+  const fraudPeers = await getConfirmedFraudCounterparties(gig.employer_id);
+  const employerDistinctHires = new Set(
+    (empHires.data ?? []).map((a) => a.applicant_id).filter((id) => !fraudPeers.has(id)),
+  ).size;
   const employerRatingAgg = aggregateRatings(
-    (empRatings.data ?? []).map((r) => ({ from_id: r.from_id, stars: r.stars })),
+    (empRatings.data ?? [])
+      .filter((r) => !fraudPeers.has(r.from_id))
+      .map((r) => ({ from_id: r.from_id, stars: r.stars })),
   );
   const employerSince = empProfile.data?.created_at
     ? new Date(empProfile.data.created_at).toLocaleDateString("en-SG", { month: "short", year: "numeric" })

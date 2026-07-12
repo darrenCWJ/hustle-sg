@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { computeTrustScore } from "@/lib/trust/score";
 import { aggregateRatings } from "@/lib/trust/ratings";
+import { getConfirmedFraudCounterparties } from "@/lib/fraud/confirmed";
 import { ReportButton } from "@/components/safety/ReportButton";
 import { BlockButton } from "@/components/safety/BlockButton";
 import Link from "next/link";
@@ -113,7 +114,9 @@ export default async function ProfilePage({
     (hiredApps ?? []).map((a: any) => a.gigs?.employer_id).filter(Boolean),
   ).size;
 
-  const ratings = ratingsRaw ?? [];
+  // Admin-confirmed fraud pairs: their mutual ratings don't count anywhere.
+  const fraudCounterparties = await getConfirmedFraudCounterparties(profile.id);
+  const ratings = (ratingsRaw ?? []).filter((r: any) => !fraudCounterparties.has(r.from_id));
   // Pair-aware average: each unique rater counts once (lib/trust/ratings.ts) —
   // a rating ring can't drag the number with repeat 5★s.
   const ratingAgg = aggregateRatings(

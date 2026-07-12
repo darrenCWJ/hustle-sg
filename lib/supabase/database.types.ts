@@ -62,6 +62,24 @@ export type Database = {
           },
         ]
       }
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       applications: {
         Row: {
           applicant_id: string
@@ -341,6 +359,64 @@ export type Database = {
           {
             foreignKeyName: "disputes_opened_by_fkey"
             columns: ["opened_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fraud_reviews: {
+        Row: {
+          created_at: string
+          employer_id: string
+          id: string
+          notes: string
+          reviewed_by: string | null
+          score_at_review: number
+          signals: Json
+          verdict: string
+          worker_id: string
+        }
+        Insert: {
+          created_at?: string
+          employer_id: string
+          id?: string
+          notes?: string
+          reviewed_by?: string | null
+          score_at_review: number
+          signals?: Json
+          verdict: string
+          worker_id: string
+        }
+        Update: {
+          created_at?: string
+          employer_id?: string
+          id?: string
+          notes?: string
+          reviewed_by?: string | null
+          score_at_review?: number
+          signals?: Json
+          verdict?: string
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fraud_reviews_employer_id_fkey"
+            columns: ["employer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fraud_reviews_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fraud_reviews_worker_id_fkey"
+            columns: ["worker_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
