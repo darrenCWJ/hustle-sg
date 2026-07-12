@@ -140,9 +140,6 @@ export default async function ProfilePage({
             <span style={{ fontSize: 12, color: "var(--color-ink-soft)", fontFamily: "var(--font-mono)" }}>
               @{profile.handle}
             </span>
-            {profile.location && (
-              <span style={{ fontSize: 12, color: "var(--color-ink-mute)" }}>· {profile.location}</span>
-            )}
           </div>
 
           <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(3rem, 6vw, 5.5rem)", margin: "0 0 12px", lineHeight: 0.94, letterSpacing: "-0.04em" }}>
@@ -213,7 +210,6 @@ export default async function ProfilePage({
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {[
                   { label: "Singpass identity", ok: verified, badge: verified ? "L2 verified" : "Not verified" },
-                  { label: "Payment escrow", ok: true, badge: "SGD protected" },
                   { label: "Fulfillment rate", ok: fulfillmentRate >= 50, badge: totalGigsPosted > 0 ? `${fulfillmentRate}%` : "No gigs yet" },
                   { label: "Workers hired", ok: totalWorkersHired > 0, badge: totalWorkersHired > 0 ? `${totalWorkersHired} total` : "None yet" },
                   { label: "Member since", ok: true, badge: memberSince },

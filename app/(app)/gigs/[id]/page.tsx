@@ -362,7 +362,7 @@ export default async function GigDetailPage({
                         Q{i + 1} · {q.max_duration_sec}s · video
                       </span>
                       <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--color-ink-mute)" }}>
-                        auto-transcribed
+                        video answer
                       </span>
                     </div>
                     <p style={{ margin: 0, fontSize: 15, fontWeight: 500 }}>{q.prompt}</p>
@@ -611,9 +611,9 @@ export default async function GigDetailPage({
               Safety & payments
             </p>
             <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 7, fontSize: 13, color: "var(--color-jade-ink)" }}>
-              <li>✓ Payment held in SGD escrow</li>
-              <li>✓ 14-day dispute window</li>
-              <li>✓ IRAS-ready receipts</li>
+              <li>Agree scope and price with the employer before you start</li>
+              <li>Payment is arranged directly between you and the employer</li>
+              <li>HustleSG does not hold funds or process payments yet</li>
             </ul>
           </div>
         </aside>

@@ -65,7 +65,7 @@ export function GigDefinitionCard() {
             ["✓", "A verified employer (ACRA or Singpass-checked)"],
             ["S$", "A transparent SGD budget — fixed, hourly, or event-based"],
             ["⏱", "A clear scope and end date"],
-            ["🔒", "Escrowed payment released on delivery"],
+            ["🤝", "Payment terms agreed upfront between both sides"],
           ].map(([icon, text]) => (
             <li key={text} style={{ display: "flex", alignItems: "start", gap: 10, fontSize: 13.5, color: "oklch(100% 0 0 / 0.8)", lineHeight: 1.45 }}>
               <span style={{ flexShrink: 0, width: 22, height: 22, borderRadius: 6, display: "grid", placeItems: "center", background: "oklch(from var(--color-accent) l c h / 0.18)", color: "var(--color-accent)", fontSize: 11, fontWeight: 600, fontFamily: "var(--font-mono)" }}>

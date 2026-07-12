@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Hero } from "./Hero";
 import { NewPostingsStream } from "./NewPostingsStream";
 import { GigDefinitionCard } from "./GigDefinitionCard";
@@ -104,7 +105,7 @@ export default async function Landing() {
               { step: "01", time: "0:20", title: "Verify with Singpass", body: "NRIC + face scan. 20 seconds. We hash your identifier; the raw identifier is never stored." },
               { step: "02", time: "4:30", title: "Build your profile", body: "Upload a 90s video, paste a WSQ cert. Details are extracted and indexed for matching." },
               { step: "03", time: "8:00", title: "Match, apply, record", body: "Assignments are matched against your verified skills. Submit video responses when shortlisted." },
-              { step: "04", time: "→ day 1", title: "Get paid. Register your business", body: "SGD payments held in escrow. ACRA registration guidance when you are ready." },
+              { step: "04", time: "→ day 1", title: "Get paid. Register your business", body: "Settle payment with the employer, then get ACRA registration guidance when you are ready." },
             ].map((s, i) => (
               <ScrollReveal key={s.step} delay={i * 90}>
                 <div style={{ borderTop: "1px solid oklch(100% 0 0 / 0.15)", paddingTop: 20 }}>
@@ -141,7 +142,7 @@ export default async function Landing() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 14 }}>
           {CATEGORIES.map((c, i) => (
             <ScrollReveal key={c.label} delay={i * 60}>
-              <a
+              <Link
                 href="/gigs"
                 className="category-card"
                 style={{
@@ -159,7 +160,7 @@ export default async function Landing() {
               >
                 <span style={{ fontFamily: "var(--font-display)", fontSize: 22, letterSpacing: "-0.02em" }}>{c.label}</span>
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, opacity: 0.7 }}>{c.count} open →</span>
-              </a>
+              </Link>
             </ScrollReveal>
           ))}
         </div>
