@@ -138,3 +138,19 @@ export function gigFitsAvailability(
 export function hasAnyAvailability(slots: number[][] | null | undefined): boolean {
   return Boolean(slots && slots.some((day) => day.some((v) => v === 1)));
 }
+
+/**
+ * Whether schedule fit is even meaningful for this gig. Project- and
+ * milestone-basis work often has no working window, days, or duration —
+ * deliver-by-deadline engagements. For those, a "fits your schedule" claim
+ * would be noise, so callers should skip the fit computation entirely.
+ */
+export function hasScheduleSignal(timing: GigTiming): boolean {
+  return Boolean(
+    timing.is_instant ||
+      (timing.days_of_week && timing.days_of_week.length > 0) ||
+      (timing.start_time && timing.end_time) ||
+      timing.starts_at ||
+      gigDurationMinutes(timing) !== null,
+  );
+}

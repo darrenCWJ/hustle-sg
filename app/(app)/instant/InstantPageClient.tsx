@@ -6,6 +6,7 @@ import { AcceptButton } from "./AcceptButton";
 import { CreateInstantModal } from "./CreateInstantModal";
 import { acceptInstantGig } from "@/app/actions/gigs";
 import type { InstantGigRow } from "@/app/actions/instant";
+import { budgetKindLabel } from "@/lib/utils";
 
 interface InstantGig extends InstantGigRow {
   distanceKm: number | null;
@@ -555,7 +556,7 @@ export function InstantPageClient({ isLoggedIn, isEmployer, initialGigs }: Props
                           S${(g.budget_cents / 100).toFixed(0)}
                         </span>
                         <span style={{ fontSize: 12, color: "var(--color-ink-soft)", marginLeft: 4 }}>
-                          {g.budget_kind === "hourly" ? "/hr" : " fixed"}
+                          {budgetKindLabel(g.budget_kind)}
                         </span>
                         {isLoggedIn && !g.aiLocked && g.aiRank > 0 && (
                           <span style={{ marginLeft: 8, fontFamily: "var(--font-mono)", fontSize: 11, padding: "2px 8px", borderRadius: 999, background: "var(--color-jade-soft)", color: "var(--color-jade-ink)", fontWeight: 700 }}>

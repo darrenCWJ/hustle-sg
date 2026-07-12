@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { acceptInstantGig } from "@/app/actions/gigs";
 import { createClient } from "@/lib/supabase/client";
+import { budgetKindLabel } from "@/lib/utils";
 
 export interface MobileGig {
   id: string;
@@ -673,7 +674,7 @@ export function SwipeCardDeck({ gigs: initial, isLoggedIn }: Props) {
                 S${(top.budget_cents / 100).toFixed(0)}
               </span>
               <span style={{ fontSize: 12, color: "var(--color-ink-mute)", marginLeft: 6 }}>
-                {top.budget_kind === "hourly" ? "/hr" : "fixed"}
+                {budgetKindLabel(top.budget_kind)}
               </span>
             </div>
             <Link

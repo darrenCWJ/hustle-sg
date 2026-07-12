@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getBlockedCounterparties } from "@/lib/safety/blocks";
+import { budgetKindLabel } from "@/lib/utils";
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -247,7 +248,7 @@ export default async function MobileBrowsePage() {
                           marginLeft: 5,
                         }}
                       >
-                        {g.budget_kind === "hourly" ? "/hr" : "fixed"}
+                        {budgetKindLabel(g.budget_kind)}
                       </span>
                     </span>
                     <span

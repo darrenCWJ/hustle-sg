@@ -26,3 +26,20 @@ export function timeAgo(iso: string): string {
   const months = Math.round(days / 30);
   return `${months}mo ago`;
 }
+
+/**
+ * Human label for a gig's budget basis. Gigs aren't only hourly: they can be
+ * a lump sum, priced for the whole project, or paid out per milestone.
+ */
+export function budgetKindLabel(kind: string | null | undefined): string {
+  switch (kind) {
+    case "hourly":
+      return "/hr";
+    case "project":
+      return "project";
+    case "milestone":
+      return "per milestone";
+    default:
+      return "fixed";
+  }
+}

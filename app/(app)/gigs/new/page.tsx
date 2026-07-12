@@ -200,6 +200,8 @@ export default async function NewGigPage({
             >
               <option value="fixed">Fixed</option>
               <option value="hourly">Hourly</option>
+              <option value="project">Whole project</option>
+              <option value="milestone">Per milestone</option>
             </select>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { budgetKindLabel } from "@/lib/utils";
 
 function timeAgo(ts: string) {
   const diff = Date.now() - new Date(ts).getTime();
@@ -238,7 +239,7 @@ export default async function MobileApplicationsPage() {
                       <span
                         style={{ fontSize: 11, fontWeight: 400, color: "var(--color-ink-mute)", marginLeft: 4 }}
                       >
-                        {gig.budget_kind === "hourly" ? "/hr" : "fixed"}
+                        {budgetKindLabel(gig.budget_kind)}
                       </span>
                     </span>
                     <span style={{ fontSize: 12, color: "var(--color-ink-soft)" }}>

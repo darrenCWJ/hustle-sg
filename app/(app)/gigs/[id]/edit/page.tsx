@@ -60,7 +60,7 @@ export default async function EditGigPage({
           location: gig.location ?? "",
           category: gig.category ?? "",
           budgetSgd: Math.round((gig.budget_cents ?? 0) / 100),
-          budgetKind: gig.budget_kind === "hourly" ? "hourly" : "fixed",
+          budgetKind: gig.budget_kind,
           closeAtLocal: toSgtLocalInput(gig.applications_close_at),
         }}
       />

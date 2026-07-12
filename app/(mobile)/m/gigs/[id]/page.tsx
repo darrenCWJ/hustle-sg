@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { MobileApplyButton } from "./MobileApplyButton";
+import { budgetKindLabel } from "@/lib/utils";
 
 const URGENCY_CONFIG = {
   now: { label: "Right Now", bg: "#dc2626", text: "#fff" },
@@ -117,7 +118,7 @@ export default async function MobileGigDetailPage({
                 marginLeft: 8,
               }}
             >
-              {gig.budget_kind === "hourly" ? "per hour" : "fixed"}
+              {budgetKindLabel(gig.budget_kind)}
             </span>
           </div>
 

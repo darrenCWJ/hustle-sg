@@ -10,7 +10,7 @@ export interface PostGigInput {
   location?: string | null;
   category?: string | null;
   budgetCents: number;
-  budgetKind: "fixed" | "hourly";
+  budgetKind: "fixed" | "hourly" | "project" | "milestone";
   requiresEmployerApproval?: boolean;
   isInstant?: boolean;
   instantUrgency?: "now" | "today" | "weekend" | null;

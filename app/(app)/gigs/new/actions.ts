@@ -13,7 +13,7 @@ const gigSchema = z.object({
   location: z.string().max(80).optional(),
   category: z.string().max(40).optional(),
   budget_sgd: z.coerce.number().positive().max(100_000),
-  budget_kind: z.enum(["fixed", "hourly"]),
+  budget_kind: z.enum(["fixed", "hourly", "project", "milestone"]),
   questions: z.string().optional(),
   requires_employer_approval: z.string().optional(),
   is_instant: z.string().optional(),

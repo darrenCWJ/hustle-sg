@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { timeAgo, formatSgd } from "@/lib/utils";
+import { timeAgo, formatSgd, budgetKindLabel } from "@/lib/utils";
 import { NotificationsToggle } from "@/components/notifications/NotificationsToggle";
 
 const GIG_STATUS: Record<string, { label: string; bg: string; fg: string }> = {
@@ -150,7 +150,7 @@ export async function EmployerDashboard({ userId }: { userId: string }) {
                         </span>
                         {g.budget_cents && (
                           <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--color-ink-soft)" }}>
-                            {formatSgd(g.budget_cents)}{g.budget_kind === "hourly" ? " /hr" : " fixed"}
+                            {formatSgd(g.budget_cents)} {budgetKindLabel(g.budget_kind)}
                           </span>
                         )}
                       </div>

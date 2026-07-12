@@ -230,7 +230,7 @@ const gigEditSchema = z.object({
   location: z.string().trim().max(200).optional(),
   category: z.string().trim().max(60).optional(),
   budget_sgd: z.coerce.number().min(0).max(1_000_000),
-  budget_kind: z.enum(["fixed", "hourly"]),
+  budget_kind: z.enum(["fixed", "hourly", "project", "milestone"]),
   applications_close_at: z.string().optional(),
 });
 

@@ -5,6 +5,7 @@ import {
   gigDurationMinutes,
   gigFitsAvailability,
   hasAnyAvailability,
+  hasScheduleSignal,
   GRID_ROWS,
 } from "@/lib/availability/fit";
 
@@ -151,6 +152,21 @@ describe("gigFitsAvailability — flexible durations (timing not fixed)", () => 
       hours_required: 1,
     };
     expect(gigFitsAvailability(slots, gig, WEDNESDAY)).toBe(false);
+  });
+});
+
+describe("hasScheduleSignal", () => {
+  test("project/milestone deliver-by-deadline gigs have no schedule signal", () => {
+    expect(hasScheduleSignal({})).toBe(false);
+    expect(hasScheduleSignal({ duration_label: "flexible" })).toBe(false);
+  });
+
+  test("window, days, start date, duration or instant all count as signal", () => {
+    expect(hasScheduleSignal({ start_time: "09:00", end_time: "11:00" })).toBe(true);
+    expect(hasScheduleSignal({ days_of_week: [1] })).toBe(true);
+    expect(hasScheduleSignal({ starts_at: "2026-07-18T09:00:00+08:00" })).toBe(true);
+    expect(hasScheduleSignal({ duration_label: "45 min" })).toBe(true);
+    expect(hasScheduleSignal({ is_instant: true, instant_urgency: "today" })).toBe(true);
   });
 });
 

@@ -13,7 +13,7 @@ interface EditGigFormProps {
     location: string;
     category: string;
     budgetSgd: number;
-    budgetKind: "fixed" | "hourly";
+    budgetKind: string;
     closeAtLocal: string; // datetime-local value in SGT, "" if none
   };
 }
@@ -102,6 +102,8 @@ export function EditGigForm({ gigId, hasApplicants, initial }: EditGigFormProps)
           <select id="edit-budget-kind" name="budget_kind" defaultValue={initial.budgetKind} style={inputStyle}>
             <option value="fixed">Fixed</option>
             <option value="hourly">Hourly</option>
+            <option value="project">Whole project</option>
+            <option value="milestone">Per milestone</option>
           </select>
         </div>
       </div>

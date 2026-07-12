@@ -22,6 +22,7 @@ Singapore-first gig platform for verified side hustlers. AI + distance-matched g
 | Auth (demo) | Mock Singpass: NRIC format check, deterministic session per salted SHA-256 hash, MyInfo prefill for demo identities |
 | Auth (non-demo) | Email OTP via Supabase (`/login`); OTP accounts are never shown as identity-verified |
 | Credential verification | **OpenCerts**: upload the `.opencert` file — document integrity, issuance status and issuer identity verified server-side; passing docs get the badge instantly. Everything else queues for **manual admin review**. Claude extracts skills from pasted cert text. Self-serve verification does not exist |
+| Budget bases | Gigs can be **fixed**, **hourly**, **whole-project**, or **per-milestone** (milestone list collected at posting and shown on the gig page) |
 | AI role matching | pgvector cosine on 1536-dim embeddings. Hybrid scoring: skill gigs = 80% cosine + 20% distance; errand gigs = 30% / 70%. Blocked pairs excluded in SQL |
 | Distance-aware feed | Haversine in Postgres, linear decay over 15 km, distance badge per card |
 | Consent-first permissions | Location and push are requested via tappable priming cards that explain the trade — never silently on page load |

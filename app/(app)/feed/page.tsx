@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { matchGigsForUser } from "@/lib/ai/match";
-import { gigFitsAvailability, hasAnyAvailability } from "@/lib/availability/fit";
+import { gigFitsAvailability, hasAnyAvailability, hasScheduleSignal } from "@/lib/availability/fit";
 import { FeedClientPage } from "./FeedClientPage";
 import { loadSavedGigIds } from "@/app/actions/gigs";
 import { GeolocationCapture } from "@/components/location/GeolocationCapture";
@@ -37,7 +37,11 @@ export default async function FeedPage() {
     const timingById = new Map((timings ?? []).map((t) => [t.id, t]));
     annotated = matches.map((m) => {
       const timing = timingById.get(m.gig_id);
-      return { ...m, fits_schedule: timing ? gigFitsAvailability(slots!, timing) : null };
+      // Project/milestone work without any schedule shape gets null (no badge)
+      // rather than a meaningless "fits" — deadline work isn't hour-based.
+      const fits =
+        timing && hasScheduleSignal(timing) ? gigFitsAvailability(slots!, timing) : null;
+      return { ...m, fits_schedule: fits };
     });
   }
 
