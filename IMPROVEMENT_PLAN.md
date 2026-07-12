@@ -1,8 +1,26 @@
 # HustleSG — Refactoring & Improvement Plan
 
-> Status: assessment complete, implementation not started.
+> **Status (2026-07-13): IMPLEMENTED.** All phases landed except externally-gated items.
 > Audience: whoever takes this codebase from hackathon POC toward a real, shippable product.
 > Basis: four grounded audits (architecture, security, code quality/testing, product/UX), cross-validated against the source.
+
+## Implementation status
+
+| Phase | Status | Notes |
+|---|---|---|
+| 0 — Stop the bleeding | ✅ Done | C1–C5 closed; deps patched; SECURITY.md; migrations 0024–0025 |
+| 1 — Foundation | ✅ Done | Generated DB types, ESLint, env module, Zod boundaries, error boundaries + first-party error store (`app_errors`, `/admin/errors`), NRIC checksum, rate limits, CI |
+| 2 — Trust & safety | ✅ Done | 2.1: **OpenCerts verification** (instant, registry-backed) + manual admin review queue; 2.2 double-blind reviews + pg_cron reminders; 2.3 report/block (enforced in matching, lists, apply, messaging); 2.4 disputes; 2.5 `/admin` surface |
+| 3 — Core product | ✅ Done | 3.1 email-OTP interim auth (real Singpass OIDC needs gov onboarding); 3.2 resolved as documented off-platform stance (Stripe needs keys); 3.3 Realtime messaging; 3.4 lifecycle controls; 3.5 applicant triage |
+| 4 — Consolidation | ✅ Done | Shared post/apply domain functions, embedding cache, RLS rebuild (initplan + one policy per command), demo hardening, mobile route holes, indexes. 4.3 file-splitting deferred as cosmetic |
+| 5 — UX & consent | ✅ Done | Priming cards, real form labels, honest onboarding, a11y on core controls |
+| 6 — Matching | 🟡 Instrumented | `match_events` records apply→hire→rate outcomes; tuning waits on real usage data |
+
+Remaining (externally gated): Stripe escrow, real Singpass/MyInfo OIDC, Sentry (optional — first-party store exists), Supabase dashboard toggles (leaked-password protection, custom SMTP). Open engineering: Playwright money-path e2e, oversized-file splits.
+
+---
+
+*The original plan follows, unchanged, as the audit record.*
 
 ---
 

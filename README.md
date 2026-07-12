@@ -1,169 +1,127 @@
 # HustleSG
 
-Singapore-first gig platform for verified side hustlers. Mock Singpass identity, WSQ/university credential verification, AI-matched gigs with distance-aware scoring, instant gig board with push notifications, async video interviews, and a guided path to registering your own company.
+Singapore-first gig platform for verified side hustlers. AI + distance-matched gigs, real credential verification (OpenCerts + admin review), async video interviews, in-app messaging, double-blind reviews, dispute resolution, an instant gig board with web push, and a guided path to registering your own company.
+
+> **Demo boundary:** authentication ships in two modes. With `NEXT_PUBLIC_DEMO_MODE` on (default), a mock Singpass flow and the `/accounts` credential list make the demo self-serve — this is insecure by design. With it off, those surfaces disappear and email-OTP login (`/login`) is the only path. See [SECURITY.md](SECURITY.md) before deploying anywhere public.
 
 ## Stack
 
 - **Next.js 15** (App Router, RSC, Server Actions) + **React 19**
-- **Supabase** (Postgres + Auth + Storage + pgvector)
-- **OpenAI** `text-embedding-3-small` for profile/gig embeddings
-- **Anthropic Claude Haiku 4.5** for certification parsing
-- **Web Push / VAPID** for push notifications when phone is closed
+- **Supabase** (Postgres + Auth + Storage + pgvector + Realtime + pg_cron)
+- **OpenAI** `text-embedding-3-small` for profile/gig embeddings (hash-cached — unchanged inputs skip the paid call)
+- **Anthropic Claude Haiku** for certification text parsing
+- **@govtechsg/opencerts-verify** for OpenCerts credential verification
+- **Web Push / VAPID** for notifications when the app is closed
 - **Tailwind CSS** with a custom OKLCH palette + editorial typography
-- **Vitest** + **Playwright** for tests
+- **Vitest** (unit) + **Playwright** (e2e) + **ESLint** flat config, gated in CI
 
 ## Features
 
 | Flow | What it does |
 |---|---|
-| Mock Singpass login | NRIC format validation, deterministic Supabase Auth session per SHA-256 hash, mock MyInfo prefill for 4 demo identities |
-| Profile + portfolio bento | Bento-grid public profile with video, website, writeup cells. Direct-to-storage signed uploads |
-| Certification verification | Upload + paste-text; Claude Haiku extracts issuer/title/skills; whitelist-based verified badge for NUS, NTU, SMU, SkillsFuture SG, and others |
-| AI role matching | pgvector cosine similarity on 1536-dim embeddings. Hybrid scoring: skill gigs = 80% cosine + 20% distance; no-skill gigs (dog walking, errands) = 30% cosine + 70% distance |
-| Distance-aware feed | Haversine distance computed in Postgres, no PostGIS. Linear decay 1.0 → 0.0 over 15 km. Distance badge shown on every feed card |
-| Silent geolocation capture | On first feed visit, browser location is captured silently and persisted to the profile. Updates match scoring automatically |
-| Instant gig board | Time-urgent gigs (now / today / weekend) with one-tap accept. Push notifications sent to top-matched nearby freelancers when a new instant gig is posted |
-| Web push notifications | Service worker + VAPID. Permission requested automatically during onboarding for freelancers. Notifications delivered even when the app is closed |
-| 3D vector map | Server-side PCA reduces 1536-dim embeddings to 3D. Interactive Three.js globe shows where profiles and gigs cluster in semantic space. Revalidates every 30 s |
-| Async video interview | Employer posts 1–3 questions; applicant records `MediaRecorder` → signed upload to private bucket |
-| Employer rehire / direct offer | Employers can send direct offers to previously hired freelancers from their dashboard |
-| Application deadlines | Gigs show a "Closed" badge past their deadline. `npm run extend-deadlines` keeps all open gigs live for demos |
-| Entrepreneur onboarding | 4-stage checklist: decide entity type → reserve name → mock-ACRA register → post-reg guidance (CPF, GST, banks, bookkeeping) |
-| Test accounts page | `/accounts` lists all 22 seeded identities with computed login credentials and quick links to demo pages |
+| Auth (demo) | Mock Singpass: NRIC format check, deterministic session per salted SHA-256 hash, MyInfo prefill for demo identities |
+| Auth (non-demo) | Email OTP via Supabase (`/login`); OTP accounts are never shown as identity-verified |
+| Credential verification | **OpenCerts**: upload the `.opencert` file — document integrity, issuance status and issuer identity verified server-side; passing docs get the badge instantly. Everything else queues for **manual admin review**. Claude extracts skills from pasted cert text. Self-serve verification does not exist |
+| AI role matching | pgvector cosine on 1536-dim embeddings. Hybrid scoring: skill gigs = 80% cosine + 20% distance; errand gigs = 30% / 70%. Blocked pairs excluded in SQL |
+| Distance-aware feed | Haversine in Postgres, linear decay over 15 km, distance badge per card |
+| Consent-first permissions | Location and push are requested via tappable priming cards that explain the trade — never silently on page load |
+| Instant gig board | Time-urgent gigs (now / today / weekend) with one-tap accept and push fan-out to top-matched nearby freelancers |
+| Async video interview | Employer posts 1–3 questions; applicants record on apply (`MediaRecorder` → signed upload to a private bucket) |
+| In-app messaging | Realtime threads per application, unlocked at shortlist/offer/hire; inbox with unread badges; block-aware |
+| Double-blind reviews | A rating stays hidden until both parties submit or 14 days pass (enforced in RLS). Either party can mark a gig completed. Daily pg_cron reminders |
+| Lifecycle controls | Withdraw application, edit/delete gig (delete only with zero applicants), honest close outcomes (filled vs cancelled) |
+| Applicant triage | Status filters, search, sort, and true DB pagination on the employer pipeline |
+| Trust & safety | Report users/gigs, block users (hidden across matching, lists, applying, messaging), disputes with a state machine |
+| Admin surface | `/admin` (role-gated, unlinked): report triage, cert review queue, dispute resolution, error log. Promote via SQL only |
+| Observability | First-party error store — server captures + client error-boundary reports land in `app_errors`, viewable at `/admin/errors` |
+| Match instrumentation | Every apply/shortlist/offer/hire/reject/withdraw/complete/rate writes to `match_events` for future ranking work |
+| Entrepreneur onboarding | Entity-type wizard → name reservation → mock-ACRA registration → post-reg guidance (CPF, GST, banking) |
+| 3D vector map | Server-side PCA to 3D; Three.js view of profiles/gigs in semantic space |
 
 ## Setup
 
 ```bash
 npm install
-cp .env.example .env.local
-```
-
-Fill in `.env.local`:
-
-```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-OPENAI_API_KEY=
-ANTHROPIC_API_KEY=
-NEXT_PUBLIC_VAPID_PUBLIC_KEY=
-VAPID_PRIVATE_KEY=
-VAPID_EMAIL=mailto:you@example.com
-PINECONE_API_KEY=          # optional — Pinecone sync only
-PINECONE_INDEX=            # optional
+cp .env.example .env.local   # fill in every variable — comments explain each
 ```
 
 ### Database
+
+Migrations live in `supabase/migrations/` (`0001` → `0038`) and cover schema, RLS, pgvector matching, storage bucket limits, rate limiting, trust & safety tables, messaging, instrumentation, and the pg_cron reminder job.
 
 ```bash
 npx supabase db push
 ```
 
-Or run migrations manually in the Supabase SQL Editor in order from `0001_init.sql` to `0013_profile_location.sql`.
-
 ### Seed
 
 ```bash
-npm run seed          # 12 freelancers + 5 employers + 16 gigs + embeddings
+npm run seed                      # 12 freelancers + 5 employers + 16 gigs + embeddings
 npx tsx lib/db/seed-personal.ts   # 5 residents + 12 regular + 18 instant gigs
-npm run extend-deadlines          # set all open gig deadlines to end of month
+npm run extend-deadlines          # keep open gig deadlines live for demos
 ```
 
-### Dev
+### Dev & checks
 
 ```bash
 npm run dev
+npm run typecheck   # tsc --noEmit
+npm run lint        # eslint .
+npm test            # Vitest unit tests
+npm run e2e         # Playwright (requires dev server; npx playwright install once)
 ```
 
-### Tests
-
-```bash
-npm test                # Vitest unit tests
-npx playwright install  # first time only
-npm run e2e             # Playwright smoke tests (requires dev server)
-```
+CI (`.github/workflows/ci.yml`) blocks on typecheck, lint, tests, and `npm audit --audit-level=high`.
 
 ## Architecture
 
 ```
 app/
-├── (marketing)/                 Landing, vector map, test accounts page
-├── (auth)/singpass/             Mock Singpass flow
-├── (auth)/onboarding/           Post-login role picker + push permission prompt
-├── (app)/feed/                  AI + distance matched gigs, silent geolocation capture
-├── (app)/instant/               Instant gig board (now / today / weekend)
-├── (app)/gigs/                  Browse + detail + post
-├── (app)/dashboard/             Employer dashboard, rehire, direct offers
-├── (app)/interviews/[id]/       Record / review async interviews
-├── (app)/profile/               Public + edit
-└── api/push/subscribe/          Web Push subscription endpoint
+├── (marketing)/                 Landing, vector map, /accounts (demo-only)
+├── (auth)/login/                Email OTP (the only login when demo mode is off)
+├── (auth)/singpass/             Mock Singpass (demo-only; redirects to /login otherwise)
+├── (auth)/onboarding/           Role picker + live completion checklist
+├── (app)/feed/                  Matched gigs + consent priming cards
+├── (app)/instant/               Instant gig board
+├── (app)/gigs/                  Browse, detail, post, edit
+├── (app)/applications|applicants/  Both sides of the pipeline (withdraw / triage)
+├── (app)/messages/              Realtime inbox + threads
+├── (app)/disputes/              Open + track disputes
+├── (app)/interviews|rate/       Async video interviews, double-blind reviews
+├── (admin)/admin/               Reports, cert review, disputes, errors (role-gated)
+├── (mobile)/m/                  Mobile surface (shares domain logic with desktop)
+└── api/                         push/subscribe, storage/sign (Zod + same-origin)
 
 lib/
-├── ai/                          Embeddings, hybrid distance+vector match, cert parser
-├── singpass/                    NRIC format validation + mock MyInfo data
-├── push/                        VAPID push notification dispatch
-├── entrepreneur/                SG entity facts + reserved-term check
-├── supabase/                    Client/server/service clients + hand-written types
-└── db/                          Seed fixtures + runners + deadline updater
-
-supabase/migrations/             SQL schema, pgvector, RLS, haversine helpers
-components/
-├── location/GeolocationCapture  Silent browser location → profile
-├── notifications/               Push toggle + auto-subscribe on onboarding
-├── nav/, profile/, gig/, video/ Feature-scoped components
-styles/tokens.css                OKLCH palette, editorial type scale
+├── gigs/ applications/          Shared domain functions (post, apply) — both surfaces adapt these
+├── ai/                          Embeddings (hash-cached), hybrid match, cert parser
+├── certs/opencerts.ts           OpenCerts / OpenAttestation verification
+├── safety/                      Block checks and list filtering
+├── security/                    safeNext, http-only URLs, origin check, rate limiter
+├── analytics/match-events.ts    Outcome instrumentation
+├── observability/errors.ts      First-party error capture
+├── auth/admin.ts                Admin gate
+└── supabase/                    Typed clients (generated Database types)
 ```
 
 ## Seeded identities
 
-All 22 test accounts are listed at `/accounts`. Quick reference:
-
-| NRIC | Handle | Role |
-|------|--------|------|
-| S1111111A | aisha_ml | ML Engineer |
-| S2222222B | jun_wei | Full-stack |
-| S3333333C | nadia_ux | UX Designer |
-| S4444444D | ravi_motion | Motion Designer |
-| S5555555E | priya_tutor | H2 Tutor |
-| S6666666F | marcus_psle | PSLE Tutor |
-| T0111111G | siti_emcee | Emcee |
-| T0222222H | jasmine_events | Event Coord |
-| S7777777I | jayden_video | Videographer |
-| S8888888J | chef_hafiz | Caterer |
-| S9090909K | eden_tiktok | TikTok Creator |
-| S1010101L | zara_copy | Copywriter |
-| M1001001A | techsg_ventures | Employer |
-| M2002002B | nova_studio | Employer |
-| M3003003C | brightmind | Employer |
-| M4004004D | sunrise_events | Employer |
-| M5005005E | kopicraft | Employer |
-| S9012345I | lim_amk | Resident (AMK) |
-| S8765432Z | rajan_bv | Resident (Bishan) |
-| S7654321F | tan_sengkang | Resident (Sengkang) |
-| S6543210B | aaron_cl | Resident (Clementi) |
-| S5432109J | siti_bd | Resident (Bedok) |
+All demo accounts are listed at `/accounts` (demo mode only). Highlights: `S1111111A` (aisha_ml, freelancer), `M1001001A` (techsg_ventures, employer). Fresh sign-ups work with any format-valid NRIC in demo mode.
 
 ## Demo script
 
-1. Visit `/accounts` → pick any freelancer identity
-2. Go to `/singpass` → Password login tab → enter the NRIC → log in
-3. Feed loads at `/feed` with AI + distance ranked gigs and match % badges
-4. Log in as `M1001001A` (employer) in a second tab → post a new gig
-5. The first account receives a push notification (if browser permission was granted during onboarding)
-6. Visit `/vector-map` → see all profiles and gigs as dots in 3D semantic space
-7. Visit `/instant` → view time-urgent gigs with urgency badges
-8. Any time: `/start-a-business` → sole-prop vs Pte Ltd wizard
+1. `/accounts` → pick a freelancer → `/singpass` → log in
+2. `/feed` — matched gigs with distance + match badges; tap the priming cards to enable location/push
+3. Second tab: log in as `M1001001A` → post a gig → first account gets matched (and pushed, if enabled)
+4. Apply → record interview answers → employer shortlists → **message thread unlocks** → offer → hire
+5. Either side marks completed → both leave double-blind reviews
+6. Upload an `.opencert` file on `/profile/edit` → instant verified badge
+7. Admin (after `update profiles set is_admin = true where handle = '...'`): `/admin` for reports, cert queue, disputes, errors
 
-**Fresh account flow:**
-1. `/singpass` → enter any NRIC like `S1234567A` + your name
-2. Pick role → browser asks for notification permission
-3. Your profile embedding is generated immediately — you appear on `/vector-map`
-4. When any employer posts a matching gig, you receive a push notification
+## Security
 
-## Security notes
+See [SECURITY.md](SECURITY.md) for the demo-mode boundary, controls in place, accepted gaps, and the production deploy checklist. Short version: RLS everywhere (initplan-optimised, one policy per command), `auth.uid()`-enforced RPCs, rate limits on paid/abusable endpoints, honest UI claims, and no self-serve trust signals.
 
-- NRICs are hashed (SHA-256 + salt `hustle-sg`). Raw NRIC never persisted.
-- All tables have RLS. Storage buckets have per-user prefix policies.
-- Interview responses live in a private bucket. Employer playback uses short-lived signed URLs.
-- No raw API keys in client code. All AI calls run server-side.
-- Mock Singpass is NOT real identity verification. Not for production use.
+## Improvement plan
+
+The codebase was overhauled against [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md) (phases 0–6: security, foundation, trust & safety, product gaps, consolidation, UX, matching). All phases are implemented except items that need external accounts (Stripe, real Singpass OIDC) — the plan file records per-phase status.

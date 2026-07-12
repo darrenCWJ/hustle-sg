@@ -42,8 +42,12 @@ the box. Any non-demo deployment must:
 - **RLS** — enabled on every table; storage buckets for portfolio, interviews
   and certs are ownership-scoped.
 - **No self-serve verification (C4)** — users cannot mark their own
-  certifications verified; new certs are always `pending` until a real
-  issuer/registry check exists (Phase 2.1).
+  certifications verified. Two real paths exist: **OpenCerts** documents are
+  cryptographically verified server-side (integrity + issuance status +
+  issuer identity, `lib/certs/opencerts.ts`) and earn the badge instantly;
+  everything else stays `pending` until an admin approves it in the
+  `/admin/certs` review queue. Every decision is written to
+  `cert_verification_log`.
 - **Truth in advertising (C5)** — the UI makes no escrow / dispute-window /
   IRAS-receipt claims; payments are stated as arranged off-platform.
 - **Open redirect** — all `next` redirect params pass through
@@ -61,16 +65,23 @@ the box. Any non-demo deployment must:
   `nosniff`, HSTS, referrer policy, and same-origin-only camera/mic/geo.
 - **Route handlers** — `push/subscribe` and `storage/sign` validate bodies with
   Zod and reject cross-origin requests (`lib/security/origin.ts`).
+- **Trust & safety** — report + block (enforced in SQL matching, list surfaces,
+  applying and messaging), double-blind reviews (reveal gate in RLS), disputes
+  with admin-only state transitions, and a role-gated `/admin` surface
+  (promoted via SQL only, 404s for everyone else).
+- **Error visibility** — server captures and client error-boundary reports
+  land in the service-role-only `app_errors` table (`/admin/errors`); the
+  client reporting action is rate-limited so error loops can't flood it.
 
 ## Known gaps (accepted for the demo)
 
-- Mock auth (above) — the entire identity layer is demo-grade.
-- `demo_sessions` table and `demo-videos` bucket have permissive RLS
-  (`USING (true)`) — demo infrastructure, do not reuse for real data
-  (Phase 4.4 tightens this).
-- No messaging/report/block/dispute mechanisms yet (Phase 2–3).
-- Certificate "verification" is pending-only; no registry integration yet
-  (Phase 2.1).
+- Mock auth (above) — the demo identity layer is insecure by design; email
+  OTP is the non-demo path and proves email ownership only.
+- `demo_sessions` has a permissive anonymous policy by design (session-code
+  access); it is constrained to the demo's ID format and a 200 KB state cap —
+  do not reuse it for real data.
+- Payments are off-platform: HustleSG holds no funds, so escrow/dispute-hold
+  claims are deliberately absent from the UI.
 
 ## Deploy checklist (gate on milestone M0)
 
