@@ -630,6 +630,20 @@ export default async function ApplicantsPage({
                           {timeAgo(a.created_at)}
                         </span>
                         <div style={{ display: "flex", gap: 8 }}>
+                          {["shortlisted", "offered", "hired", "completed"].includes(a.status) && (
+                            <Link
+                              href={`/messages/${a.id}`}
+                              style={{
+                                padding: "6px 12px",
+                                borderRadius: 999,
+                                border: "1px solid var(--color-line)",
+                                fontSize: 12,
+                                fontWeight: 600,
+                              }}
+                            >
+                              Message
+                            </Link>
+                          )}
                           {applicant?.handle && (
                             <Link
                               href={`/profile/${applicant.handle}`}

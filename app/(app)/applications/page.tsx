@@ -482,6 +482,18 @@ export default async function ApplicationsPage() {
                       >
                         Report issue
                       </Link>
+                      <Link
+                        href={`/messages/${a.id}`}
+                        style={{
+                          padding: "6px 12px",
+                          borderRadius: 999,
+                          border: "1px solid var(--color-line)",
+                          fontSize: 12,
+                          fontWeight: 600,
+                        }}
+                      >
+                        Message
+                      </Link>
                       {gig?.id && (
                         <Link
                           href={`/gigs/${gig.id}`}
@@ -528,6 +540,20 @@ export default async function ApplicationsPage() {
                             Withdraw
                           </button>
                         </form>
+                      )}
+                      {a.status === "shortlisted" && (
+                        <Link
+                          href={`/messages/${a.id}`}
+                          style={{
+                            padding: "6px 12px",
+                            borderRadius: 999,
+                            border: "1px solid var(--color-line)",
+                            fontSize: 12,
+                            fontWeight: 600,
+                          }}
+                        >
+                          Message
+                        </Link>
                       )}
                       {gig?.id && (
                         <Link

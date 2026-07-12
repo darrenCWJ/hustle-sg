@@ -123,6 +123,7 @@ export function UserMenu({ displayName, handle, role }: Props) {
 
           <div style={{ padding: "6px 0" }} onClick={() => setOpen(false)}>
             <MenuItem href="/dashboard" icon="⊞">Dashboard</MenuItem>
+            <MenuItem href="/messages" icon="✉">Messages</MenuItem>
             <MenuItem href={`/profile/${handle}`} icon="◉">My profile</MenuItem>
             {(role === "freelancer" || role === "both") && (
               <MenuItem href="/feed" icon="✦">Matched gigs</MenuItem>
