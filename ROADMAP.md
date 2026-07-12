@@ -48,9 +48,14 @@
 - [ ] **Real Singpass/MyInfo OIDC** — needs government onboarding; email OTP
   remains the interim.
 - [ ] **Front-end consolidation** — retire `/m` in favour of one responsive
-  app; split the two oversized components (SwipeCardDeck, DashboardCalendar).
+  app. ~~Split the two oversized components~~ done: pure grid math lives in
+  `lib/availability/calendar-grid.ts` (tested), the deck in
+  `deck-utils.ts` + `GigCard` + `EmptyDeck` + `DeckOverlays`, the calendar in
+  `DashboardCalendar` + `CalendarGigCards`.
 - [ ] **Ops** — Sentry DSN (optional; first-party store exists), custom SMTP,
-  leaked-password toggle (Supabase dashboard).
+  leaked-password toggle (Supabase dashboard). CI has an opt-in E2E job:
+  set repo variable `RUN_E2E=true` + `E2E_SUPABASE_URL` /
+  `E2E_SUPABASE_ANON_KEY` secrets.
 
 ## Model health playbook (for non-technical admins)
 

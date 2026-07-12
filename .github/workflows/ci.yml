@@ -30,3 +30,48 @@ jobs:
 
       - name: Dependency audit (high)
         run: npm audit --audit-level=high
+
+  # Money-path E2E against the seeded demo database. Opt-in: set the repo
+  # variable RUN_E2E to "true" (Settings → Secrets and variables → Actions →
+  # Variables) and add E2E_SUPABASE_URL / E2E_SUPABASE_ANON_KEY secrets.
+  # Job-level `if` cannot read secrets, hence the variable gate.
+  e2e:
+    runs-on: ubuntu-latest
+    if: ${{ vars.RUN_E2E == 'true' }}
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_DEMO_MODE: "true"
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build
+        run: npm run build
+
+      - name: Start server
+        run: |
+          npm run start &
+          timeout 60 bash -c 'until curl -sf http://localhost:3000 >/dev/null; do sleep 2; done'
+
+      - name: Run E2E tests
+        run: npx playwright test
+
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7
