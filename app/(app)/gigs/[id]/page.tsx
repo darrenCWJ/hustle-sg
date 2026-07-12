@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatSgd, timeAgo } from "@/lib/utils";
+import { ReportButton } from "@/components/safety/ReportButton";
 import { applyToGig } from "./actions";
 import { RecommendedCandidates } from "./RecommendedCandidates";
 
@@ -125,6 +126,9 @@ export default async function GigDetailPage({
             {gig.category ?? "Gig"} · {gig.location ?? "Remote"}
           </span>
           <span style={{ fontSize: 11, color: "var(--color-ink-mute)" }}>· {timeAgo(gig.created_at)}</span>
+          {user && !isOwnGig && (
+            <ReportButton targetKind="gig" targetId={gig.id} targetLabel="this gig" />
+          )}
         </div>
         <h1
           style={{

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { isBlockedBetween } from "@/lib/safety/blocks";
 
 export async function mobileApplyToGig(
   gigId: string,
@@ -19,6 +20,17 @@ export async function mobileApplyToGig(
     .eq("applicant_id", user.id)
     .maybeSingle();
   if (existing) return { ok: true, alreadyApplied: true };
+
+  // Blocked pairs can't enter each other's hiring pipeline (Phase 2.3).
+  const { data: gigOwner } = await supabase
+    .from("gigs")
+    .select("employer_id")
+    .eq("id", gigId)
+    .single();
+  if (!gigOwner) return { ok: false, error: "Gig not found." };
+  if (await isBlockedBetween(user.id, gigOwner.employer_id)) {
+    return { ok: false, error: "You can't apply to this gig." };
+  }
 
   const { data: app, error } = await supabase
     .from("applications")

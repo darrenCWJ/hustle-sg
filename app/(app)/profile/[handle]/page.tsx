@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { computeTrustScore } from "@/lib/trust/score";
+import { ReportButton } from "@/components/safety/ReportButton";
+import { BlockButton } from "@/components/safety/BlockButton";
 import Link from "next/link";
 
 export default async function ProfilePage({
@@ -56,6 +58,18 @@ export default async function ProfilePage({
   const isOwner = user?.id === profile.id;
   const isEmployer = profile.role === "employer" || profile.role === "both";
   const isFreelancer = profile.role === "freelancer" || profile.role === "both";
+
+  // Viewer's own block row is readable under RLS (blocker_id = auth.uid()).
+  let viewerHasBlocked = false;
+  if (user && !isOwner) {
+    const { data: blockRow } = await supabase
+      .from("blocks")
+      .select("blocked_id")
+      .eq("blocker_id", user.id)
+      .eq("blocked_id", profile.id)
+      .maybeSingle();
+    viewerHasBlocked = Boolean(blockRow);
+  }
 
   let employerGigs: any[] = [];
   let totalWorkersHired = 0;
@@ -140,6 +154,20 @@ export default async function ProfilePage({
             <span style={{ fontSize: 12, color: "var(--color-ink-soft)", fontFamily: "var(--font-mono)" }}>
               @{profile.handle}
             </span>
+            {user && !isOwner && (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <ReportButton
+                  targetKind="user"
+                  targetId={profile.id}
+                  targetLabel={profile.display_name}
+                />
+                <BlockButton
+                  userId={profile.id}
+                  displayName={profile.display_name}
+                  initiallyBlocked={viewerHasBlocked}
+                />
+              </span>
+            )}
           </div>
 
           <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(3rem, 6vw, 5.5rem)", margin: "0 0 12px", lineHeight: 0.94, letterSpacing: "-0.04em" }}>

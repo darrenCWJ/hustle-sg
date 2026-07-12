@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { isBlockedBetween } from "@/lib/safety/blocks";
 
 export async function applyToGig(gigId: string, formData: FormData) {
   const supabase = await createClient();
@@ -13,11 +14,14 @@ export async function applyToGig(gigId: string, formData: FormData) {
   // Guard: reject if gig is closed or past its application deadline.
   const { data: gigMeta } = await supabase
     .from("gigs")
-    .select("status, applications_close_at")
+    .select("status, applications_close_at, employer_id")
     .eq("id", gigId)
     .single();
   if (!gigMeta || gigMeta.status !== "open") return;
   if (gigMeta.applications_close_at && new Date(gigMeta.applications_close_at) < new Date()) return;
+
+  // Blocked pairs can't enter each other's hiring pipeline (Phase 2.3).
+  if (await isBlockedBetween(user.id, gigMeta.employer_id)) return;
 
   const cover = String(formData.get("cover_note") ?? "").slice(0, 2000);
 
