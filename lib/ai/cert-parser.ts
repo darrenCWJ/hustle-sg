@@ -79,17 +79,31 @@ export async function parseCertText(text: string): Promise<ParsedCert> {
   if (jsonStart === -1 || jsonEnd === -1) {
     throw new Error(`Claude did not return JSON: ${raw.slice(0, 200)}`);
   }
-  const parsed = JSON.parse(raw.slice(jsonStart, jsonEnd + 1));
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = JSON.parse(raw.slice(jsonStart, jsonEnd + 1));
+  } catch {
+    // The model can wrap JSON in prose or emit stray braces; fail with a clear,
+    // catchable error instead of an opaque SyntaxError.
+    throw new Error(`Claude returned malformed JSON: ${raw.slice(0, 200)}`);
+  }
+
+  const kindValue = parsed.kind;
+  const kind: ParsedCert["kind"] =
+    typeof kindValue === "string" &&
+    (["wsq", "university", "accreditation", "other"] as const).includes(
+      kindValue as ParsedCert["kind"],
+    )
+      ? (kindValue as ParsedCert["kind"])
+      : "other";
 
   return {
     issuer: String(parsed.issuer ?? "").trim(),
     title: String(parsed.title ?? "").trim(),
-    issued_at: parsed.issued_at ?? null,
+    issued_at: typeof parsed.issued_at === "string" ? parsed.issued_at : null,
     skills: Array.isArray(parsed.skills)
       ? parsed.skills.map((s: unknown) => String(s)).slice(0, 10)
       : [],
-    kind: ["wsq", "university", "accreditation", "other"].includes(parsed.kind)
-      ? parsed.kind
-      : "other",
+    kind,
   };
 }

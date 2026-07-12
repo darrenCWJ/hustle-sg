@@ -1,4 +1,4 @@
-// Seed realistic SG data + AI embeddings + Pinecone upsert.
+// Seed realistic SG data + AI embeddings (pgvector).
 // Run: npx tsx lib/db/seed.ts
 // Reset (wipe first): npx tsx lib/db/seed.ts --reset
 
@@ -295,39 +295,6 @@ async function computeEmbeddings(
   return records;
 }
 
-// ─── PINECONE UPSERT ─────────────────────────────────────────────────────────
-
-async function upsertToPinecone(records: EmbeddingRecord[]) {
-  const apiKey = process.env.PINECONE_API_KEY;
-  const indexName = process.env.PINECONE_INDEX ?? "hustlesg";
-  if (!apiKey) {
-    console.warn("⚠ PINECONE_API_KEY not set — skipping Pinecone upsert.");
-    return;
-  }
-
-  try {
-    const { Pinecone } = await import("@pinecone-database/pinecone");
-    const pc = new Pinecone({ apiKey });
-    const index = pc.index(indexName);
-
-    const BATCH = 100;
-    for (let i = 0; i < records.length; i += BATCH) {
-      const batch = records.slice(i, i + BATCH);
-      await index.upsert({
-        records: batch.map((r) => ({
-          id: r.id,
-          values: r.vector,
-          metadata: { label: r.label, kind: r.kind },
-        })),
-      });
-      console.log(`  → Pinecone: upserted ${i + batch.length}/${records.length}`);
-    }
-    console.log(`  ✓ Pinecone index "${indexName}" updated.`);
-  } catch (err) {
-    console.warn("  ⚠ Pinecone upsert failed:", err);
-  }
-}
-
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -344,10 +311,10 @@ async function main() {
   await seedApplications(handleToId, gigMap);
 
   if (process.env.OPENAI_API_KEY) {
-    const records = await computeEmbeddings(handleToId, gigMap);
-    await upsertToPinecone(records);
+    // Writes pgvector embeddings to profiles/gigs (the app's actual match store).
+    await computeEmbeddings(handleToId, gigMap);
   } else {
-    console.warn("⚠ OPENAI_API_KEY not set — skipping embeddings + Pinecone.");
+    console.warn("⚠ OPENAI_API_KEY not set — skipping embeddings.");
   }
 
   const allNrics = [...FREELANCERS, ...EMPLOYERS].map((p) => `${p.nric} (${p.handle})`);

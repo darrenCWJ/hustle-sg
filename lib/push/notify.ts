@@ -5,6 +5,13 @@ const VAPID_PUBLIC = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
 const VAPID_EMAIL = process.env.VAPID_EMAIL ?? "mailto:admin@hustlesg.com";
 
+// Minimum vector-similarity score (cosine, 1.0 = identical) to notify a
+// freelancer of a match. Instant gigs use a slightly lower bar — more urgency,
+// cast a wider net; regular gig matches use a higher bar to avoid low-relevance
+// notification spam. The two values differ on purpose.
+const INSTANT_MATCH_NOTIFY_THRESHOLD = 0.5;
+const GIG_MATCH_NOTIFY_THRESHOLD = 0.55;
+
 function getWebPush() {
   if (!VAPID_PUBLIC || !VAPID_PRIVATE) return null;
   webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC, VAPID_PRIVATE);
@@ -68,9 +75,8 @@ export async function notifyInstantGigPosted(gigId: string): Promise<void> {
 
   if (!matches?.length) return;
 
-  const MIN_SCORE = 0.50;
   const qualified = (matches as { user_id: string; score: number }[])
-    .filter((m) => m.score >= MIN_SCORE)
+    .filter((m) => m.score >= INSTANT_MATCH_NOTIFY_THRESHOLD)
     .slice(0, 8);
 
   if (!qualified.length) return;
@@ -114,11 +120,8 @@ export async function notifyMatchedFreelancers(gigId: string): Promise<void> {
 
   if (!matches?.length) return;
 
-  // Only notify freelancers whose vector similarity is genuinely high (≥ 0.55).
-  // Cosine similarity of 1.0 = identical, 0.55+ = meaningfully related.
-  const MIN_SCORE = 0.55;
   const qualified = (matches as { user_id: string; score: number }[]).filter(
-    (m) => m.score >= MIN_SCORE,
+    (m) => m.score >= GIG_MATCH_NOTIFY_THRESHOLD,
   ).slice(0, 5);
 
   if (!qualified.length) return;
