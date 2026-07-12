@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   gigRowRange,
   gigDayCols,
+  gigDurationMinutes,
   gigFitsAvailability,
   hasAnyAvailability,
   GRID_ROWS,
@@ -89,6 +90,67 @@ describe("gigFitsAvailability", () => {
     const slots = weekWith(6, 0, 0);
     expect(gigFitsAvailability(slots, {}, WEDNESDAY)).toBe(true);
     expect(gigFitsAvailability(emptyWeek(), {}, WEDNESDAY)).toBe(false);
+  });
+});
+
+describe("gigDurationMinutes", () => {
+  test("hours_required wins and converts to minutes", () => {
+    expect(gigDurationMinutes({ hours_required: 2 })).toBe(120);
+  });
+
+  test("parses free-text labels: minutes, decimal hours, combos", () => {
+    expect(gigDurationMinutes({ duration_label: "45 min" })).toBe(45);
+    expect(gigDurationMinutes({ duration_label: "15mins" })).toBe(15);
+    expect(gigDurationMinutes({ duration_label: "1.5 hours" })).toBe(90);
+    expect(gigDurationMinutes({ duration_label: "2h" })).toBe(120);
+    expect(gigDurationMinutes({ duration_label: "1h 30m" })).toBe(90);
+  });
+
+  test("unknown or unparseable → null", () => {
+    expect(gigDurationMinutes({})).toBeNull();
+    expect(gigDurationMinutes({ duration_label: "flexible" })).toBeNull();
+  });
+});
+
+describe("gigFitsAvailability — flexible durations (timing not fixed)", () => {
+  test("a 45-min task fits any free 60-min stretch (rounds up to grid slots)", () => {
+    const slots = weekWith(2, 4, 5); // Wed: one free hour, 10:00–11:00
+    const gig = { days_of_week: [2], duration_label: "45 min" };
+    expect(gigFitsAvailability(slots, gig, WEDNESDAY)).toBe(true);
+  });
+
+  test("a 15-min task fits a single free half-hour slot", () => {
+    const slots = weekWith(2, 4, 4); // Wed: 10:00–10:30 only
+    const gig = { days_of_week: [2], duration_label: "15 mins" };
+    expect(gigFitsAvailability(slots, gig, WEDNESDAY)).toBe(true);
+  });
+
+  test("fragmented availability shorter than the duration does not fit", () => {
+    // Wed: two separate free half-hours with a gap — no contiguous 2h run.
+    const slots = emptyWeek();
+    slots[2][2] = 1;
+    slots[2][6] = 1;
+    const gig = { days_of_week: [2], hours_required: 2 };
+    expect(gigFitsAvailability(slots, gig, WEDNESDAY)).toBe(false);
+  });
+
+  test("contiguous run long enough fits a multi-hour flexible gig", () => {
+    const slots = weekWith(2, 4, 9); // Wed: 10:00–13:00 free (3h)
+    const gig = { days_of_week: [2], hours_required: 3 };
+    expect(gigFitsAvailability(slots, gig, WEDNESDAY)).toBe(true);
+  });
+
+  test("a fixed window still takes precedence over the duration", () => {
+    // Free 10:00–13:00, but the gig's fixed window is 14:00–15:00 → no fit,
+    // even though a 1h contiguous run exists elsewhere in the day.
+    const slots = weekWith(2, 4, 9);
+    const gig = {
+      days_of_week: [2],
+      start_time: "14:00",
+      end_time: "15:00",
+      hours_required: 1,
+    };
+    expect(gigFitsAvailability(slots, gig, WEDNESDAY)).toBe(false);
   });
 });
 

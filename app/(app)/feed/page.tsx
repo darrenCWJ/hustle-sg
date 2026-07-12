@@ -32,7 +32,7 @@ export default async function FeedPage() {
   if (calendarSet && matches.length > 0) {
     const { data: timings } = await supabase
       .from("gigs")
-      .select("id, days_of_week, start_time, end_time, starts_at, is_instant, instant_urgency")
+      .select("id, days_of_week, start_time, end_time, starts_at, is_instant, instant_urgency, hours_required, duration_label")
       .in("id", matches.map((m) => m.gig_id));
     const timingById = new Map((timings ?? []).map((t) => [t.id, t]));
     annotated = matches.map((m) => {

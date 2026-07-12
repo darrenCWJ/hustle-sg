@@ -10,6 +10,8 @@ export interface GigTiming {
   starts_at?: string | null; // ISO timestamp
   is_instant?: boolean | null;
   instant_urgency?: string | null; // now | today | weekend
+  hours_required?: number | null; // whole hours
+  duration_label?: string | null; // free text, e.g. "45 min", "1.5 hours"
 }
 
 const GRID_START_MIN = 8 * 60; // 08:00
@@ -47,6 +49,37 @@ export function gigRowRange(timing: GigTiming): number[] | null {
   return rows.length > 0 ? rows : null;
 }
 
+/**
+ * How long the gig needs, in minutes, when it has no fixed clock window —
+ * e.g. "45 min sometime Tuesday". Reads hours_required first, then parses the
+ * free-text duration_label ("45 min", "1.5 hours", "2h", "1h 30m"). Null when
+ * the duration is unknown.
+ */
+export function gigDurationMinutes(timing: GigTiming): number | null {
+  if (timing.hours_required && timing.hours_required > 0) {
+    return timing.hours_required * 60;
+  }
+  const label = timing.duration_label?.toLowerCase() ?? "";
+  if (!label) return null;
+
+  let minutes = 0;
+  const hours = /(\d+(?:\.\d+)?)\s*(?:h\b|hr|hour)/.exec(label);
+  if (hours) minutes += Math.round(Number(hours[1]) * 60);
+  const mins = /(\d+)\s*(?:m\b|min)/.exec(label);
+  if (mins) minutes += Number(mins[1]);
+
+  return minutes > 0 ? minutes : null;
+}
+
+function hasContiguousRun(day: number[], length: number): boolean {
+  let run = 0;
+  for (const v of day) {
+    run = v === 1 ? run + 1 : 0;
+    if (run >= length) return true;
+  }
+  return false;
+}
+
 function todayCol(now: Date): number {
   return (now.getDay() + 6) % 7; // JS Sunday=0 → grid Monday=0
 }
@@ -73,11 +106,14 @@ export function gigDayCols(timing: GigTiming, now: Date = new Date()): number[] 
 }
 
 /**
- * True when the gig fits the freelancer's availability: on at least one of
- * the gig's candidate days, EVERY half-hour slot of its working window is
- * marked available. When the window is unknown, any availability on a
- * candidate day counts; when the day is also unknown, any availability at
- * all counts.
+ * True when the gig fits the freelancer's availability, on at least one of
+ * the gig's candidate days:
+ * - fixed window (start/end times) → EVERY half-hour slot of the window is free;
+ * - flexible timing with a known duration ("45 min", 2 hours) → a contiguous
+ *   free stretch at least that long exists (sub-30-min durations round up to
+ *   one 30-min slot — the grid's resolution; conservative, never overpromises);
+ * - unknown duration → any availability on a candidate day;
+ * - unknown day too → any availability at all.
  */
 export function gigFitsAvailability(
   slots: number[][],
@@ -86,12 +122,15 @@ export function gigFitsAvailability(
 ): boolean {
   const cols = gigDayCols(timing, now) ?? Array.from({ length: GRID_COLS }, (_, i) => i);
   const rows = gigRowRange(timing);
+  const durationMin = rows === null ? gigDurationMinutes(timing) : null;
+  const runLength = durationMin !== null ? Math.max(1, Math.ceil(durationMin / SLOT_MIN)) : null;
 
   return cols.some((col) => {
     const day = slots[col];
     if (!day) return false;
-    if (rows === null) return day.some((v) => v === 1);
-    return rows.every((r) => day[r] === 1);
+    if (rows !== null) return rows.every((r) => day[r] === 1);
+    if (runLength !== null) return hasContiguousRun(day, runLength);
+    return day.some((v) => v === 1);
   });
 }
 
