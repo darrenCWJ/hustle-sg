@@ -16,3 +16,5 @@ tsconfig.tsbuildinfo
 ./artifacts
 screenshots/
 .playwright-mcp/
+# Supabase CLI scratch
+supabase/.temp/
