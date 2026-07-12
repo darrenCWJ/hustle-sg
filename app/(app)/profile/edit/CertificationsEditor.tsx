@@ -6,7 +6,6 @@ import Link from "next/link";
 import {
   addCertification,
   deleteCertification,
-  verifyCertification,
 } from "./actions";
 import type { Certification } from "@/lib/supabase/types";
 import { VerifiedBadge } from "@/components/profile/VerifiedBadge";
@@ -42,7 +41,7 @@ export function CertificationsEditor({ certs }: { certs: Certification[] }) {
       setTitle("");
       setIssuedAt("");
       setRawText("");
-      setFlash(res.verified ? "Issuer recognised — verified badge added." : "Added (pending manual review).");
+      setFlash("Added — pending verification against the issuer.");
       router.refresh();
     });
   };
@@ -126,18 +125,9 @@ export function CertificationsEditor({ certs }: { certs: Certification[] }) {
             {c.verified ? (
               <VerifiedBadge>Verified</VerifiedBadge>
             ) : (
-              <button
-                type="button"
-                className="text-xs px-2.5 py-1 rounded-pill border border-line text-ink-soft hover:border-trust hover:text-trust transition"
-                onClick={() => {
-                  startTransition(async () => {
-                    await verifyCertification(c.id);
-                    router.refresh();
-                  });
-                }}
-              >
-                Mark verified
-              </button>
+              <span className="text-xs px-2.5 py-1 rounded-pill border border-line text-ink-soft">
+                Pending verification
+              </span>
             )}
             <button
               type="button"

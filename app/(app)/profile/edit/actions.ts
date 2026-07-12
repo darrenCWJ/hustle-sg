@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { regenerateUserEmbedding } from "@/lib/ai/match";
-import { isVerifiedIssuer, parseCertText } from "@/lib/ai/cert-parser";
+import { parseCertText } from "@/lib/ai/cert-parser";
+import { isHttpUrl } from "@/lib/security/url";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/security/rate-limit";
 
 const profileSchema = z.object({
   handle: z
@@ -54,7 +56,12 @@ const portfolioSchema = z.object({
   title: z.string().min(1).max(120),
   description: z.string().max(800).optional().nullable(),
   media_url: z.string().optional().nullable(),
-  external_url: z.string().url().optional().nullable(),
+  external_url: z
+    .string()
+    .url()
+    .refine(isHttpUrl, "Links must start with http:// or https://")
+    .optional()
+    .nullable(),
   tags: z.string().optional(),
 });
 
@@ -138,28 +145,31 @@ export async function addCertification(formData: FormData) {
   let extractedSkills: string[] = [];
   const rawText = String(formData.get("raw_text") ?? "").trim();
   if (rawText) {
-    try {
-      const parsedCert = await parseCertText(rawText);
-      extractedSkills = parsedCert.skills;
-      // Let Claude override only if the user didn't type
-      if (!parsed.data.issuer) (parsed.data as any).issuer = parsedCert.issuer;
-      if (!parsed.data.title) (parsed.data as any).title = parsedCert.title;
-    } catch (err) {
-      console.error("[cert-parser]", err);
+    // Throttle the paid Claude call per user (finding M4). On limit, skip
+    // enrichment but still save the cert.
+    const allowed = await checkRateLimit(
+      `cert-parse:${user.id}`,
+      RATE_LIMITS.certParse.limit,
+      RATE_LIMITS.certParse.windowSeconds,
+    );
+    if (allowed) {
+      try {
+        const parsedCert = await parseCertText(rawText);
+        extractedSkills = parsedCert.skills;
+        // Let Claude override only if the user didn't type
+        if (!parsed.data.issuer) (parsed.data as any).issuer = parsedCert.issuer;
+        if (!parsed.data.title) (parsed.data as any).title = parsedCert.title;
+      } catch (err) {
+        console.error("[cert-parser]", err);
+      }
     }
   }
 
-  // Auto-verify if issuer is known OR user is SingPass-verified
-  const knownIssuer = isVerifiedIssuer(parsed.data.issuer);
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("singpass_verified_at")
-    .eq("id", user.id)
-    .single();
-  const singpassVerified = Boolean(profile?.singpass_verified_at);
-  const verified = knownIssuer || singpassVerified;
-  const verificationMethod = knownIssuer ? "manual" : singpassVerified ? "singpass" : null;
-
+  // Credentials are NOT verified from self-typed data (finding C4): neither a
+  // recognised issuer NAME (which the user types themselves) nor a Singpass-
+  // verified identity is evidence that the certificate is genuine. New certs are
+  // recorded as pending until real issuer/registry verification exists
+  // (IMPROVEMENT_PLAN.md Phase 2.1).
   const { error } = await supabase.from("certifications").insert({
     user_id: user.id,
     issuer: parsed.data.issuer,
@@ -167,16 +177,18 @@ export async function addCertification(formData: FormData) {
     kind: parsed.data.kind,
     issued_at: parsed.data.issued_at,
     doc_url: parsed.data.doc_url,
-    verified,
-    verification_status: verified ? "verified" : "pending",
-    verification_method: verificationMethod,
-    verified_at: verified ? new Date().toISOString() : null,
+    verified: false,
+    verification_status: "pending",
+    verification_method: null,
+    verified_at: null,
     extracted_skills: extractedSkills,
   });
   if (error) return { ok: false as const, error: error.message };
 
-  regenerateUserEmbedding(user.id).catch(() => {});
-  return { ok: true as const, verified };
+  regenerateUserEmbedding(user.id).catch((err) => {
+    console.error("[embed] cert", err);
+  });
+  return { ok: true as const, verified: false };
 }
 
 export async function deleteCertification(id: string): Promise<{ ok: true }> {
@@ -235,26 +247,10 @@ export async function deleteWorkHistory(id: string): Promise<{ ok: true }> {
   return { ok: true };
 }
 
-export async function verifyCertification(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Not authenticated" };
-
-  const { error } = await supabase
-    .from("certifications")
-    .update({
-      verified: true,
-      verification_status: "verified",
-      verification_method: "manual",
-      verified_at: new Date().toISOString(),
-    })
-    .eq("id", id)
-    .eq("user_id", user.id);
-
-  if (error) return { ok: false, error: error.message };
-  regenerateUserEmbedding(user.id).catch(() => {});
-  return { ok: true };
-}
+// NOTE: self-serve certificate verification was removed (finding C4). A user
+// must not be able to mark their own credential "verified" with no evidence.
+// Real verification (issuer/registry lookup or an admin review queue) lands in
+// IMPROVEMENT_PLAN.md Phase 2.1.
 
 export async function saveLocation(lat: number, lon: number): Promise<void> {
   const supabase = await createClient();
