@@ -1,3 +1,4 @@
+import { createHash } from "crypto";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { MatchGigRow } from "@/lib/supabase/types";
 import {
@@ -5,6 +6,12 @@ import {
   buildProfileEmbeddingText,
   generateEmbedding,
 } from "./embeddings";
+
+// Embedding cache (Phase 4.4): skip the paid OpenAI call when the input text
+// is unchanged since the last (re)generation.
+function embeddingInputHash(text: string): string {
+  return createHash("sha256").update(text).digest("hex");
+}
 
 export interface MatchedGig extends MatchGigRow {
   overlap_skills: string[];
@@ -76,7 +83,11 @@ export async function regenerateUserEmbedding(userId: string): Promise<void> {
   // Only verified certs are used — unverified ones and portfolio items can be
   // freely typed by anyone and would let users game their position in vector space.
   const [{ data: profile }, { data: certs }] = await Promise.all([
-    admin.from("profiles").select("headline, bio").eq("id", userId).single(),
+    admin
+      .from("profiles")
+      .select("headline, bio, embedding_input_hash")
+      .eq("id", userId)
+      .single(),
     admin
       .from("certifications")
       .select("title, extracted_skills")
@@ -91,8 +102,14 @@ export async function regenerateUserEmbedding(userId: string): Promise<void> {
     extractedSkills: (certs ?? []).flatMap((c: any) => c.extracted_skills ?? []),
   });
 
+  const hash = embeddingInputHash(text);
+  if (profile?.embedding_input_hash === hash) return; // unchanged — skip paid call
+
   const vector = await generateEmbedding(text || " ");
-  await admin.from("profiles").update({ embedding: vector as any }).eq("id", userId);
+  await admin
+    .from("profiles")
+    .update({ embedding: vector as any, embedding_input_hash: hash })
+    .eq("id", userId);
 }
 
 export async function regenerateGigEmbedding(gigId: string): Promise<void> {
@@ -100,7 +117,7 @@ export async function regenerateGigEmbedding(gigId: string): Promise<void> {
 
   const { data: gig } = await admin
     .from("gigs")
-    .select("title, description, skills_required, category")
+    .select("title, description, skills_required, category, embedding_input_hash")
     .eq("id", gigId)
     .single();
 
@@ -113,6 +130,12 @@ export async function regenerateGigEmbedding(gigId: string): Promise<void> {
     category: gig.category,
   });
 
+  const hash = embeddingInputHash(text);
+  if (gig.embedding_input_hash === hash) return; // unchanged — skip paid call
+
   const vector = await generateEmbedding(text);
-  await admin.from("gigs").update({ embedding: vector as any }).eq("id", gigId);
+  await admin
+    .from("gigs")
+    .update({ embedding: vector as any, embedding_input_hash: hash })
+    .eq("id", gigId);
 }

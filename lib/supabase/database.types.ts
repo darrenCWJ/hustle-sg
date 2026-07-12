@@ -314,6 +314,7 @@ export type Database = {
           description: string
           duration_label: string | null
           embedding: string | null
+          embedding_input_hash: string | null
           employer_id: string
           end_time: string | null
           ends_at: string | null
@@ -345,6 +346,7 @@ export type Database = {
           description: string
           duration_label?: string | null
           embedding?: string | null
+          embedding_input_hash?: string | null
           employer_id: string
           end_time?: string | null
           ends_at?: string | null
@@ -376,6 +378,7 @@ export type Database = {
           description?: string
           duration_label?: string | null
           embedding?: string | null
+          embedding_input_hash?: string | null
           employer_id?: string
           end_time?: string | null
           ends_at?: string | null
@@ -621,6 +624,7 @@ export type Database = {
           created_at: string
           display_name: string
           embedding: string | null
+          embedding_input_hash: string | null
           handle: string
           headline: string | null
           id: string
@@ -638,6 +642,7 @@ export type Database = {
           created_at?: string
           display_name: string
           embedding?: string | null
+          embedding_input_hash?: string | null
           handle: string
           headline?: string | null
           id: string
@@ -655,6 +660,7 @@ export type Database = {
           created_at?: string
           display_name?: string
           embedding?: string | null
+          embedding_input_hash?: string | null
           handle?: string
           headline?: string | null
           id?: string
