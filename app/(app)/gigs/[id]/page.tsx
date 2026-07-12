@@ -540,7 +540,7 @@ export default async function GigDetailPage({
                   <p style={{ fontSize: 13, color: "oklch(100% 0 0 / 0.5)", textAlign: "center", margin: 0 }}>
                     This is your gig
                   </p>
-                  {gig.status === "open" && (
+                  {gig.status === "open" ? (
                     <Link
                       href={`/gigs/${gig.id}/edit`}
                       style={{
@@ -556,6 +556,24 @@ export default async function GigDetailPage({
                       }}
                     >
                       Edit gig
+                    </Link>
+                  ) : (
+                    // Repeated job? One click copies everything except timing.
+                    <Link
+                      href={`/gigs/new?from=${gig.id}`}
+                      style={{
+                        display: "block",
+                        padding: "10px 0",
+                        borderRadius: 999,
+                        background: "var(--color-accent)",
+                        color: "oklch(22% 0.08 38)",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        textAlign: "center",
+                        textDecoration: "none",
+                      }}
+                    >
+                      ↻ Repost this gig
                     </Link>
                   )}
                 </div>

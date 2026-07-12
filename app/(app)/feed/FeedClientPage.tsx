@@ -6,7 +6,7 @@ import type { MatchedGig } from "@/lib/ai/match";
 import { formatSgd } from "@/lib/utils";
 import { toggleSavedGig } from "@/app/actions/gigs";
 
-type FilterId = "all" | "design" | "engineering" | "saved";
+type FilterId = "all" | "design" | "engineering" | "saved" | "fits";
 type SortId = "match" | "budget";
 
 const DESIGN_KEYWORDS = ["figma", "webflow", "ui", "ux", "design", "illustrator", "photoshop", "branding", "visual", "motion", "framer"];
@@ -22,9 +22,11 @@ function getCategory(gig: MatchedGig): "design" | "engineering" | "other" {
 interface FeedClientPageProps {
   matches: MatchedGig[];
   initialSavedIds?: string[];
+  /** True when the user has marked availability on the dashboard calendar. */
+  hasAvailability?: boolean;
 }
 
-export function FeedClientPage({ matches, initialSavedIds = [] }: FeedClientPageProps) {
+export function FeedClientPage({ matches, initialSavedIds = [], hasAvailability = false }: FeedClientPageProps) {
   const [filter, setFilter] = useState<FilterId>("all");
   const [sort, setSort] = useState<SortId>("match");
   const [saved, setSaved] = useState<Set<string>>(new Set(initialSavedIds));
@@ -43,6 +45,7 @@ export function FeedClientPage({ matches, initialSavedIds = [] }: FeedClientPage
     design: matches.filter((m) => getCategory(m) === "design").length,
     engineering: matches.filter((m) => getCategory(m) === "engineering").length,
     saved: saved.size,
+    fits: matches.filter((m) => m.fits_schedule === true).length,
   }), [matches, saved]);
 
   const filtered = useMemo(() => {
@@ -50,6 +53,7 @@ export function FeedClientPage({ matches, initialSavedIds = [] }: FeedClientPage
     if (filter === "design") list = list.filter((m) => getCategory(m) === "design");
     else if (filter === "engineering") list = list.filter((m) => getCategory(m) === "engineering");
     else if (filter === "saved") list = list.filter((m) => saved.has(m.gig_id));
+    else if (filter === "fits") list = list.filter((m) => m.fits_schedule === true);
     if (sort === "budget") list = [...list].sort((a, b) => (b.budget_cents ?? 0) - (a.budget_cents ?? 0));
     else list = [...list].sort((a, b) => b.score - a.score);
     return list;
@@ -63,6 +67,8 @@ export function FeedClientPage({ matches, initialSavedIds = [] }: FeedClientPage
     { id: "design", label: "Design" },
     { id: "engineering", label: "Engineering" },
     { id: "saved", label: "Saved ♥" },
+    // Availability filter only makes sense once the calendar is marked.
+    ...(hasAvailability ? [{ id: "fits" as const, label: `Fits my schedule (${counts.fits})` }] : []),
   ];
 
   return (
@@ -327,6 +333,11 @@ export function FeedClientPage({ matches, initialSavedIds = [] }: FeedClientPage
                           {m.distance_km < 1
                             ? `${Math.round(m.distance_km * 1000)} m`
                             : `${m.distance_km.toFixed(1)} km`}
+                        </span>
+                      )}
+                      {m.fits_schedule === true && (
+                        <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "var(--color-jade-soft)", color: "var(--color-jade-ink)" }}>
+                          🗓 Fits your schedule
                         </span>
                       )}
                     </div>

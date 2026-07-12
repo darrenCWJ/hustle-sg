@@ -16,6 +16,8 @@ function embeddingInputHash(text: string): string {
 export interface MatchedGig extends MatchGigRow {
   overlap_skills: string[];
   employer_display_name?: string | null;
+  /** true/false when the user has an availability calendar; null when not. */
+  fits_schedule?: boolean | null;
 }
 
 export async function matchGigsForUser(

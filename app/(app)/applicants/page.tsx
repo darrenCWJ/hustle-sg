@@ -465,10 +465,25 @@ export default async function ApplicantsPage({
                 >
                   View gig →
                 </Link>
-                {gigStatus === "open" && (
+                {gigStatus === "open" ? (
                   <span style={{ marginLeft: "auto" }}>
                     <CloseGigButton gigId={gigId} />
                   </span>
+                ) : (
+                  <Link
+                    href={`/gigs/new?from=${gigId}`}
+                    style={{
+                      marginLeft: "auto",
+                      padding: "6px 14px",
+                      borderRadius: 999,
+                      border: "1px solid var(--color-line)",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "var(--color-ink)",
+                    }}
+                  >
+                    ↻ Repost
+                  </Link>
                 )}
               </div>
 

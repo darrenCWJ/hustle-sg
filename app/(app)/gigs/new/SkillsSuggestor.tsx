@@ -3,8 +3,8 @@
 import { useRef, useState } from "react";
 import { suggestSkills } from "./actions";
 
-export function SkillsSuggestor() {
-  const [skills, setSkills] = useState<string[]>([]);
+export function SkillsSuggestor({ initialSkills = [] }: { initialSkills?: string[] }) {
+  const [skills, setSkills] = useState<string[]>(initialSkills);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);

@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-export function HeadcountStepper() {
-  const [count, setCount] = useState(1);
+export function HeadcountStepper({ initial = 1 }: { initial?: number }) {
+  const [count, setCount] = useState(Math.min(20, Math.max(1, initial)));
 
   return (
     <div className="flex items-center gap-3">

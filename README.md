@@ -30,6 +30,8 @@ Singapore-first gig platform for verified side hustlers. AI + distance-matched g
 | In-app messaging | Realtime threads per application, unlocked at shortlist/offer/hire; inbox with unread badges; block-aware |
 | Double-blind reviews | A rating stays hidden until both parties submit or 14 days pass (enforced in RLS). Either party can mark a gig completed. Daily pg_cron reminders |
 | Lifecycle controls | Withdraw application, edit/delete gig (delete only with zero applicants), honest close outcomes (filled vs cancelled) |
+| Rehire & repost | Direct offers to previous hires when posting (rehire selector) or from the applicants page; **↻ Repost** copies a past gig into the form (fresh timing/deadline required) |
+| Availability calendar | Weekly grid on the worker dashboard; the feed marks gigs that **fit your schedule** (day + working-window overlap) with a badge and filter |
 | Applicant triage | Status filters, search, sort, and true DB pagination on the employer pipeline |
 | Trust & safety | Report users/gigs, block users (hidden across matching, lists, applying, messaging), disputes with a state machine |
 | Admin surface | `/admin` (role-gated, unlinked): report triage, cert review queue, dispute resolution, error log. Promote via SQL only |
