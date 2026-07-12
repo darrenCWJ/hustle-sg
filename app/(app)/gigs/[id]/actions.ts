@@ -1,8 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { isBlockedBetween } from "@/lib/safety/blocks";
+import { regenerateGigEmbedding } from "@/lib/ai/match";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/security/rate-limit";
 
 export async function applyToGig(gigId: string, formData: FormData) {
   const supabase = await createClient();
@@ -82,7 +85,7 @@ export async function closeGig(gigId: string) {
   // Verify caller is the gig's employer
   const { data: gig } = await supabase
     .from("gigs")
-    .select("employer_id, status")
+    .select("employer_id, status, title")
     .eq("id", gigId)
     .single();
   if (!gig || gig.employer_id !== user.id) return { ok: false as const, error: "Not authorised" };
@@ -90,15 +93,48 @@ export async function closeGig(gigId: string) {
 
   const service = createServiceClient();
 
-  // Mark gig as filled
-  await service.from("gigs").update({ status: "filled" }).eq("id", gigId);
-
-  // Reject all still-pending applications (applied / interviewing / offered)
-  await service
+  // Honest outcome (IMPROVEMENT_PLAN.md Phase 3.4): a close with hires is
+  // "filled"; a close with none is "closed" (cancelled) — and the rejection
+  // notice must not claim the employer "moved forward with other candidates"
+  // when nobody was hired.
+  const { count: hiredCount } = await service
     .from("applications")
-    .update({ status: "rejected" })
+    .select("id", { count: "exact", head: true })
     .eq("gig_id", gigId)
-    .in("status", ["applied", "interviewing", "offered"]);
+    .in("status", ["hired", "completed"]);
+  const wasFilled = (hiredCount ?? 0) > 0;
+
+  await service
+    .from("gigs")
+    .update({ status: wasFilled ? "filled" : "closed" })
+    .eq("id", gigId);
+
+  // Reject still-pending applications and tell those applicants what happened.
+  const { data: pending } = await service
+    .from("applications")
+    .select("id, applicant_id")
+    .eq("gig_id", gigId)
+    .in("status", ["applied", "interviewing", "shortlisted", "offered"]);
+
+  if (pending && pending.length > 0) {
+    await service
+      .from("applications")
+      .update({ status: "rejected" })
+      .in("id", pending.map((p) => p.id));
+
+    await service.from("notifications").insert(
+      pending.map((p) => ({
+        user_id: p.applicant_id,
+        kind: "application_status_changed",
+        title: "Application update",
+        body: wasFilled
+          ? `"${gig.title}" has been filled — the employer went with other candidates.`
+          : `The employer closed "${gig.title}" without hiring. Nothing you did wrong — the gig was cancelled.`,
+        link: `/gigs/${gigId}`,
+        data: { gig_id: gigId, status: "rejected" },
+      })),
+    );
+  }
 
   const { revalidatePath } = await import("next/cache");
   revalidatePath("/applicants");
@@ -223,4 +259,129 @@ export async function updateApplicationStatus(
   }
 
   return { ok: true as const };
+}
+
+const gigEditSchema = z.object({
+  title: z.string().trim().min(3).max(160),
+  description: z.string().trim().min(10).max(8000),
+  skills_required: z.string().max(600),
+  location: z.string().trim().max(200).optional(),
+  category: z.string().trim().max(60).optional(),
+  budget_sgd: z.coerce.number().min(0).max(1_000_000),
+  budget_kind: z.enum(["fixed", "hourly"]),
+  applications_close_at: z.string().optional(),
+});
+
+// Phase 3.4: employers can fix a live posting instead of closing it (which
+// rejects every applicant) and re-posting from scratch.
+export async function updateGig(gigId: string, formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false as const, error: "Not authenticated" };
+
+  const { data: gig } = await supabase
+    .from("gigs")
+    .select("employer_id, status")
+    .eq("id", gigId)
+    .single();
+  if (!gig || gig.employer_id !== user.id) return { ok: false as const, error: "Not authorised" };
+  if (gig.status !== "open") return { ok: false as const, error: "Only open gigs can be edited" };
+
+  const parsed = gigEditSchema.safeParse({
+    title: formData.get("title"),
+    description: formData.get("description"),
+    skills_required: String(formData.get("skills_required") ?? ""),
+    location: String(formData.get("location") ?? "") || undefined,
+    category: String(formData.get("category") ?? "") || undefined,
+    budget_sgd: formData.get("budget_sgd") ?? 0,
+    budget_kind: formData.get("budget_kind") ?? "fixed",
+    applications_close_at: String(formData.get("applications_close_at") ?? "") || undefined,
+  });
+  if (!parsed.success) {
+    return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+
+  // Same deadline rules as posting: SGT wall time, now..+90 days.
+  let closeAt: string | null = null;
+  if (parsed.data.applications_close_at) {
+    const d = new Date(`${parsed.data.applications_close_at}:00+08:00`);
+    const now = new Date();
+    const maxFuture = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+    if (isNaN(d.getTime()) || d <= now || d > maxFuture) {
+      return { ok: false as const, error: "Deadline must be between now and 90 days from today." };
+    }
+    closeAt = d.toISOString();
+  }
+
+  const skills = parsed.data.skills_required
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)
+    .slice(0, 12);
+
+  const { error } = await supabase
+    .from("gigs")
+    .update({
+      title: parsed.data.title,
+      description: parsed.data.description,
+      skills_required: skills,
+      location: parsed.data.location ?? null,
+      category: parsed.data.category ?? null,
+      budget_cents: Math.round(parsed.data.budget_sgd * 100),
+      budget_kind: parsed.data.budget_kind,
+      applications_close_at: closeAt,
+    })
+    .eq("id", gigId);
+  if (error) return { ok: false as const, error: error.message };
+
+  // Edits change the match text; refresh the embedding (paid call, throttled
+  // by the same per-user budget as posting).
+  const allowed = await checkRateLimit(
+    `gig-post:${user.id}`,
+    RATE_LIMITS.gigPost.limit,
+    RATE_LIMITS.gigPost.windowSeconds,
+  );
+  if (allowed) {
+    regenerateGigEmbedding(gigId).catch((err) =>
+      console.error("[gigs] re-embed after edit", err),
+    );
+  }
+
+  const { revalidatePath } = await import("next/cache");
+  revalidatePath(`/gigs/${gigId}`);
+  redirect(`/gigs/${gigId}`);
+}
+
+// Deleting is only allowed while nobody has applied — after that, applicants
+// have skin in the game and the gig must be closed (with notifications) instead.
+export async function deleteGig(gigId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false as const, error: "Not authenticated" };
+
+  const { data: gig } = await supabase
+    .from("gigs")
+    .select("employer_id")
+    .eq("id", gigId)
+    .single();
+  if (!gig || gig.employer_id !== user.id) return { ok: false as const, error: "Not authorised" };
+
+  const { count } = await supabase
+    .from("applications")
+    .select("id", { count: "exact", head: true })
+    .eq("gig_id", gigId);
+  if ((count ?? 0) > 0) {
+    return {
+      ok: false as const,
+      error: "This gig already has applicants — close it instead so they're notified.",
+    };
+  }
+
+  const { error } = await supabase.from("gigs").delete().eq("id", gigId);
+  if (error) return { ok: false as const, error: error.message };
+
+  const { revalidatePath } = await import("next/cache");
+  revalidatePath("/gigs");
+  revalidatePath("/applicants");
+  redirect("/applicants");
 }

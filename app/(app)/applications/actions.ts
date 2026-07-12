@@ -62,3 +62,51 @@ export async function acceptOffer(appId: string): Promise<void> {
 export async function declineOffer(appId: string): Promise<void> {
   return respondToOffer(appId, false);
 }
+
+// Freelancers can leave a pipeline they're no longer interested in
+// (IMPROVEMENT_PLAN.md Phase 3.4) instead of ghosting the employer.
+export async function withdrawApplication(appId: string): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const { data: app } = await supabase
+    .from("applications")
+    .select("id, gig_id, status, gigs(title, employer_id)")
+    .eq("id", appId)
+    .eq("applicant_id", user.id)
+    .in("status", ["applied", "interviewing", "shortlisted", "offered"])
+    .single();
+  if (!app) return;
+
+  const { error } = await supabase
+    .from("applications")
+    .update({ status: "withdrawn" })
+    .eq("id", appId);
+  if (error) {
+    console.error("[applications] withdrawApplication", error);
+    return;
+  }
+
+  const gig = app.gigs as unknown as { title: string; employer_id: string } | null;
+  if (gig?.employer_id) {
+    const { data: workerProfile } = await supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("id", user.id)
+      .single();
+    const service = createServiceClient();
+    await service.from("notifications").insert({
+      user_id: gig.employer_id,
+      kind: "application_status_changed",
+      title: `${workerProfile?.display_name ?? "An applicant"} withdrew from "${gig.title}"`,
+      body: "They're no longer in the running — you may want to review other applicants.",
+      link: "/applicants",
+      data: { application_id: appId, gig_id: app.gig_id },
+    });
+  }
+
+  revalidatePath("/applications");
+}

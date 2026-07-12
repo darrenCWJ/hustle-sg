@@ -104,7 +104,7 @@ export default async function Landing() {
             {[
               { step: "01", time: "0:20", title: "Verify with Singpass", body: "NRIC + face scan. 20 seconds. We hash your identifier; the raw identifier is never stored." },
               { step: "02", time: "4:30", title: "Build your profile", body: "Upload a 90s video, paste a WSQ cert. Details are extracted and indexed for matching." },
-              { step: "03", time: "8:00", title: "Match, apply, record", body: "Assignments are matched against your verified skills. Submit video responses when shortlisted." },
+              { step: "03", time: "8:00", title: "Match, apply, record", body: "Assignments are matched against your verified skills. Record video responses as part of applying." },
               { step: "04", time: "→ day 1", title: "Get paid. Register your business", body: "Settle payment with the employer, then get ACRA registration guidance when you are ready." },
             ].map((s, i) => (
               <ScrollReveal key={s.step} delay={i * 90}>

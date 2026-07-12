@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatSgd, timeAgo } from "@/lib/utils";
-import { acceptOffer, declineOffer } from "./actions";
+import { acceptOffer, declineOffer, withdrawApplication } from "./actions";
 import { markCompleted } from "../rate/actions";
 
 const STATUS_CONFIG: Record<
@@ -508,7 +508,27 @@ export default async function ApplicationsPage() {
                       </form>
                     </div>
                   ) : (
-                    <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                    <div style={{ display: "flex", gap: 8, flexShrink: 0, alignItems: "center" }}>
+                      {/* Freelancers control their own pipeline (Phase 3.4). */}
+                      {["applied", "interviewing", "shortlisted"].includes(a.status) && (
+                        <form action={withdrawApplication.bind(null, a.id)} style={{ margin: 0 }}>
+                          <button
+                            type="submit"
+                            style={{
+                              padding: "6px 12px",
+                              borderRadius: 999,
+                              border: "none",
+                              background: "transparent",
+                              fontSize: 11.5,
+                              fontWeight: 600,
+                              color: "var(--color-ink-mute)",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Withdraw
+                          </button>
+                        </form>
+                      )}
                       {gig?.id && (
                         <Link
                           href={`/gigs/${gig.id}`}

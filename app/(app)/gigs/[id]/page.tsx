@@ -348,7 +348,7 @@ export default async function GigDetailPage({
                 Async interview
               </h2>
               <p style={{ color: "var(--color-ink-soft)", fontSize: 14, margin: "0 0 18px" }}>
-                If shortlisted, record {questions.length} short video answer{questions.length > 1 ? "s" : ""} on your own time.
+                When you apply, record {questions.length} short video answer{questions.length > 1 ? "s" : ""} on your own time.
               </p>
               <ol style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                 {questions.map((q: any, i: number) => (
@@ -536,9 +536,29 @@ export default async function GigDetailPage({
                   )}
                 </div>
               ) : isOwnGig ? (
-                <p style={{ fontSize: 13, color: "oklch(100% 0 0 / 0.5)", textAlign: "center", margin: 0 }}>
-                  This is your gig
-                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <p style={{ fontSize: 13, color: "oklch(100% 0 0 / 0.5)", textAlign: "center", margin: 0 }}>
+                    This is your gig
+                  </p>
+                  {gig.status === "open" && (
+                    <Link
+                      href={`/gigs/${gig.id}/edit`}
+                      style={{
+                        display: "block",
+                        padding: "10px 0",
+                        borderRadius: 999,
+                        border: "1px solid oklch(100% 0 0 / 0.25)",
+                        color: "var(--color-surface)",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        textAlign: "center",
+                        textDecoration: "none",
+                      }}
+                    >
+                      Edit gig
+                    </Link>
+                  )}
+                </div>
               ) : isEmployerOnly ? (
                 <p style={{ fontSize: 13, color: "oklch(100% 0 0 / 0.5)", textAlign: "center", margin: 0 }}>
                   Switch to a worker account to apply
@@ -578,7 +598,7 @@ export default async function GigDetailPage({
                   </button>
                   <p style={{ fontSize: 11, color: "oklch(100% 0 0 / 0.5)", margin: 0, textAlign: "center" }}>
                     {questions && questions.length > 0
-                      ? `You'll record ${questions.length} video answer${questions.length > 1 ? "s" : ""} if shortlisted`
+                      ? `You'll record ${questions.length} video answer${questions.length > 1 ? "s" : ""} as part of applying`
                       : "Your application will be sent directly to the employer"}
                   </p>
                 </form>
