@@ -18,6 +18,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_errors: {
+        Row: {
+          created_at: string
+          digest: string | null
+          id: string
+          message: string
+          scope: string
+          source: string
+          stack: string | null
+          url: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          digest?: string | null
+          id?: string
+          message: string
+          scope?: string
+          source: string
+          stack?: string | null
+          url?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          digest?: string | null
+          id?: string
+          message?: string
+          scope?: string
+          source?: string
+          stack?: string | null
+          url?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_errors_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       applications: {
         Row: {
           applicant_id: string
@@ -480,6 +524,48 @@ export type Database = {
             columns: ["question_id"]
             isOneToOne: false
             referencedRelation: "interview_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_events: {
+        Row: {
+          created_at: string
+          event: string
+          gig_id: string
+          id: string
+          score: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event: string
+          gig_id: string
+          id?: string
+          score?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event?: string
+          gig_id?: string
+          id?: string
+          score?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_events_gig_id_fkey"
+            columns: ["gig_id"]
+            isOneToOne: false
+            referencedRelation: "gigs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

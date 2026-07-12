@@ -17,11 +17,17 @@ export default async function AdminOverviewPage() {
       .neq("status", "resolved"),
   ]);
 
+  const { count: recentErrors } = await service
+    .from("app_errors")
+    .select("id", { count: "exact", head: true })
+    .gte("created_at", new Date(Date.now() - 24 * 3600 * 1000).toISOString());
+
   const cards = [
     { label: "Open reports", count: openReports.count ?? 0, href: "/admin/reports" },
     { label: "Under review", count: reviewingReports.count ?? 0, href: "/admin/reports" },
     { label: "Certs awaiting verification", count: pendingCerts.count ?? 0, href: "/admin/certs" },
     { label: "Active disputes", count: openDisputes.count ?? 0, href: "/admin/disputes" },
+    { label: "Errors (24h)", count: recentErrors ?? 0, href: "/admin/errors" },
   ];
 
   return (

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { reportClientError } from "@/app/actions/errors";
 
 export default function Error({
   error,
@@ -11,8 +12,14 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Surface for server-side/telemetry capture (Sentry wiring: Phase 1.5).
     console.error("[route-error]", error);
+    // Persist to the first-party error store (app_errors → /admin/errors).
+    reportClientError({
+      message: error.message || "Unknown root error",
+      digest: error.digest,
+      url: typeof window !== "undefined" ? window.location.href : undefined,
+      scope: "root-error-boundary",
+    }).catch(() => {});
   }, [error]);
 
   return (

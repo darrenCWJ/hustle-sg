@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { reportClientError } from "@/app/actions/errors";
 
 interface RouteErrorProps {
   error: Error & { digest?: string };
@@ -23,8 +24,14 @@ export function RouteError({
   homeLabel = "Go home",
 }: RouteErrorProps) {
   useEffect(() => {
-    // Surface for server-side/telemetry capture (Sentry wiring: Phase 1.5).
     console.error("[route-error]", error);
+    // Persist to the first-party error store (app_errors → /admin/errors).
+    reportClientError({
+      message: error.message || "Unknown route error",
+      digest: error.digest,
+      url: typeof window !== "undefined" ? window.location.href : undefined,
+      scope: "route-error-boundary",
+    }).catch(() => {});
   }, [error]);
 
   return (
