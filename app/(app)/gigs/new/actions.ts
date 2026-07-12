@@ -2,9 +2,8 @@
 
 import { z } from "zod";
 import { redirect } from "next/navigation";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { regenerateGigEmbedding } from "@/lib/ai/match";
-import { notifyMatchedFreelancers } from "@/lib/push/notify";
+import { createClient } from "@/lib/supabase/server";
+import { postGigCore } from "@/lib/gigs/post";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/security/rate-limit";
 
 const gigSchema = z.object({
@@ -42,16 +41,7 @@ export async function postGig(formData: FormData) {
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   if (profile?.role === "freelancer") return { ok: false as const, error: "Switch your role to Employer to post assignments." };
 
-  // Posting triggers a paid embedding call + push fan-out; throttle per user.
-  const allowed = await checkRateLimit(
-    `gig-post:${user.id}`,
-    RATE_LIMITS.gigPost.limit,
-    RATE_LIMITS.gigPost.windowSeconds,
-  );
-  if (!allowed) {
-    return { ok: false as const, error: "You're posting too quickly. Please try again later." };
-  }
-
+  // Rate limiting lives in postGigCore — one hit per post across surfaces.
   const parsed = gigSchema.safeParse({
     title: formData.get("title"),
     description: formData.get("description"),
@@ -91,106 +81,43 @@ export async function postGig(formData: FormData) {
     }
   }
 
-  const skills = parsed.data.skills_required
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean)
-    .slice(0, 12);
-
-  // Ensure employer role
-  await supabase
-    .from("profiles")
-    .update({ role: "both" })
-    .eq("id", user.id)
-    .eq("role", "freelancer");
-
-  const { data: gig, error } = await supabase
-    .from("gigs")
-    .insert({
-      employer_id: user.id,
-      title: parsed.data.title,
-      description: parsed.data.description,
-      skills_required: skills,
-      location: parsed.data.location ?? null,
-      category: parsed.data.category ?? null,
-      budget_cents: Math.round(parsed.data.budget_sgd * 100),
-      budget_kind: parsed.data.budget_kind,
-      status: "open",
-      requires_employer_approval: parsed.data.requires_employer_approval === "true",
-      is_instant: parsed.data.is_instant === "true",
-      instant_urgency: parsed.data.is_instant === "true" && parsed.data.instant_urgency
-        ? parsed.data.instant_urgency
+  // Shared domain function (Phase 4.1) — mobile posting wraps the same core.
+  const result = await postGigCore({
+    title: parsed.data.title,
+    description: parsed.data.description,
+    skills: parsed.data.skills_required.split(","),
+    location: parsed.data.location ?? null,
+    category: parsed.data.category ?? null,
+    budgetCents: Math.round(parsed.data.budget_sgd * 100),
+    budgetKind: parsed.data.budget_kind,
+    requiresEmployerApproval: parsed.data.requires_employer_approval === "true",
+    isInstant: parsed.data.is_instant === "true",
+    instantUrgency:
+      parsed.data.is_instant === "true" &&
+      (["now", "today", "weekend"] as const).includes(parsed.data.instant_urgency as never)
+        ? (parsed.data.instant_urgency as "now" | "today" | "weekend")
         : null,
-      headcount: parsed.data.headcount ?? 1,
-      applications_close_at: closeAt?.toISOString() ?? null,
-      starts_at: parsed.data.starts_at || null,
-      ends_at: parsed.data.ends_at || null,
-      duration_label: parsed.data.duration_label || null,
-      hours_required: parsed.data.hours_required ?? null,
-      recurrence_cadence: parsed.data.recurrence_cadence || null,
-      milestones: parsed.data.milestones_json
-        ? (() => { try { return JSON.parse(parsed.data.milestones_json!); } catch { return []; } })()
-        : [],
-      start_time: parsed.data.start_time || null,
-      end_time: parsed.data.end_time || null,
-      days_of_week: parsed.data.days_of_week
-        ? parsed.data.days_of_week.split(",").map(Number).filter(n => !isNaN(n) && n >= 0 && n <= 6)
-        : [],
-    })
-    .select()
-    .single();
+    headcount: parsed.data.headcount ?? 1,
+    applicationsCloseAt: closeAt?.toISOString() ?? null,
+    startsAt: parsed.data.starts_at || null,
+    endsAt: parsed.data.ends_at || null,
+    durationLabel: parsed.data.duration_label || null,
+    hoursRequired: parsed.data.hours_required ?? null,
+    recurrenceCadence: parsed.data.recurrence_cadence || null,
+    milestones: parsed.data.milestones_json
+      ? (() => { try { return JSON.parse(parsed.data.milestones_json!); } catch { return []; } })()
+      : [],
+    startTime: parsed.data.start_time || null,
+    endTime: parsed.data.end_time || null,
+    daysOfWeek: parsed.data.days_of_week
+      ? parsed.data.days_of_week.split(",").map(Number).filter(n => !isNaN(n) && n >= 0 && n <= 6)
+      : [],
+    questions: String(parsed.data.questions ?? "").split("\n"),
+    rehireWorkerIds: formData.getAll("rehire_worker_ids").map(String),
+  });
 
-  if (error || !gig) return { ok: false as const, error: error?.message ?? "Failed" };
-
-  const questions = String(parsed.data.questions ?? "")
-    .split("\n")
-    .map((q) => q.trim())
-    .filter(Boolean)
-    .slice(0, 3);
-
-  if (questions.length > 0) {
-    await supabase.from("interview_questions").insert(
-      questions.map((prompt, i) => ({
-        gig_id: gig.id,
-        prompt,
-        max_duration_sec: 90,
-        display_order: i,
-      })),
-    );
-  }
-
-  // Await embedding so match_users_for_gig sees the vector before notifying.
-  await regenerateGigEmbedding(gig.id).catch(() => {});
-  notifyMatchedFreelancers(gig.id).catch(() => {});
-
-  // Send direct offers to any selected previous hires.
-  const rehireIds = formData.getAll("rehire_worker_ids").map(String).filter(Boolean);
-  if (rehireIds.length > 0) {
-    const service = createServiceClient();
-    const { data: employer } = await supabase.from("profiles").select("display_name").eq("id", user.id).single();
-    const employerName = employer?.display_name ?? "An employer";
-    await Promise.all(
-      rehireIds.map(async (workerId) => {
-        const { data: app, error } = await service
-          .from("applications")
-          .insert({ gig_id: gig.id, applicant_id: workerId, status: "offered" })
-          .select("id")
-          .single();
-        if (!error && app) {
-          await service.from("notifications").insert({
-            user_id: workerId,
-            kind: "direct_offer",
-            title: `${employerName} sent you a direct offer for "${gig.title}"`,
-            body: "Review and accept or decline the offer.",
-            link: "/applications",
-            data: { application_id: app.id, gig_id: gig.id },
-          });
-        }
-      }),
-    );
-  }
-
-  redirect(`/gigs/${gig.id}`);
+  if (!result.ok) return { ok: false as const, error: result.error };
+  redirect(`/gigs/${result.gigId}`);
 }
 
 export async function suggestSkills(

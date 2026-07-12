@@ -147,8 +147,8 @@ export default async function MobileApplicationsPage() {
               const st = STATUS[app.status as keyof typeof STATUS] ?? STATUS.applied;
 
               return (
+                <div key={app.id}>
                 <Link
-                  key={app.id}
                   href={`/m/gigs/${gig.id}`}
                   style={{
                     display: "block",
@@ -234,7 +234,7 @@ export default async function MobileApplicationsPage() {
                         color: "var(--color-ink)",
                       }}
                     >
-                      S${(gig.budget_cents / 100).toFixed(0)}
+                      S${((gig.budget_cents ?? 0) / 100).toFixed(0)}
                       <span
                         style={{ fontSize: 11, fontWeight: 400, color: "var(--color-ink-mute)", marginLeft: 4 }}
                       >
@@ -245,7 +245,51 @@ export default async function MobileApplicationsPage() {
                       {gig.location ?? "Singapore"} →
                     </span>
                   </div>
+
                 </Link>
+
+                {/* Mobile route holes (Phase 4.2): the interview recorder and
+                    rating flow live in the (app) group but render single-column
+                    and work at mobile width — link instead of dead-ending. */}
+                {(app.status === "interviewing" || app.status === "applied") && (
+                  <Link
+                    href={`/interviews/${app.id}`}
+                    style={{
+                      display: "block",
+                      marginTop: 8,
+                      padding: "9px 0",
+                      borderRadius: 999,
+                      background: "var(--color-ink)",
+                      color: "var(--color-surface)",
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      textAlign: "center",
+                      textDecoration: "none",
+                    }}
+                  >
+                    🎥 Record / view interview
+                  </Link>
+                )}
+                {app.status === "completed" && (
+                  <Link
+                    href={`/rate/${app.id}`}
+                    style={{
+                      display: "block",
+                      marginTop: 8,
+                      padding: "9px 0",
+                      borderRadius: 999,
+                      background: "#7c3aed",
+                      color: "#fff",
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      textAlign: "center",
+                      textDecoration: "none",
+                    }}
+                  >
+                    ★ Rate employer
+                  </Link>
+                )}
+                </div>
               );
             })}
           </div>

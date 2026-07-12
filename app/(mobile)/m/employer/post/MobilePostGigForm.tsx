@@ -223,6 +223,18 @@ export function MobilePostGigForm() {
             />
           </div>
 
+          {/* Skills — feeds AI matching; mobile gigs used to post without any. */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: "var(--color-ink-soft)" }}>
+              Skills needed <span style={{ fontSize: 11, color: "var(--color-ink-mute)" }}>(comma-separated, optional)</span>
+            </label>
+            <input
+              name="skills"
+              placeholder="e.g. barista, latte art"
+              style={INPUT_STYLE}
+            />
+          </div>
+
           {/* Freelancers needed */}
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
             <label style={{ fontSize: 12, fontWeight: 600, color: "var(--color-ink-soft)" }}>
