@@ -128,6 +128,11 @@ export function RateForm({ applicationId, rateeName, isEmployer }: Props) {
         <p style={{ fontSize: 13, color: "#dc2626", margin: "0 0 16px" }}>{error}</p>
       )}
 
+      <p style={{ fontSize: 12.5, color: "var(--color-ink-mute)", margin: "0 0 14px", lineHeight: 1.5 }}>
+        Reviews are double-blind: yours stays hidden until {rateeName} submits
+        theirs, or 14 days pass — so neither side can retaliate.
+      </p>
+
       <button
         type="button"
         onClick={handleSubmit}

@@ -39,6 +39,19 @@ export default async function RatePage({
     .eq("from_id", user.id)
     .maybeSingle();
 
+  // Double-blind reveal state: the counterparty's rating only passes RLS once
+  // both sides have rated (or after 14 days) — visibility IS the reveal signal.
+  let counterpartRated = false;
+  if (existing) {
+    const { data: counterpart } = await supabase
+      .from("ratings")
+      .select("id")
+      .eq("application_id", applicationId)
+      .neq("from_id", user.id)
+      .maybeSingle();
+    counterpartRated = Boolean(counterpart);
+  }
+
   const ratee = isEmployer ? (app.applicant as any) : gig?.employer;
   const gigTitle = gig?.title ?? "Gig";
 
@@ -66,6 +79,11 @@ export default async function RatePage({
             {"★".repeat(existing.stars)}{"☆".repeat(5 - existing.stars)}
           </div>
           <p style={{ fontSize: 14, color: "var(--color-ink-soft)", margin: 0, lineHeight: 1.55 }}>{existing.review}</p>
+          <p style={{ fontSize: 12.5, color: "var(--color-ink-mute)", margin: "14px 0 0", lineHeight: 1.5 }}>
+            {counterpartRated
+              ? "Both reviews are in — they're now visible on each other's profiles."
+              : `Your review stays hidden until ${ratee?.display_name ?? "the other party"} submits theirs, or 14 days pass.`}
+          </p>
         </div>
       ) : (
         <RateForm

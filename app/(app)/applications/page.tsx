@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatSgd, timeAgo } from "@/lib/utils";
 import { acceptOffer, declineOffer } from "./actions";
+import { markCompleted } from "../rate/actions";
 
 const STATUS_CONFIG: Record<
   string,
@@ -472,6 +473,33 @@ export default async function ApplicationsPage() {
                           ★ Rate employer
                         </Link>
                       )}
+                    </div>
+                  ) : a.status === "hired" ? (
+                    <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                      {gig?.id && (
+                        <Link
+                          href={`/gigs/${gig.id}`}
+                          style={{
+                            padding: "6px 12px",
+                            borderRadius: 999,
+                            border: "1px solid var(--color-line)",
+                            fontSize: 12,
+                            fontWeight: 600,
+                          }}
+                        >
+                          View gig
+                        </Link>
+                      )}
+                      {/* Completion is two-sided (Phase 2.2): the freelancer can
+                          close out a finished gig too, unlocking both reviews. */}
+                      <form action={markCompleted.bind(null, a.id)}>
+                        <button
+                          type="submit"
+                          style={{ padding: "6px 14px", borderRadius: 999, background: "#7c3aed", color: "#fff", fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer" }}
+                        >
+                          Mark completed
+                        </button>
+                      </form>
                     </div>
                   ) : (
                     <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 
 const ratingSchema = z.object({
   applicationId: z.string().uuid(),
@@ -67,22 +67,43 @@ export async function markCompleted(applicationId: string): Promise<void> {
   } = await supabase.auth.getUser();
   if (!user) return;
 
-  // Only the employer can mark as completed
+  // Either party can close out a hired gig (Phase 2.2): completion — and the
+  // review loop it unlocks — must not be unilaterally gated by the employer.
   const { data: app } = await supabase
     .from("applications")
-    .select("id, gig_id, gigs(employer_id)")
+    .select("id, gig_id, applicant_id, gigs(employer_id, title)")
     .eq("id", applicationId)
     .eq("status", "hired")
     .single();
 
   if (!app) return;
   const gig = app.gigs as any;
-  if (gig?.employer_id !== user.id) return;
+  const isApplicant = app.applicant_id === user.id;
+  const isEmployer = gig?.employer_id === user.id;
+  if (!isApplicant && !isEmployer) return;
 
-  await supabase
+  const { error } = await supabase
     .from("applications")
     .update({ status: "completed" })
-    .eq("id", applicationId);
+    .eq("id", applicationId)
+    .eq("status", "hired");
+  if (error) {
+    console.error("[rate] markCompleted", error);
+    return;
+  }
+
+  // Prompt the other party to leave their (double-blind) review.
+  const otherPartyId = isEmployer ? app.applicant_id : gig.employer_id;
+  const service = createServiceClient();
+  await service.from("notifications").insert({
+    user_id: otherPartyId,
+    kind: "application_status_changed",
+    title: `"${gig?.title ?? "Gig"}" marked completed`,
+    body: "Leave your review — reviews stay hidden until both sides submit, or 14 days pass.",
+    link: `/rate/${applicationId}`,
+    data: { application_id: applicationId, status: "completed" },
+  });
 
   revalidatePath("/applicants");
+  revalidatePath("/applications");
 }

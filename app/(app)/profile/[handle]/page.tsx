@@ -504,12 +504,18 @@ export default async function ProfilePage({
       <section style={{ marginBottom: 70 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end", marginBottom: 20 }}>
           <h2 style={{ fontFamily: "var(--font-display)", fontSize: 38, margin: 0, letterSpacing: "-0.03em" }}>Reviews</h2>
-          {ratings.length > 0 && (
+          {ratings.length > 0 ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ color: "#f59e0b", fontSize: 22 }}>★</span>
               <span style={{ fontFamily: "var(--font-display)", fontSize: 28, letterSpacing: "-0.03em" }}>{avgStars}</span>
               <span style={{ fontSize: 12, color: "var(--color-ink-soft)" }}>from {ratings.length} review{ratings.length !== 1 ? "s" : ""}</span>
             </div>
+          ) : (
+            // Honest "unproven" signal (Phase 2.2): zero reviews reads as new,
+            // not as silently trustworthy.
+            <span className="pill" style={{ background: "var(--color-muted)", color: "var(--color-ink-soft)", fontSize: 12, fontWeight: 600 }}>
+              New — no reviews yet
+            </span>
           )}
         </div>
         {ratings.length > 0 ? (
