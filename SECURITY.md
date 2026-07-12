@@ -17,6 +17,7 @@ Everything that depends on that scheme is gated behind a single flag:
 | Surface | File | Behaviour when `NEXT_PUBLIC_DEMO_MODE=false` |
 |---|---|---|
 | Mock Singpass sign-in | `app/(auth)/singpass/actions.ts` | Returns an error; no derived-credential login |
+| `/singpass` + `/m/singpass` pages | layout/page gates | Redirect to `/login` (email OTP) |
 | NRIC existence check | `checkNricExists` (same file) | Always returns `false` (no NRIC oracle) |
 | `/accounts` credential list | `app/(marketing)/accounts/page.tsx` | Hard 404 |
 
@@ -26,8 +27,12 @@ the box. Any non-demo deployment must:
 1. Set `NEXT_PUBLIC_DEMO_MODE=false`.
 2. Set `NRIC_HASH_SALT` to a per-deployment secret (the default salt is the
    public string `"hustle-sg"`, kept so seeded demo accounts keep working).
-3. Wire a real authentication provider (IMPROVEMENT_PLAN.md Phase 3.1) —
-   with demo mode off there is **no** login path until one exists.
+3. Authentication outside the demo is **email OTP** (`/login`,
+   `app/(auth)/login/` — Supabase `signInWithOtp`, per-address rate limited).
+   OTP proves email ownership only: profiles created this way have no
+   `singpass_verified_at` and never show identity-verified badges. For
+   production, configure custom SMTP in the Supabase dashboard and plan the
+   real Singpass/MyInfo OIDC integration (IMPROVEMENT_PLAN.md Phase 3.1).
 
 ## Controls in place
 

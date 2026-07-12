@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { NRICForm } from "@/components/singpass/NRICForm";
 import { safeNext } from "@/lib/security/safe-redirect";
+import { DEMO_MODE } from "@/lib/config/demo";
 
 const SP_RED = "#c0392b";
 
@@ -10,6 +12,8 @@ export default async function MobileSingpassPage({
   searchParams: Promise<{ next?: string }>;
 }) {
   const next = safeNext((await searchParams).next, "/m/feed");
+  // Mock Singpass is demo-only; outside the demo, email OTP is the login path.
+  if (!DEMO_MODE) redirect(`/login?next=${encodeURIComponent(next)}`);
   const backHref = next.startsWith("/m/") ? next : "/m/feed";
 
   return (
